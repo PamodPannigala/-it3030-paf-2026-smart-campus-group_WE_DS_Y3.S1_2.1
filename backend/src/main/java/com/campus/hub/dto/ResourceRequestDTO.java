@@ -22,7 +22,7 @@ public class ResourceRequestDTO {
     private Integer capacity;
 
     @NotBlank(message = "Location is required")
-    private String location;
+    private String location ;
 
     @Pattern(regexp = "ACTIVE|AVAILABLE|MAINTENANCE|OUT_OF_SERVICE", 
          message = "Status must be ACTIVE, AVAILABLE, MAINTENANCE, or OUT_OF_SERVICE")
