@@ -24,3 +24,9 @@
   background-color: #34495e !important;
   color: white !important;
 }
+
+.active-nav-link {
+  background-color: #1f2d3a !important;
+  color: #ffffff !important;
+  border-left: 4px solid #17a2b8 !important;
+}
