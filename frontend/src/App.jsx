@@ -6,6 +6,10 @@ import ResourceList from "./pages/ResourceList";
 import PublicResourceView from "./components/PublicResourceView";
 import ResourceCataloguePage from "./pages/ResourceCataloguePage";
 import ResourceDetailPage from "./pages/ResourceDetailPage";
+import BookingForm from "./pages/BookingForm";
+import BookingSuccess from "./pages/BookingSuccess";
+import MyBookings from "./pages/MyBookings";
+import AdminBookings from "./pages/AdminBookings";
 
 function App() {
   const location = useLocation();
@@ -25,6 +29,10 @@ function App() {
             <Route path="/resource/view/:id" element={<PublicResourceView />} />
             <Route path="/catalogue" element={<ResourceCataloguePage />} />
             <Route path="/resourseDetail/:id" element={<ResourceDetailPage />} />
+            <Route path="/booking/:id" element={<BookingForm />} />
+            <Route path="/booking-success/:id" element={<BookingSuccess />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
+            <Route path="/admin/bookings" element={<AdminBookings />} />
           </Routes>
         </div>
       </div>

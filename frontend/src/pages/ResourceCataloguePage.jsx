@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Search, LayoutGrid } from "lucide-react";
+import { Search, LayoutGrid, CalendarCheck } from "lucide-react"; // ADD CalendarCheck here
 import { useNavigate } from "react-router-dom";
 
 import FormInput_FU from "../components/FormInput/FormInput_FU";
@@ -13,7 +13,7 @@ const ResourceCataloguePage = () => {
   const [resources, setResources] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("ALL");
-  const [loading, setLoading] = useState(true); // Loading එකක් දාමු Professional ලුක් එකට
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
@@ -52,8 +52,38 @@ const ResourceCataloguePage = () => {
           backgroundSize: "cover",
           backgroundPosition: "center",
           borderRadius: "0 0 60px 60px",
+          position: "relative", // ADD THIS for absolute positioning
         }}
       >
+        {/* ADD THIS - My Bookings Button (Top Right Corner) */}
+        <button
+          onClick={() => navigate("/my-bookings")}
+          className="btn btn-light rounded-pill px-4 py-2 fw-semibold shadow-sm"
+          style={{
+            position: "absolute",
+            top: "30px",
+            right: "30px",
+            backgroundColor: "white",
+            color: "#2563eb",
+            border: "none",
+            transition: "all 0.3s ease",
+            zIndex: 10,
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = "#2563eb";
+            e.currentTarget.style.color = "white";
+            e.currentTarget.style.transform = "translateY(-2px)";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = "white";
+            e.currentTarget.style.color = "#2563eb";
+            e.currentTarget.style.transform = "translateY(0)";
+          }}
+        >
+          <CalendarCheck size={18} className="me-2" />
+          My Bookings
+        </button>
+
         <div className="container text-center">
           <h1 className="display-3 fw-bold mb-3 mt-4 animate__animated animate__fadeInDown">
             University Asset Hub
@@ -70,7 +100,7 @@ const ResourceCataloguePage = () => {
                   <FormInput_FU
                     icon={Search}
                     placeholder="What are you looking for? (e.g. AR/VR Lab)"
-                    onChange={(e) => setSearchTerm(e.value || e.target.value)} // Fix for custom input
+                    onChange={(e) => setSearchTerm(e.value || e.target.value)}
                     className="border-0 shadow-none mb-0"
                   />
                 </div>
