@@ -1,6 +1,6 @@
 package com.campus.hub.user.service;
 
-import com.campus.hub.exception.ResourceNotFoundException;
+import com.campus.hub.exception.EntityNotFoundException;
 import com.campus.hub.user.dto.UserSummaryResponse;
 import com.campus.hub.user.entity.CampusUser;
 import com.campus.hub.user.entity.Role;
@@ -29,7 +29,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     @Transactional
     public UserSummaryResponse updateRole(Long userId, Role role) {
         CampusUser user = campusUserRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
         user.setRole(role);
         CampusUser updated = campusUserRepository.save(user);
         return toSummary(updated);

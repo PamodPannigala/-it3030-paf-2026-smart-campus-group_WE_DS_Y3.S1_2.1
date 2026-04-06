@@ -31,9 +31,6 @@ public class NotificationPreference {
     private CampusUser user;
 
     @Column(nullable = false)
-    private boolean bookingStatusEnabled;
-
-    @Column(nullable = false)
     private boolean ticketStatusEnabled;
 
     @Column(nullable = false)

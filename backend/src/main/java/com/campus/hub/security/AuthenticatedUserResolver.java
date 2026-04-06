@@ -1,6 +1,6 @@
 package com.campus.hub.security;
 
-import com.campus.hub.exception.ResourceNotFoundException;
+import com.campus.hub.exception.EntityNotFoundException;
 import com.campus.hub.user.entity.CampusUser;
 import com.campus.hub.user.repository.CampusUserRepository;
 import java.util.Map;
@@ -24,7 +24,7 @@ public class AuthenticatedUserResolver {
 
         String email = resolveEmail(authentication.getPrincipal());
         return campusUserRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found: " + email));
+                .orElseThrow(() -> new EntityNotFoundException("Authenticated user not found: " + email));
     }
 
     private String resolveEmail(Object principal) {

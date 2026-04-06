@@ -1,6 +1,6 @@
 package com.campus.hub.notification.service;
 
-import com.campus.hub.exception.ResourceNotFoundException;
+import com.campus.hub.exception.EntityNotFoundException;
 import com.campus.hub.notification.dto.NotificationCreateRequest;
 import com.campus.hub.notification.dto.NotificationPreferenceResponse;
 import com.campus.hub.notification.dto.NotificationPreferenceUpdateRequest;
@@ -29,7 +29,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public NotificationResponse create(NotificationCreateRequest request) {
         CampusUser user = campusUserRepository.findById(request.userId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.userId()));
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + request.userId()));
 
         if (!isNotificationCategoryEnabled(user, request.category())) {
             throw new IllegalArgumentException("Notification category is disabled by user preferences");
@@ -64,7 +64,7 @@ public class NotificationServiceImpl implements NotificationService {
     public NotificationResponse markAsRead(Long userId, Long notificationId) {
         validateUserExists(userId);
         Notification notification = notificationRepository.findByIdAndUserId(notificationId, userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + notificationId));
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found with id: " + notificationId));
         notification.setRead(true);
         Notification updated = notificationRepository.save(notification);
         return toResponse(updated);
@@ -91,9 +91,6 @@ public class NotificationServiceImpl implements NotificationService {
         validateUserExists(userId);
         NotificationPreference preference = getOrCreatePreference(userId);
 
-        if (request.bookingStatusEnabled() != null) {
-            preference.setBookingStatusEnabled(request.bookingStatusEnabled());
-        }
         if (request.ticketStatusEnabled() != null) {
             preference.setTicketStatusEnabled(request.ticketStatusEnabled());
         }
@@ -120,7 +117,6 @@ public class NotificationServiceImpl implements NotificationService {
 
     private NotificationPreferenceResponse toPreferenceResponse(NotificationPreference preference) {
         return new NotificationPreferenceResponse(
-                preference.isBookingStatusEnabled(),
                 preference.isTicketStatusEnabled(),
                 preference.isTicketCommentEnabled()
         );
@@ -128,7 +124,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void validateUserExists(Long userId) {
         if (!campusUserRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("User not found with id: " + userId);
+            throw new EntityNotFoundException("User not found with id: " + userId);
         }
     }
 
@@ -136,10 +132,9 @@ public class NotificationServiceImpl implements NotificationService {
         return preferenceRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     CampusUser user = campusUserRepository.findById(userId)
-                            .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                            .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
                     NotificationPreference defaults = NotificationPreference.builder()
                             .user(user)
-                            .bookingStatusEnabled(true)
                             .ticketStatusEnabled(true)
                             .ticketCommentEnabled(true)
                             .build();
@@ -156,7 +151,6 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         return switch (category) {
-            case BOOKING_STATUS -> preference.isBookingStatusEnabled();
             case TICKET_STATUS -> preference.isTicketStatusEnabled();
             case TICKET_COMMENT -> preference.isTicketCommentEnabled();
         };
