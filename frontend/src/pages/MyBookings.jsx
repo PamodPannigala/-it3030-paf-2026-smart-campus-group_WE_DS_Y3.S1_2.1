@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Calendar, Clock, CheckCircle, XCircle, Clock as PendingIcon, AlertCircle, Image as ImageIcon, Download, QrCode, X } from "lucide-react";
+import toast, { Toaster } from 'react-hot-toast';
 import "../styles/MyBookings.css"; // Create this CSS file for hover effects
 
 const MyBookings = () => {
@@ -45,20 +46,20 @@ const MyBookings = () => {
     }
   };
 
-  const cancelBooking = async (bookingId) => {
+    const cancelBooking = async (bookingId) => {
     if (window.confirm("Are you sure you want to cancel this booking request?")) {
       try {
         await axios.put(`http://localhost:8080/api/bookings/${bookingId}/cancel`);
-        alert("Booking cancelled successfully!");
+        toast.success("Booking cancelled successfully!");
         fetchMyBookings();
         setShowModal(false);
       } catch (err) {
-        alert(err.response?.data?.message || "Failed to cancel booking");
+        toast.error(err.response?.data?.message || "Failed to cancel booking");
       }
     }
   };
 
-  const downloadQRCode = async (bookingId, resourceName) => {
+    const downloadQRCode = async (bookingId, resourceName) => {
     try {
       const response = await axios.get(`http://localhost:8080/api/bookings/${bookingId}/qrcode`, {
         responseType: 'blob'
@@ -74,10 +75,10 @@ const MyBookings = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      alert("QR Code downloaded successfully!");
+      toast.success("QR Code downloaded successfully!");
     } catch (err) {
       console.error("Failed to download QR code:", err);
-      alert("Failed to download QR code");
+      toast.error("Failed to download QR code");
     }
   };
   
@@ -120,6 +121,39 @@ const MyBookings = () => {
 
   return (
     <div className="container py-4">
+       <Toaster 
+  position="top-center"  // Options: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right
+  reverseOrder={false}
+  gutter={8}
+  containerClassName=""
+  containerStyle={{}}
+  toastOptions={{
+    duration: 3000,  // 3 seconds
+    style: {
+      background: '#3b82f6',  // Blue color
+      color: '#fff',
+      borderRadius: '12px',
+      padding: '12px 20px',
+      fontSize: '14px',
+      fontWeight: '500',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+    },
+    success: {
+      duration: 3000,
+      iconTheme: {
+        primary: '#fff',
+        secondary: '#3b82f6'
+      }
+    },
+    error: {
+      duration: 4000,
+      iconTheme: {
+        primary: '#fff',
+        secondary: '#ef4444'
+      }
+    }
+  }}
+/>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 className="mb-0">My Bookings</h2>
         <button onClick={() => navigate("/catalogue")} className="btn btn-outline-primary">
