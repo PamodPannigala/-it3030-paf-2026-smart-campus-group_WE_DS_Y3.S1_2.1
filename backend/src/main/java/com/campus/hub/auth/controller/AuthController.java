@@ -12,19 +12,21 @@ import com.campus.hub.user.entity.CampusUser;
 import com.campus.hub.user.entity.Role;
 import com.campus.hub.user.repository.CampusUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -83,18 +85,19 @@ public class AuthController {
     @PostMapping("/login")
     public AuthUserResponse login(
             @Valid @RequestBody LoginRequest request,
-            HttpServletRequest httpServletRequest
+            HttpServletRequest httpServletRequest,
+            HttpServletResponse httpServletResponse
     ) {
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
 
-        SecurityContextHolder.getContext().setAuthentication(auth);
-        HttpSession session = httpServletRequest.getSession(true);
-        session.setAttribute(
-                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                SecurityContextHolder.getContext()
-        );
+        SecurityContextImpl context = new SecurityContextImpl();
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+
+        SecurityContextRepository repo = new HttpSessionSecurityContextRepository();
+        repo.saveContext(context, httpServletRequest, httpServletResponse);
 
         CampusUser user = campusUserRepository.findByEmailIgnoreCase(request.email())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
