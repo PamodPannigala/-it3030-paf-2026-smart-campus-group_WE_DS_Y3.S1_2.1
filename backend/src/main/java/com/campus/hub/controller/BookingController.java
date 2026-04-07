@@ -117,11 +117,13 @@ public class BookingController {
         try {
             String qrData = payload.get("qrData");
             Booking booking = bookingService.verifyAndCheckin(qrData);
+            BookingResponseDTO bookingDTO = bookingService.convertToDTO(booking); 
             return ResponseEntity.ok(Map.of(
                 "message", "Check-in successful",
                 "bookingId", booking.getId(),
                 "resourceName", booking.getResourceId(),
-                "checkedInAt", booking.getCheckedInAt().toString()
+                "checkedInAt", booking.getCheckedInAt().toString(),
+                "checkedIn", booking.isCheckedIn()
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));

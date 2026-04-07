@@ -25,7 +25,7 @@ public class BookingService {
     private BookingRepository bookingRepository;
     
     // Convert Booking to DTO with resource details
-    private BookingResponseDTO convertToDTO(Booking booking) {
+    public BookingResponseDTO convertToDTO(Booking booking) {
         BookingResponseDTO dto = new BookingResponseDTO();
         dto.setId(booking.getId());
         dto.setResourceId(booking.getResourceId());
@@ -40,6 +40,9 @@ public class BookingService {
         dto.setRejectionReason(booking.getRejectionReason());
         dto.setCreatedAt(booking.getCreatedAt());
         dto.setUpdatedAt(booking.getUpdatedAt());
+        dto.setCheckedIn(booking.isCheckedIn());
+        dto.setCheckedInAt(booking.getCheckedInAt());
+        dto.setQrCodeGeneratedAt(booking.getQrCodeGeneratedAt());
         
         // Get resource details
         resourceRepository.findById(booking.getResourceId()).ifPresent(resource -> {
@@ -253,28 +256,7 @@ public class BookingService {
     }
     
     // Helper method to get current logged-in user ID
-    // Implement this based on your authentication method (JWT, Session, etc.)
     private Long getCurrentUserId() {
-        // TODO: Implement based on your authentication method
-        // For now, return 1L for testing
-        // When you have authentication, uncomment and implement:
-        
-        // Option 1: If using Spring Security
-        // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        // if (auth != null && auth.getPrincipal() instanceof CustomUserDetails) {
-        //     CustomUserDetails user = (CustomUserDetails) auth.getPrincipal();
-        //     return user.getId();
-        // }
-        
-        // Option 2: If using JWT token
-        // String token = request.getHeader("Authorization");
-        // if (token != null && token.startsWith("Bearer ")) {
-        //     token = token.substring(7);
-        //     return jwtUtil.extractUserId(token);
-        // }
-        
-        // Temporary for testing - returns default user ID 1
-        // Remove this line when implementing real authentication
         return 1L;
     }
 }

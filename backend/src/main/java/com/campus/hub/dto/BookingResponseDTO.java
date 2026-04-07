@@ -21,6 +21,9 @@ public class BookingResponseDTO {
     private String rejectionReason;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean checkedIn;
+    private LocalDateTime checkedInAt;
+    private LocalDateTime qrCodeGeneratedAt;
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -70,4 +73,14 @@ public class BookingResponseDTO {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public boolean isCheckedIn() { return checkedIn; }
+    public void setCheckedIn(boolean checkedIn) { this.checkedIn = checkedIn; }
+
+    public LocalDateTime getCheckedInAt() { return checkedInAt; }
+    public void setCheckedInAt(LocalDateTime checkedInAt) { this.checkedInAt = checkedInAt; }
+
+    public LocalDateTime getQrCodeGeneratedAt() { return qrCodeGeneratedAt; }
+    public void setQrCodeGeneratedAt(LocalDateTime qrCodeGeneratedAt) { this.qrCodeGeneratedAt = qrCodeGeneratedAt; }
+    
 }

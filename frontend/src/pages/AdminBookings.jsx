@@ -70,6 +70,41 @@ const AdminBookings = () => {
     }
   };
 
+    const getCheckedInStatus = (booking) => {
+    // Only show for APPROVED bookings
+    if (booking.status !== "APPROVED") {
+      return <span className="text-muted">—</span>;
+    }
+    
+    // Check if already checked in
+    if (booking.checkedIn) {
+      return (
+        <span className="badge bg-success" style={{ fontSize: '0.75rem' }}>
+          <CheckCircle size={10} className="me-1" /> Checked In
+        </span>
+      );
+    }
+    
+    // Check if booking date and time has passed
+    const bookingDateTime = new Date(`${booking.bookingDate}T${booking.endTime}`);
+    const now = new Date();
+    
+    if (now > bookingDateTime) {
+      return (
+        <span className="badge bg-danger" style={{ fontSize: '0.75rem' }}>
+          <XCircle size={10} className="me-1" /> Missed
+        </span>
+      );
+    }
+    
+    // Upcoming booking
+    return (
+      <span className="badge bg-warning text-dark" style={{ fontSize: '0.75rem' }}>
+        <Clock size={10} className="me-1" /> Pending
+      </span>
+    );
+  };
+
   // Calculate dashboard statistics
   const totalBookings = bookings.length;
   
@@ -374,7 +409,7 @@ const downloadPDF = async () => {
           <button 
             onClick={() => window.location.href = '/admin/checkin'} 
             className="btn btn-info px-4 py-2 rounded-pill"
-            style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#1e3a8a', borderColor: '#1e3a8a' }}
+            style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#1e3a8a', borderColor: '#1e3a8a', color: '#ffffff' }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -553,6 +588,7 @@ const downloadPDF = async () => {
               <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Time</th>
               <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Purpose</th>
               <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Status</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Checked-in</th>
               <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Actions</th>
             </tr>
           </thead>
@@ -596,9 +632,10 @@ const downloadPDF = async () => {
                       {booking.purpose?.substring(0, 50)}{booking.purpose?.length > 50 ? "..." : ""}
                     </div>
                   </td>
-                  <td style={{ padding: '12px', verticalAlign: 'middle' }}>{getStatusBadge(booking.status)}</td>
+                                    <td style={{ padding: '12px', verticalAlign: 'middle' }}>{getStatusBadge(booking.status)}</td>
+                  <td style={{ padding: '12px', verticalAlign: 'middle' }}>{getCheckedInStatus(booking)}</td>
                   <td style={{ padding: '12px', verticalAlign: 'middle' }}>
-                    <div className="d-flex gap-2">
+                    <div className="d-flex gap-2 justify-content-center">
                       <button 
                         className="btn btn-sm btn-outline-info" 
                         onClick={() => setViewModal(booking)}
