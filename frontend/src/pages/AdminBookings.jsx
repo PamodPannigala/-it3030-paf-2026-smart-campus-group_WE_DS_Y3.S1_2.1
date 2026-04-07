@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { CheckCircle, XCircle, Eye, Calendar, Clock, User, FileText, Search, TrendingUp, Package, Calendar as CalendarIcon, ArrowUpRight, FileDown, Trash2 } from "lucide-react";
+import toast, { Toaster } from 'react-hot-toast';
 import Chart from 'react-apexcharts';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -38,16 +39,16 @@ const AdminBookings = () => {
       try {
         await axios.put(`http://localhost:8080/api/bookings/${bookingId}/approve`);
         fetchAllBookings();
-        alert("Booking approved successfully!");
+        toast.success("Booking approved successfully!");
       } catch (err) {
-        alert("Failed to approve booking");
+        toast.error("Failed to approve booking");
       }
     }
   };
 
   const rejectBooking = async (bookingId) => {
     if (!rejectionReason) {
-      alert("Please provide a reason for rejection");
+      toast.error("Please provide a reason for rejection");
       return;
     }
     try {
@@ -57,9 +58,9 @@ const AdminBookings = () => {
       fetchAllBookings();
       setSelectedBooking(null);
       setRejectionReason("");
-      alert("Booking rejected");
+      toast.success("Booking rejected");
     } catch (err) {
-      alert("Failed to reject booking");
+      toast.error("Failed to reject booking");
     }
   };
 
@@ -478,7 +479,40 @@ const downloadPDF = async () => {
   if (loading) return <div className="text-center py-5">Loading...</div>;
 
   return (
-    <div className="container-fluid py-4" style={{ backgroundColor: '#f8f9fa' }}>
+      <div className="container py-4">
+        <Toaster 
+        position="top-center"  // Options: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right
+        reverseOrder={false}
+        gutter={8}
+        containerClassName=""
+        containerStyle={{}}
+        toastOptions={{
+          duration: 3000,  // 3 seconds
+          style: {
+            background: '#3b82f6',  // Blue color
+            color: '#fff',
+            borderRadius: '12px',
+            padding: '12px 20px',
+            fontSize: '14px',
+            fontWeight: '500',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#3b82f6'
+            }
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#fff',
+              secondary: '#ef4444'
+            }
+          }
+        }}
+      />
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 style={{ color: '#1a1a2e', fontWeight: '600' }}>Manage Bookings (Admin)</h2>
         <div className="d-flex gap-2">
@@ -796,10 +830,10 @@ const downloadPDF = async () => {
                           if (window.confirm("Are you sure you want to permanently delete this booking?")) {
                             axios.delete(`http://localhost:8080/api/bookings/${booking.id}`)
                               .then(() => {
-                                alert("Booking deleted successfully");
+                                toast.success("Booking deleted successfully");
                                 fetchAllBookings();
                               })
-                              .catch(err => alert("Failed to delete booking"));
+                              .catch(err => toast.error("Failed to delete booking"));
                           }
                         }}
                         title="Delete Permanently"
