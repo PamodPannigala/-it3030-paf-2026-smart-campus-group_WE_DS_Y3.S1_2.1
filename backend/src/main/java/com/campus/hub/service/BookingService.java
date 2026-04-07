@@ -117,15 +117,28 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
     
-    // Approve booking
+    // Approve booking - Also generate QR code
     public Booking approveBooking(Long id) {
         Booking booking = bookingRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Booking not found"));
         booking.setStatus(BookingStatus.APPROVED);
         booking.setUpdatedAt(LocalDateTime.now());
+        
+        // Generate unique QR code token when approved
+        String qrToken = generateQRToken(booking);
+        booking.setQrCode(qrToken);
+        booking.setQrCodeGeneratedAt(LocalDateTime.now());
+        
         return bookingRepository.save(booking);
     }
     
+    // Method for QR Token Generation 
+    private String generateQRToken(Booking booking) {
+        // Simple approach: encode booking ID + timestamp + secret
+        String data = booking.getId() + "-" + System.currentTimeMillis() + "-CAMPUSHUB";
+        return java.util.Base64.getEncoder().encodeToString(data.getBytes());
+    }
+
     // Reject booking
     public Booking rejectBooking(Long id, String reason) {
         Booking booking = bookingRepository.findById(id)
@@ -147,5 +160,121 @@ public class BookingService {
         Booking booking = bookingRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Booking not found"));
         bookingRepository.delete(booking);
+    }
+
+    // Generate QR code image as byte array
+    public byte[] generateQRCodeImage(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        
+        if (booking.getQrCode() == null) {
+            throw new RuntimeException("QR code not generated for this booking");
+        }
+        
+        try {
+            com.google.zxing.MultiFormatWriter qrCodeWriter = new com.google.zxing.MultiFormatWriter();
+            java.util.Map<com.google.zxing.EncodeHintType, Object> hints = new java.util.HashMap<>();
+            hints.put(com.google.zxing.EncodeHintType.CHARACTER_SET, "UTF-8");
+            
+            com.google.zxing.common.BitMatrix bitMatrix = qrCodeWriter.encode(
+                booking.getQrCode(),
+                com.google.zxing.BarcodeFormat.QR_CODE,
+                300, 300,
+                hints
+            );
+            
+            javax.imageio.ImageIO.setUseCache(false);
+            java.awt.image.BufferedImage qrImage = com.google.zxing.client.j2se.MatrixToImageWriter.toBufferedImage(bitMatrix);
+            
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            javax.imageio.ImageIO.write(qrImage, "PNG", baos);
+            
+            return baos.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate QR code", e);
+        }
+    }
+    
+    // Verify QR code and check-in with full validation
+    public Booking verifyAndCheckin(String qrData) {
+        // Find booking by QR code
+        Booking booking = bookingRepository.findByQrCode(qrData)
+            .orElseThrow(() -> new RuntimeException("Invalid QR code"));
+        
+        // Check if booking is approved
+        if (booking.getStatus() != BookingStatus.APPROVED) {
+            throw new RuntimeException("Booking is not approved. Current status: " + booking.getStatus());
+        }
+        
+        // Check if already checked in
+        if (booking.isCheckedIn()) {
+            throw new RuntimeException("Already checked in on " + booking.getCheckedInAt());
+        }
+        
+        // Check if booking date is TODAY
+        LocalDate today = LocalDate.now();
+        if (!booking.getBookingDate().equals(today)) {
+            throw new RuntimeException("Booking is for " + booking.getBookingDate() + ", not today");
+        }
+        
+        // VALIDATION 1: Check current time is within booking time slot
+        LocalTime now = LocalTime.now();
+        LocalTime startTime = booking.getStartTime();
+        LocalTime endTime = booking.getEndTime();
+        
+        if (now.isBefore(startTime)) {
+            throw new RuntimeException("Check-in too early! Booking starts at " + startTime);
+        }
+        
+        if (now.isAfter(endTime)) {
+            throw new RuntimeException("Check-in too late! Booking ended at " + endTime);
+        }
+        
+        // VALIDATION 2: Check QR code expiry (72 hours from generation)
+        if (booking.getQrCodeGeneratedAt() != null) {
+            LocalDateTime qrExpiry = booking.getQrCodeGeneratedAt().plusHours(72);
+            if (LocalDateTime.now().isAfter(qrExpiry)) {
+                throw new RuntimeException("QR code has expired. Please contact administrator.");
+            }
+        }
+        
+        // VALIDATION 3: Check if user is the one who made the booking
+        Long currentUserId = getCurrentUserId();
+        if (currentUserId != null && !booking.getUserId().equals(currentUserId)) {
+            throw new RuntimeException("You are not authorized to check in for this booking");
+        }
+        
+        // Mark as checked in
+        booking.setCheckedIn(true);
+        booking.setCheckedInAt(LocalDateTime.now());
+        booking.setUpdatedAt(LocalDateTime.now());
+        
+        return bookingRepository.save(booking);
+    }
+    
+    // Helper method to get current logged-in user ID
+    // Implement this based on your authentication method (JWT, Session, etc.)
+    private Long getCurrentUserId() {
+        // TODO: Implement based on your authentication method
+        // For now, return 1L for testing
+        // When you have authentication, uncomment and implement:
+        
+        // Option 1: If using Spring Security
+        // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        // if (auth != null && auth.getPrincipal() instanceof CustomUserDetails) {
+        //     CustomUserDetails user = (CustomUserDetails) auth.getPrincipal();
+        //     return user.getId();
+        // }
+        
+        // Option 2: If using JWT token
+        // String token = request.getHeader("Authorization");
+        // if (token != null && token.startsWith("Bearer ")) {
+        //     token = token.substring(7);
+        //     return jwtUtil.extractUserId(token);
+        // }
+        
+        // Temporary for testing - returns default user ID 1
+        // Remove this line when implementing real authentication
+        return 1L;
     }
 }

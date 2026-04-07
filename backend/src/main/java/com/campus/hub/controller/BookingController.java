@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
-import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -94,6 +93,36 @@ public class BookingController {
         try {
             bookingService.deleteBooking(id);
             return ResponseEntity.ok(Map.of("message", "Booking deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Get QR code image for a booking
+    @GetMapping("/{id}/qrcode")
+    public ResponseEntity<byte[]> getQRCode(@PathVariable Long id) {
+        try {
+            byte[] qrImage = bookingService.generateQRCodeImage(id);
+            return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.IMAGE_PNG)
+                .body(qrImage);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    // Verify check-in (called by scanner)
+    @PostMapping("/verify-checkin")
+    public ResponseEntity<?> verifyCheckin(@RequestBody Map<String, String> payload) {
+        try {
+            String qrData = payload.get("qrData");
+            Booking booking = bookingService.verifyAndCheckin(qrData);
+            return ResponseEntity.ok(Map.of(
+                "message", "Check-in successful",
+                "bookingId", booking.getId(),
+                "resourceName", booking.getResourceId(),
+                "checkedInAt", booking.getCheckedInAt().toString()
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

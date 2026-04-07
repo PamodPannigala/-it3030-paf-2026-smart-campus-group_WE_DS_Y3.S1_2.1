@@ -370,13 +370,30 @@ const downloadPDF = async () => {
     <div className="container-fluid py-4" style={{ backgroundColor: '#f8f9fa' }}>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2 style={{ color: '#1a1a2e', fontWeight: '600' }}>Manage Bookings (Admin)</h2>
-        <button 
-          onClick={downloadPDF} 
-          className="btn btn-dark px-4 py-2 rounded-pill"
-          style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-          <FileDown size={18} /> Export PDF
-        </button>
+        <div className="d-flex gap-2">
+          <button 
+            onClick={() => window.location.href = '/admin/checkin'} 
+            className="btn btn-info px-4 py-2 rounded-pill"
+            style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#1e3a8a', borderColor: '#1e3a8a' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <rect x="9" y="9" width="6" height="6"></rect>
+              <line x1="9" y1="3" x2="9" y2="9"></line>
+              <line x1="15" y1="3" x2="15" y2="9"></line>
+              <line x1="9" y1="15" x2="9" y2="21"></line>
+              <line x1="15" y1="15" x2="15" y2="21"></line>
+            </svg>
+            QR Check-in
+          </button>
+          <button 
+            onClick={downloadPDF} 
+            className="btn btn-dark px-4 py-2 rounded-pill"
+            style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <FileDown size={18} /> Export PDF
+          </button>
+        </div>
       </div>
       
       {/* Rest of your JSX remains exactly the same */}

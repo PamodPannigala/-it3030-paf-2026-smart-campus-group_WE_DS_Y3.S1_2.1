@@ -10,6 +10,7 @@ import BookingForm from "./pages/BookingForm";
 import BookingSuccess from "./pages/BookingSuccess";
 import MyBookings from "./pages/MyBookings";
 import AdminBookings from "./pages/AdminBookings";
+import QRScanner from './pages/QRScanner';
 
 function App() {
   const location = useLocation();
@@ -33,6 +34,7 @@ function App() {
             <Route path="/booking-success/:id" element={<BookingSuccess />} />
             <Route path="/my-bookings" element={<MyBookings />} />
             <Route path="/admin/bookings" element={<AdminBookings />} />
+            <Route path="/admin/checkin" element={<QRScanner />} />
           </Routes>
         </div>
       </div>

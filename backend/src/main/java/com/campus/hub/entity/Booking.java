@@ -40,6 +40,15 @@ public class Booking {
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;
+
+    @Column(unique = true, length = 255)
+    private String qrCode;
+    
+    private LocalDateTime qrCodeGeneratedAt;
+    
+    private LocalDateTime checkedInAt;
+    
+    private boolean isCheckedIn = false;
     
     // Constructor
     public Booking() {
@@ -151,5 +160,37 @@ public class Booking {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getQrCode() {
+        return qrCode;
+    }
+    
+    public void setQrCode(String qrCode) {
+        this.qrCode = qrCode;
+    }
+    
+    public LocalDateTime getQrCodeGeneratedAt() {
+        return qrCodeGeneratedAt;
+    }
+    
+    public void setQrCodeGeneratedAt(LocalDateTime qrCodeGeneratedAt) {
+        this.qrCodeGeneratedAt = qrCodeGeneratedAt;
+    }
+    
+    public LocalDateTime getCheckedInAt() {
+        return checkedInAt;
+    }
+    
+    public void setCheckedInAt(LocalDateTime checkedInAt) {
+        this.checkedInAt = checkedInAt;
+    }
+    
+    public boolean isCheckedIn() {
+        return isCheckedIn;
+    }
+    
+    public void setCheckedIn(boolean isCheckedIn) {
+        this.isCheckedIn = isCheckedIn;
     }
 }
