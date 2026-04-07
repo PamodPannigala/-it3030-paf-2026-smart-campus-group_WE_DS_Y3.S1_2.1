@@ -1,7 +1,7 @@
 // src/pages/AdminBookings.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import { CheckCircle, XCircle, Eye, Calendar, Clock, User, FileText, Search, TrendingUp, Package, Calendar as CalendarIcon, ArrowUpRight, FileDown } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Calendar, Clock, User, FileText, Search, TrendingUp, Package, Calendar as CalendarIcon, ArrowUpRight, FileDown, Trash2 } from "lucide-react";
 import Chart from 'react-apexcharts';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -633,6 +633,24 @@ const downloadPDF = async () => {
                           <CheckCircle size={14} />
                         </button>
                       )}
+
+                      <button 
+                        className="btn btn-sm btn-outline-dark" 
+                        onClick={() => {
+                          if (window.confirm("Are you sure you want to permanently delete this booking?")) {
+                            axios.delete(`http://localhost:8080/api/bookings/${booking.id}`)
+                              .then(() => {
+                                alert("Booking deleted successfully");
+                                fetchAllBookings();
+                              })
+                              .catch(err => alert("Failed to delete booking"));
+                          }
+                        }}
+                        title="Delete Permanently"
+                        style={{ borderRadius: '8px' }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </td>
                 </tr>

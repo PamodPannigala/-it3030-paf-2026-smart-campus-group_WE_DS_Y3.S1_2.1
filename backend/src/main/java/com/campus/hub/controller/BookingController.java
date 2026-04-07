@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -85,5 +86,16 @@ public class BookingController {
     public ResponseEntity<List<BookingResponseDTO>> getAllBookings() {
         List<BookingResponseDTO> bookings = bookingService.getAllBookings();
         return ResponseEntity.ok(bookings);
+    }
+
+    // Delete booking (Admin only - permanent deletion)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteBooking(@PathVariable Long id) {
+        try {
+            bookingService.deleteBooking(id);
+            return ResponseEntity.ok(Map.of("message", "Booking deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 }

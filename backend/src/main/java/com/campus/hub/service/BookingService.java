@@ -1,7 +1,6 @@
 package com.campus.hub.service;
 
 import com.campus.hub.dto.BookingResponseDTO;
-import com.campus.hub.entity.Resource;
 import com.campus.hub.dto.BookingRequest;
 import com.campus.hub.entity.Booking;
 import com.campus.hub.entity.BookingStatus;
@@ -141,5 +140,12 @@ public class BookingService {
     public List<BookingResponseDTO> getAllBookings() {
         List<Booking> bookings = bookingRepository.findAllByOrderByCreatedAtDesc();
         return bookings.stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+    // Delete booking permanently
+    public void deleteBooking(Long id) {
+        Booking booking = bookingRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+        bookingRepository.delete(booking);
     }
 }
