@@ -525,18 +525,18 @@ const downloadPDF = async () => {
 
       {/* Scrollable Table View */}
       <div className="table-responsive" style={{ maxHeight: "450px", overflowY: "auto", borderRadius: '16px' }}>
-        <table className="table table-hover table-bordered" style={{ backgroundColor: '#ffffff', borderRadius: '16px' }}>
-          <thead className="sticky-top" style={{ backgroundColor: '#94a3b8' }}>
+        <table className="table table-hover table-bordered text-center align-middle" style={{ backgroundColor: '#ffffff', borderRadius: '16px' }}>
+          <thead className="sticky-top" style={{ backgroundColor: '#1e3a8a' }}>
             <tr>
-              <th style={{ position: "sticky", top: 0, backgroundColor: "#94a3b8", padding: '14px 12px', fontWeight: '600', color: '#4b5563' }}>ID</th>
-              <th style={{ position: "sticky", top: 0, backgroundColor: "#94a3b8", padding: '14px 12px', fontWeight: '600', color: '#4b5563' }}>Resource Image</th>
-              <th style={{ position: "sticky", top: 0, backgroundColor: "#94a3b8", padding: '14px 12px', fontWeight: '600', color: '#4b5563' }}>Resource Name</th>
-              <th style={{ position: "sticky", top: 0, backgroundColor: "#94a3b8", padding: '14px 12px', fontWeight: '600', color: '#4b5563' }}>User</th>
-              <th style={{ position: "sticky", top: 0, backgroundColor: "#94a3b8", padding: '14px 12px', fontWeight: '600', color: '#4b5563' }}>Date</th>
-              <th style={{ position: "sticky", top: 0, backgroundColor: "#94a3b8", padding: '14px 12px', fontWeight: '600', color: '#4b5563' }}>Time</th>
-              <th style={{ position: "sticky", top: 0, backgroundColor: "#94a3b8", padding: '14px 12px', fontWeight: '600', color: '#4b5563' }}>Purpose</th>
-              <th style={{ position: "sticky", top: 0, backgroundColor: "#94a3b8", padding: '14px 12px', fontWeight: '600', color: '#4b5563' }}>Status</th>
-              <th style={{ position: "sticky", top: 0, backgroundColor: "#94a3b8", padding: '14px 12px', fontWeight: '600', color: '#4b5563' }}>Actions</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>ID</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Resource Image</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Resource Name</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>User</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Date</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Time</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Purpose</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Status</th>
+              <th style={{ position: "sticky", top: 0, backgroundColor: "#1e3a8a", padding: '14px 12px', fontWeight: '600', color: '#ffffff', textAlign: "center", verticalAlign: "middle" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
