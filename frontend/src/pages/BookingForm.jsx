@@ -50,35 +50,107 @@ const BookingForm = () => {
     return true;
   };
 
-  // Check if time is within operating hours
-  // This allows: start time >= open time AND start time < close time
-  // End time > open time AND end time <= close time
-  // This enables back-to-back bookings (e.g., 8-10, 10-12)
-  const isTimeValid = (timeString, type) => {
+  // Helper function to convert time string to minutes since midnight
+  const timeToMinutes = (timeString) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Format minutes to time string (HH:MM)
+  const minutesToTime = (minutes) => {
+    const hours = Math.floor(minutes / 60) % 24;
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+
+  // Check if time is within operating hours (handles overnight hours like 17:00 to 05:00)
+  const isTimeWithinOperatingHours = (timeString, type) => {
     if (!timeString || !resource) return true;
     
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const timeInMinutes = hours * 60 + minutes;
+    const timeInMinutes = timeToMinutes(timeString);
+    const openTimeStr = resource.openTime || "08:00:00";
+    const closeTimeStr = resource.closeTime || "17:00:00";
     
-    const [openHour, openMinute] = (resource.openTime || "08:00:00").split(':').map(Number);
-    const [closeHour, closeMinute] = (resource.closeTime || "17:00:00").split(':').map(Number);
+    let openTimeInMinutes = timeToMinutes(openTimeStr);
+    let closeTimeInMinutes = timeToMinutes(closeTimeStr);
     
-    const openTimeInMinutes = openHour * 60 + openMinute;
-    const closeTimeInMinutes = closeHour * 60 + closeMinute;
+    // Check if operating hours cross midnight (e.g., 17:00 to 05:00)
+    const crossesMidnight = closeTimeInMinutes < openTimeInMinutes;
     
-    if (type === 'start') {
-      // Start time can be at open time, must be before close time
-      return timeInMinutes >= openTimeInMinutes && timeInMinutes < closeTimeInMinutes;
+    if (crossesMidnight) {
+      // Operating hours cross midnight
+      if (type === 'start') {
+        // Start time: from open time to midnight, OR from midnight to close time
+        return timeInMinutes >= openTimeInMinutes || timeInMinutes < closeTimeInMinutes;
+      } else {
+        // End time: same logic but with different boundaries
+        return timeInMinutes > openTimeInMinutes || timeInMinutes <= closeTimeInMinutes;
+      }
     } else {
-      // End time must be after open time, can be at close time
-      return timeInMinutes > openTimeInMinutes && timeInMinutes <= closeTimeInMinutes;
+      // Normal operating hours (same day)
+      if (type === 'start') {
+        return timeInMinutes >= openTimeInMinutes && timeInMinutes < closeTimeInMinutes;
+      } else {
+        return timeInMinutes > openTimeInMinutes && timeInMinutes <= closeTimeInMinutes;
+      }
     }
   };
 
-  // Check if end time is after start time
+  // Get the minimum allowed start time based on current time if booking is today (3 minutes gap)
+  const getMinStartTime = () => {
+    if (!resource) return "";
+    
+    const today = new Date().toISOString().split('T')[0];
+    if (formData.bookingDate !== today) return resource.openTime?.substring(0,5) || "08:00";
+    
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeMinutes = currentHour * 60 + currentMinute;
+    
+    const openTimeMinutes = timeToMinutes(resource.openTime || "08:00:00");
+    
+    // If current time is after open time, use current time + 3 minutes
+    if (currentTimeMinutes > openTimeMinutes) {
+      let nextTimeMinutes = currentTimeMinutes + 3;
+      
+      // Round up to nearest minute (no rounding to 30 minutes)
+      const nextHour = Math.floor(nextTimeMinutes / 60) % 24;
+      const nextMinute = nextTimeMinutes % 60;
+      return `${nextHour.toString().padStart(2, '0')}:${nextMinute.toString().padStart(2, '0')}`;
+    }
+    
+    return resource.openTime?.substring(0,5) || "08:00";
+  };
+
+  // Get max allowed end time (no restriction, just operating hour end)
+  const getMaxEndTime = () => {
+    return resource?.closeTime?.substring(0,5) || "17:00";
+  };
+
+  // Check if time is within operating hours (using the new function)
+  const isTimeValid = (timeString, type) => {
+    if (!timeString || !resource) return true;
+    return isTimeWithinOperatingHours(timeString, type);
+  };
+
+  // Check if end time is after start time (handles overnight)
   const isEndTimeAfterStartTime = () => {
     if (!formData.startTime || !formData.endTime) return true;
-    return formData.startTime < formData.endTime;
+    
+    const startMinutes = timeToMinutes(formData.startTime);
+    const endMinutes = timeToMinutes(formData.endTime);
+    
+    const openTimeMinutes = timeToMinutes(resource?.openTime || "08:00:00");
+    const closeTimeMinutes = timeToMinutes(resource?.closeTime || "17:00:00");
+    const crossesMidnight = closeTimeMinutes < openTimeMinutes;
+    
+    if (crossesMidnight) {
+      // For overnight bookings, end time can be less than start time (e.g., 22:00 to 02:00)
+      return true;
+    }
+    
+    return startMinutes < endMinutes;
   };
 
   // Validate date field
@@ -111,6 +183,22 @@ const BookingForm = () => {
       return false;
     }
     
+    // Check if booking is today and start time is not in the past (3 minutes gap)
+    const today = new Date().toISOString().split('T')[0];
+    if (formData.bookingDate === today) {
+      const now = new Date();
+      const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+      const startMinutes = timeToMinutes(time);
+      
+      // Allow start time to be at least current time + 3 minutes
+      const minStartMinutes = currentTimeMinutes + 3;
+      if (startMinutes < minStartMinutes) {
+        const minTime = minutesToTime(minStartMinutes);
+        setValidationErrors(prev => ({ ...prev, startTime: `Start time must be at least 3 minutes from now (current time: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})` }));
+        return false;
+      }
+    }
+    
     setValidationErrors(prev => ({ ...prev, startTime: "" }));
     return true;
   };
@@ -129,7 +217,7 @@ const BookingForm = () => {
       return false;
     }
     
-    if (formData.startTime && formData.startTime >= time) {
+    if (!isEndTimeAfterStartTime()) {
       setValidationErrors(prev => ({ ...prev, endTime: "End time must be after start time" }));
       return false;
     }
@@ -138,8 +226,14 @@ const BookingForm = () => {
     return true;
   };
 
-  // Validate attendees field
+  // Validate attendees field (skip if resource type is EQUIPMENT)
   const validateAttendees = (attendees) => {
+    // Skip validation for EQUIPMENT type
+    if (resource?.type === "EQUIPMENT") {
+      setValidationErrors(prev => ({ ...prev, attendees: "" }));
+      return true;
+    }
+    
     if (!attendees || attendees === "") {
       setValidationErrors(prev => ({ ...prev, attendees: "Expected attendees is required" }));
       return false;
@@ -271,7 +365,7 @@ const BookingForm = () => {
         startTime: formData.startTime,
         endTime: formData.endTime,
         purpose: formData.purpose,
-        expectedAttendees: parseInt(formData.expectedAttendees),
+        expectedAttendees: resource?.type === "EQUIPMENT" ? 0 : parseInt(formData.expectedAttendees),
         specialRequests: formData.specialRequests || "",
         status: "PENDING"
       };
@@ -325,7 +419,7 @@ const BookingForm = () => {
                 <div className="resource-summary mb-4 p-3 bg-light rounded">
                   <h5>{resource?.name}</h5>
                   <p className="text-muted mb-0">
-                    {resource?.type} • Capacity: {resource?.capacity} people
+                    {resource?.type} • {resource?.type !== "EQUIPMENT" && `Capacity: ${resource?.capacity} people`}
                   </p>
                 </div>
 
@@ -382,13 +476,14 @@ const BookingForm = () => {
                         value={formData.startTime}
                         onChange={handleChange}
                         className={`form-control ${validationErrors.startTime ? 'is-invalid' : ''}`}
-                        step="3600"
+                        step="60"
+                        min={getMinStartTime()}
                         required
                       />
                       {validationErrors.startTime && (
                         <div className="invalid-feedback">{validationErrors.startTime}</div>
                       )}
-                      <small className="text-muted">Min: {resource?.openTime?.substring(0,5) || "08:00"}</small>
+                      <small className="text-muted">Min: {getMinStartTime()}</small>
                     </div>
                     <div className="col-md-6">
                       <label className="form-label fw-semibold">
@@ -400,13 +495,13 @@ const BookingForm = () => {
                         value={formData.endTime}
                         onChange={handleChange}
                         className={`form-control ${validationErrors.endTime ? 'is-invalid' : ''}`}
-                        step="3600"
+                        step="60"
                         required
                       />
                       {validationErrors.endTime && (
                         <div className="invalid-feedback">{validationErrors.endTime}</div>
                       )}
-                      <small className="text-muted">Max: {resource?.closeTime?.substring(0,5) || "17:00"}</small>
+                      <small className="text-muted">Max: {getMaxEndTime()}</small>
                     </div>
                   </div>
 
@@ -434,26 +529,28 @@ const BookingForm = () => {
                     />
                   </div>
 
-                  {/* Expected Attendees - Required */}
-                  <div className="mb-3">
-                    <label className="form-label fw-semibold">
-                      <Users size={16} className="me-1" /> Expected Attendees *
-                    </label>
-                    <input
-                      type="number"
-                      name="expectedAttendees"
-                      value={formData.expectedAttendees}
-                      onChange={handleChange}
-                      className={`form-control ${validationErrors.attendees ? 'is-invalid' : ''}`}
-                      min="1"
-                      max={resource?.capacity || 100}
-                      placeholder="Number of people"
-                      required
-                    />
-                    {validationErrors.attendees && (
-                      <div className="invalid-feedback">{validationErrors.attendees}</div>
-                    )}
-                  </div>
+                  {/* Expected Attendees - Only show for non-EQUIPMENT resources */}
+                  {resource?.type !== "EQUIPMENT" && (
+                    <div className="mb-3">
+                      <label className="form-label fw-semibold">
+                        <Users size={16} className="me-1" /> Expected Attendees *
+                      </label>
+                      <input
+                        type="number"
+                        name="expectedAttendees"
+                        value={formData.expectedAttendees}
+                        onChange={handleChange}
+                        className={`form-control ${validationErrors.attendees ? 'is-invalid' : ''}`}
+                        min="1"
+                        max={resource?.capacity || 100}
+                        placeholder="Number of people"
+                        required
+                      />
+                      {validationErrors.attendees && (
+                        <div className="invalid-feedback">{validationErrors.attendees}</div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Special Requests - Optional */}
                   <div className="mb-4">
