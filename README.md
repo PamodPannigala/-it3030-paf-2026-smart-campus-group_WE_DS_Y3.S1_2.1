@@ -55,7 +55,7 @@ cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
-API base URL: `http://localhost:8080`. If you see **Access denied for user 'root'**, fix MySQL username/password via `DB_USERNAME` / `DB_PASSWORD` as above.
+API base URL: `http://localhost:8081` (this project uses **8081** by default to avoid conflicts). If you see **Access denied for user 'root'**, fix MySQL username/password via `DB_USERNAME` / `DB_PASSWORD` as above.
 
 ## Run the frontend (VS Code or terminal)
 
@@ -66,7 +66,7 @@ npm install
 npm run dev
 ```
 
-App URL: `http://localhost:5173`. Ensure `VITE_API_ORIGIN` in `.env` points at the backend (default `http://localhost:8080`).
+App URL: `http://localhost:5173`. Ensure `VITE_API_ORIGIN` in `.env` points at the backend (default `http://localhost:8081`).
 
 ## API overview (Member 4)
 

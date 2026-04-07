@@ -7,33 +7,40 @@ const navLinkClass = ({ isActive }) =>
   `list-group-item list-group-item-action p-3 d-flex align-items-center ${isActive ? "active-nav-link" : ""}`;
 
 const Sidebar = () => {
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   return (
     <div className="bg-light border-right" id="sidebar-wrapper">
       <div className="sidebar-heading p-3">Campus Hub</div>
       <div className="list-group list-group-flush">
-        <NavLink to="/" className={navLinkClass}>
-          <LayoutDashboard className="me-2" size={18} />
-          Dashboard
-        </NavLink>
-        <NavLink to="/auth" className={navLinkClass}>
-          <LogIn className="me-2" size={18} />
-          Authentication
-        </NavLink>
-        <NavLink to="/notifications" className={navLinkClass}>
-          <Bell className="me-2" size={18} />
-          Notifications
-        </NavLink>
-        <NavLink to="/preferences" className={navLinkClass}>
-          <Settings className="me-2" size={18} />
-          Preferences
-        </NavLink>
-        {isAdmin && (
-          <NavLink to="/users" className={navLinkClass}>
-            <Users className="me-2" size={18} />
-            User Roles
+        {!user && (
+          <NavLink to="/" className={navLinkClass}>
+            <LogIn className="me-2" size={18} />
+            Login
           </NavLink>
+        )}
+
+        {user && (
+          <>
+            <NavLink to={isAdmin ? "/admin" : "/home"} className={navLinkClass}>
+              <LayoutDashboard className="me-2" size={18} />
+              {isAdmin ? "Admin Dashboard" : "Home"}
+            </NavLink>
+            <NavLink to="/settings" className={navLinkClass}>
+              <Settings className="me-2" size={18} />
+              Settings
+            </NavLink>
+            <NavLink to="/notifications" className={navLinkClass}>
+              <Bell className="me-2" size={18} />
+              Notifications
+            </NavLink>
+            {isAdmin && (
+              <NavLink to="/users" className={navLinkClass}>
+                <Users className="me-2" size={18} />
+                Manage Users
+              </NavLink>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -41,3 +48,4 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+

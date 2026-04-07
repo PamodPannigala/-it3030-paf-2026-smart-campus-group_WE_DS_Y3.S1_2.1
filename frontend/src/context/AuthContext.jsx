@@ -31,8 +31,27 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  const login = () => {
+  const loginWithGoogle = () => {
     window.location.href = OAUTH_LOGIN_URL;
+  };
+
+  const loginWithPassword = async ({ email, password }) => {
+    const response = await api.post("/auth/login", { email, password });
+    setUser(response.data);
+    return response.data;
+  };
+
+  const signup = async ({ fullName, email, password }) => {
+    await api.post("/auth/signup", { fullName, email, password });
+  };
+
+  const forgotPassword = async ({ email }) => {
+    const res = await api.post("/auth/forgot-password", { email });
+    return res.data.token;
+  };
+
+  const resetPassword = async ({ token, newPassword }) => {
+    await api.post("/auth/reset-password", { token, newPassword });
   };
 
   const logout = async () => {
@@ -44,7 +63,11 @@ export const AuthProvider = ({ children }) => {
     user,
     loading,
     refreshUser,
-    login,
+    loginWithGoogle,
+    loginWithPassword,
+    signup,
+    forgotPassword,
+    resetPassword,
     logout,
     isAdmin: user?.role === "ADMIN",
   };

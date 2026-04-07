@@ -116,6 +116,8 @@ const NotificationsPage = () => {
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
                 >
+                  <option value="BOOKING">BOOKING</option>
+                  <option value="FACILITY">FACILITY</option>
                   <option value="TICKET_STATUS">TICKET_STATUS</option>
                   <option value="TICKET_COMMENT">TICKET_COMMENT</option>
                 </select>

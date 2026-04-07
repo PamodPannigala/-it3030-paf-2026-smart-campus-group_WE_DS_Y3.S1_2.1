@@ -1,0 +1,12 @@
+package com.campus.hub.auth.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
+public record ForgotPasswordRequest(
+        @Email(message = "email must be valid")
+        @NotBlank(message = "email is required")
+        String email
+) {
+}
+

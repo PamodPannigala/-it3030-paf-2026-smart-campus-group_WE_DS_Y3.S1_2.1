@@ -151,6 +151,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         return switch (category) {
+            case BOOKING, FACILITY -> true;
             case TICKET_STATUS -> preference.isTicketStatusEnabled();
             case TICKET_COMMENT -> preference.isTicketCommentEnabled();
         };

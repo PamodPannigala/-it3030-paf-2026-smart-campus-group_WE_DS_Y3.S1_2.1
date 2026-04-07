@@ -8,8 +8,8 @@ const OAuthSuccessPage = () => {
 
   useEffect(() => {
     refreshUser()
-      .then(() => navigate("/", { replace: true }))
-      .catch(() => navigate("/auth", { replace: true }));
+      .then((u) => navigate(u?.role === "ADMIN" ? "/admin" : "/home", { replace: true }))
+      .catch(() => navigate("/", { replace: true }));
   }, [navigate, refreshUser]);
 
   return <div className="alert alert-info">Finalizing sign in...</div>;
