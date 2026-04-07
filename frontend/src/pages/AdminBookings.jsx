@@ -15,6 +15,8 @@ const AdminBookings = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [viewModal, setViewModal] = useState(null);
+  const [dateFilter, setDateFilter] = useState("");
+  const [checkedInFilter, setCheckedInFilter] = useState("ALL");
 
   useEffect(() => {
     fetchAllBookings();
@@ -70,7 +72,8 @@ const AdminBookings = () => {
     }
   };
 
-    const getCheckedInStatus = (booking) => {
+     // ========== CHECKED-IN STATUS FUNCTION ==========
+  const getCheckedInStatus = (booking) => {
     // Only show for APPROVED bookings
     if (booking.status !== "APPROVED") {
       return <span className="text-muted">—</span>;
@@ -104,6 +107,21 @@ const AdminBookings = () => {
       </span>
     );
   };
+
+  // ========== CHECKED-IN STATISTICS FOR CHART (MOVED OUTSIDE) ==========
+  const checkedInStats = useMemo(() => {
+    const approvedBookings = bookings.filter(b => b.status === "APPROVED");
+    const checkedIn = approvedBookings.filter(b => b.checkedIn).length;
+    const notCheckedIn = approvedBookings.filter(b => !b.checkedIn).length;
+    const missed = approvedBookings.filter(b => {
+      if (b.checkedIn) return false;
+      const bookingDateTime = new Date(`${b.bookingDate}T${b.endTime}`);
+      return new Date() > bookingDateTime;
+    }).length;
+    const pending = notCheckedIn - missed;
+    
+    return { checkedIn, pending, missed };
+  }, [bookings]);
 
   // Calculate dashboard statistics
   const totalBookings = bookings.length;
@@ -195,6 +213,41 @@ const AdminBookings = () => {
       legend: { position: 'bottom', fontSize: '12px' },
       dataLabels: { enabled: false },
       title: { text: 'Booking Status Distribution', style: { fontSize: '14px', fontWeight: '500', color: '#374151' } },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '65%',
+            labels: {
+              show: true,
+              name: { show: false },
+              value: { show: false },
+              total: {
+                show: true,
+                label: 'Total',
+                formatter: function(w) {
+                  try {
+                    const totals = w?.globals?.seriesTotals || [];
+                    const total = totals.reduce((a, b) => a + Number(b || 0), 0);
+                    return total.toLocaleString();
+                  } catch (_) { return ''; }
+                }
+              }
+            }
+          }
+        }
+      }
+    }} series={series} />
+  );
+
+    // ========== ADD THIS NEW DONUT CHART FOR CHECKED-IN STATUS ==========
+  const CheckedInDonutChart = ({ labels = [], series = [], colors = [] }) => (
+    <Chart type='donut' height={260} options={{
+      chart: { toolbar: { show: false } },
+      labels,
+      colors,
+      legend: { position: 'bottom', fontSize: '12px' },
+      dataLabels: { enabled: false },
+      title: { text: 'Check-in Status (Approved Bookings)', style: { fontSize: '14px', fontWeight: '500', color: '#374151' } },
       plotOptions: {
         pie: {
           donut: {
@@ -387,15 +440,38 @@ const downloadPDF = async () => {
     alert('Error generating PDF. Please try again.');
   }
 };
-  // Apply status filter
+    // Apply status filter
   const statusFilteredBookings = filter === "ALL" 
     ? bookings 
     : bookings.filter(b => b.status === filter);
 
+  // Apply date filter
+  const dateFilteredBookings = dateFilter === ""
+    ? statusFilteredBookings
+    : statusFilteredBookings.filter(b => b.bookingDate === dateFilter);
+
+  // Apply checked-in status filter (only for APPROVED bookings)
+  const checkedInFilteredBookings = checkedInFilter === "ALL" 
+    ? dateFilteredBookings
+    : dateFilteredBookings.filter(b => {
+        if (b.status !== "APPROVED") return checkedInFilter === "NOT_CHECKED_IN";
+        if (checkedInFilter === "CHECKED_IN") return b.checkedIn === true;
+        if (checkedInFilter === "NOT_CHECKED_IN") return b.checkedIn === false;
+        if (checkedInFilter === "MISSED") {
+          const bookingDateTime = new Date(`${b.bookingDate}T${b.endTime}`);
+          return !b.checkedIn && new Date() > bookingDateTime;
+        }
+        if (checkedInFilter === "PENDING") {
+          const bookingDateTime = new Date(`${b.bookingDate}T${b.endTime}`);
+          return !b.checkedIn && new Date() <= bookingDateTime;
+        }
+        return true;
+      });
+
   // Apply search filter (by resource name)
   const filteredBookings = searchTerm.trim() === ""
-    ? statusFilteredBookings
-    : statusFilteredBookings.filter(booking => 
+    ? checkedInFilteredBookings
+    : checkedInFilteredBookings.filter(booking => 
         booking.resourceName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
@@ -529,40 +605,66 @@ const downloadPDF = async () => {
         </div>
       </div>
       
-      {/* Search Bar */}
+            {/* Search and Filter Bar */}
       <div className="row mb-4">
-        <div className="col-md-4">
-          <div className="input-group" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <span className="input-group-text bg-white border-end-0" style={{ borderRadius: '12px 0 0 12px' }}>
-              <Search size={18} className="text-muted" />
-            </span>
+        <div className="col-md-12">
+          <div className="d-flex flex-wrap gap-3 align-items-center">
+            {/* Search Bar */}
+            <div className="input-group" style={{ width: "250px", boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+              <span className="input-group-text bg-white border-end-0" style={{ borderRadius: '12px 0 0 12px' }}>
+                <Search size={18} className="text-muted" />
+              </span>
+              <input
+                type="text"
+                className="form-control border-start-0"
+                style={{ borderRadius: '0 12px 12px 0', borderColor: '#dee2e6' }}
+                placeholder="Search by resource name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Date Filter */}
             <input
-              type="text"
-              className="form-control border-start-0"
-              style={{ borderRadius: '0 12px 12px 0', borderColor: '#dee2e6' }}
-              placeholder="Search by resource name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              type="date"
+              className="form-control"
+              style={{ width: "180px", borderRadius: '12px', borderColor: '#dee2e6' }}
+              placeholder="Filter by date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
             />
-          </div>
-        </div>
-        <div className="col-md-8">
-          <div className="btn-group flex-wrap gap-2">
-            <button className={`btn ${filter === "ALL" ? "btn-primary" : "btn-outline-primary"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("ALL")}>
-              All ({bookings.length})
-            </button>
-            <button className={`btn ${filter === "PENDING" ? "btn-warning" : "btn-outline-warning"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("PENDING")}>
-              Pending ({statusCounts.PENDING})
-            </button>
-            <button className={`btn ${filter === "APPROVED" ? "btn-success" : "btn-outline-success"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("APPROVED")}>
-              Approved ({statusCounts.APPROVED})
-            </button>
-            <button className={`btn ${filter === "REJECTED" ? "btn-danger" : "btn-outline-danger"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("REJECTED")}>
-              Rejected ({statusCounts.REJECTED})
-            </button>
-            <button className={`btn ${filter === "CANCELLED" ? "btn-secondary" : "btn-outline-secondary"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("CANCELLED")}>
-              Cancelled ({statusCounts.CANCELLED})
-            </button>
+
+            {/* Checked-in Status Filter */}
+            <select
+              className="form-select"
+              style={{ width: "200px", borderRadius: '12px', borderColor: '#dee2e6' }}
+              value={checkedInFilter}
+              onChange={(e) => setCheckedInFilter(e.target.value)}
+            >
+              <option value="ALL">All Check-in Status</option>
+              <option value="CHECKED_IN">Checked In</option>
+              <option value="PENDING">Pending Check-in</option>
+              <option value="MISSED">Missed</option>
+            </select>
+
+            {/* Status Filter Buttons */}
+            <div className="btn-group flex-wrap gap-2">
+              <button className={`btn ${filter === "ALL" ? "btn-primary" : "btn-outline-primary"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("ALL")}>
+                All ({bookings.length})
+              </button>
+              <button className={`btn ${filter === "PENDING" ? "btn-warning" : "btn-outline-warning"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("PENDING")}>
+                Pending ({statusCounts.PENDING})
+              </button>
+              <button className={`btn ${filter === "APPROVED" ? "btn-success" : "btn-outline-success"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("APPROVED")}>
+                Approved ({statusCounts.APPROVED})
+              </button>
+              <button className={`btn ${filter === "REJECTED" ? "btn-danger" : "btn-outline-danger"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("REJECTED")}>
+                Rejected ({statusCounts.REJECTED})
+              </button>
+              <button className={`btn ${filter === "CANCELLED" ? "btn-secondary" : "btn-outline-secondary"}`} style={{ borderRadius: '10px', fontWeight: '500' }} onClick={() => setFilter("CANCELLED")}>
+                Cancelled ({statusCounts.CANCELLED})
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -714,9 +816,9 @@ const downloadPDF = async () => {
         </table>
       </div>
 
-      {/* Charts Section - Below the table */}
+            {/* Charts Section - Below the table */}
       <div className="row mt-4">
-        <div className="col-md-6 mb-4">
+        <div className="col-md-4 mb-4">
           <div className="card shadow-sm" style={{ border: 'none', borderRadius: '16px' }}>
             <div className="card-body p-4">
               <LineChart 
@@ -727,13 +829,24 @@ const downloadPDF = async () => {
             </div>
           </div>
         </div>
-        <div className="col-md-6 mb-4">
+        <div className="col-md-4 mb-4">
           <div className="card shadow-sm" style={{ border: 'none', borderRadius: '16px' }}>
             <div className="card-body p-4">
               <DonutChart 
                 labels={statusList.map(s => s.charAt(0) + s.slice(1).toLowerCase())}
                 series={statusList.map(s => statusCounts[s])}
                 colors={statusList.map(s => colorMap[s])}
+              />
+            </div>
+          </div>
+        </div>
+        <div className="col-md-4 mb-4">
+          <div className="card shadow-sm" style={{ border: 'none', borderRadius: '16px' }}>
+            <div className="card-body p-4">
+              <CheckedInDonutChart 
+                labels={['Checked In', 'Pending', 'Missed']}
+                series={[checkedInStats.checkedIn, checkedInStats.pending, checkedInStats.missed]}
+                colors={['#22c55e', '#f59e0b', '#ef4444']}
               />
             </div>
           </div>
