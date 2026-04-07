@@ -42,12 +42,12 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
             throw new OAuth2AuthenticationException(new OAuth2Error("invalid_user_info"), "Email is missing in OAuth2 user info");
         }
 
-        String fullName = readString(attributes, "name");
-        if (fullName == null) {
-            fullName = isSeedAdmin(email) && !seedAdminName.isBlank() ? seedAdminName : email;
-        }
+        String nameFromOAuth = readString(attributes, "name");
+        final String fullName = nameFromOAuth != null
+                ? nameFromOAuth
+                : (isSeedAdmin(email) && !seedAdminName.isBlank() ? seedAdminName : email);
 
-        String provider = userRequest.getClientRegistration().getRegistrationId().toUpperCase(Locale.ROOT);
+        final String provider = userRequest.getClientRegistration().getRegistrationId().toUpperCase(Locale.ROOT);
 
         CampusUser user = campusUserRepository.findByEmailIgnoreCase(email)
                 .map(existing -> updateExistingUser(existing, fullName, provider, email))
