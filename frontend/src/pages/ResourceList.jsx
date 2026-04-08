@@ -3,6 +3,7 @@ import axios from "axios";
 import { QRCodeSVG } from "qrcode.react";
 import { useLocation } from "react-router-dom";
 import { uploadImageToCloudinary } from "../utils/ImageUpload.js";
+import AIInsightPanel from "../components/AIInsightPanel/AIInsightPanel.jsx";
 
 const ResourceList = () => {
   const [resources, setResources] = useState([]);
