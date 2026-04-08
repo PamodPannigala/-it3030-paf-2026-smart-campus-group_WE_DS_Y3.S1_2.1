@@ -23,7 +23,10 @@ public class Resource {
     private LocalTime openTime;
     private LocalTime closeTime;
     private boolean availableWeekends;
-    
+
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "purchase_year", nullable = true)
+    private Integer purchaseYear;
 }
