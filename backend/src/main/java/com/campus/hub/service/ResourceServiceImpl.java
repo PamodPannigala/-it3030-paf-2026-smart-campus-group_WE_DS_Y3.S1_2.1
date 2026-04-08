@@ -95,7 +95,7 @@ public class ResourceServiceImpl implements ResourceService {
         resource.setOpenTime(dto.getOpenTime());
         resource.setCloseTime(dto.getCloseTime());
         resource.setAvailableWeekends(dto.isAvailableWeekends());
-
+        resource.setPurchaseYear(dto.getPurchaseYear());
         resource.setImageUrl(dto.getImageUrl());
     }
 
@@ -113,7 +113,7 @@ public class ResourceServiceImpl implements ResourceService {
         dto.setOpenTime(resource.getOpenTime());
         dto.setCloseTime(resource.getCloseTime());
         dto.setAvailableWeekends(resource.isAvailableWeekends());
-
+        dto.setPurchaseYear(resource.getPurchaseYear());
         dto.setImageUrl(resource.getImageUrl());
         return dto;
     }
