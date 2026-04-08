@@ -573,6 +573,13 @@ const ResourceList = () => {
           </div>
         </div>
       )}
+
+      <div className="row mt-4">
+        <div className="col-md-8"></div>
+        <div className="col-md-4">
+          <AIInsightPanel resources={resources} />
+        </div>
+      </div>
     </div>
   );
 };
