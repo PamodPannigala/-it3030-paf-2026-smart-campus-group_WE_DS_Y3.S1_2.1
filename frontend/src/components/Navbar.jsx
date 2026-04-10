@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
-  const { user, loading, login, logout } = useAuth();
+  const { user, loading, loginWithGoogle, logout } = useAuth();
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -17,7 +17,7 @@ const Navbar = () => {
             </span>
           )}
           {!loading && !user && (
-            <button className="btn btn-sm btn-outline-light" onClick={login}>
+            <button className="btn btn-sm btn-outline-light" onClick={loginWithGoogle}>
               Login
             </button>
           )}

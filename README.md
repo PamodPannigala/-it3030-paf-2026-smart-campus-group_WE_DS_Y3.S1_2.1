@@ -33,7 +33,7 @@ You can instead set `DB_URL` to a full JDBC URL if required.
 
 Register an OAuth client in [Google Cloud Console](https://console.cloud.google.com/) (Web application). Authorized redirect URI must include:
 
-`http://localhost:8080/login/oauth2/code/google`
+`http://localhost:8081/login/oauth2/code/google`
 
 Then set (PowerShell example):
 

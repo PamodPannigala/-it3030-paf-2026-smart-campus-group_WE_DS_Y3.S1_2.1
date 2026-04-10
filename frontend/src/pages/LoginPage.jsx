@@ -19,7 +19,7 @@ const LoginPage = () => {
   const { loginWithGoogle, loginWithPassword, signup, resetPassword, forgotPassword } = useAuth();
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [signupForm, setSignupForm] = useState({ fullName: "", email: "", password: "" });
+  const [signupForm, setSignupForm] = useState({ fullName: "", email: "", password: "", role: "USER" });
   const [forgotForm, setForgotForm] = useState({ email: "" });
   const [resetForm, setResetForm] = useState({ token: "", newPassword: "" });
 
@@ -88,7 +88,7 @@ const LoginPage = () => {
         <div className="card shadow-sm border-0">
           <div className="card-body p-4">
             <h2 className="mb-2">Welcome</h2>
-            <p className="text-muted mb-4">Log in or create a new user account.</p>
+            <p className="text-muted mb-4">Log in or create a new user/admin account.</p>
 
             <div className="d-flex flex-wrap gap-2 mb-3">
               <button
@@ -177,6 +177,17 @@ const LoginPage = () => {
                     onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
                     required
                   />
+                </div>
+                <div>
+                  <label className="form-label">Account type</label>
+                  <select
+                    className="form-select"
+                    value={signupForm.role}
+                    onChange={(e) => setSignupForm({ ...signupForm, role: e.target.value })}
+                  >
+                    <option value="USER">User</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
                 </div>
                 <button className="btn btn-primary" type="submit">
                   Create account

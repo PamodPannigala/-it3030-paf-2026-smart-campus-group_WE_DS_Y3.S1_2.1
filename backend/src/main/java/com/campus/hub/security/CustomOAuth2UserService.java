@@ -37,7 +37,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         OAuth2User oauth2User = delegate.loadUser(userRequest);
         Map<String, Object> attributes = oauth2User.getAttributes();
 
-        String email = readString(attributes, "email");
+        String email = normalizeEmail(readString(attributes, "email"));
         if (email == null) {
             throw new OAuth2AuthenticationException(new OAuth2Error("invalid_user_info"), "Email is missing in OAuth2 user info");
         }
@@ -105,5 +105,13 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         }
         String text = value.toString().trim();
         return text.isEmpty() ? null : text;
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        String normalized = email.trim().toLowerCase(Locale.ROOT);
+        return normalized.isEmpty() ? null : normalized;
     }
 }

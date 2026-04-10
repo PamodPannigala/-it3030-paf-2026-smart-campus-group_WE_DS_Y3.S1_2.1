@@ -36,17 +36,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginWithPassword = async ({ email, password }) => {
-    const response = await api.post("/auth/login", { email, password });
+    const response = await api.post("/auth/login", { email: email.trim(), password });
     setUser(response.data);
     return response.data;
   };
 
-  const signup = async ({ fullName, email, password }) => {
-    await api.post("/auth/signup", { fullName, email, password });
+  const signup = async ({ fullName, email, password, role }) => {
+    await api.post("/auth/signup", { fullName, email: email.trim(), password, role });
   };
 
   const forgotPassword = async ({ email }) => {
-    const res = await api.post("/auth/forgot-password", { email });
+    const res = await api.post("/auth/forgot-password", { email: email.trim() });
     return res.data.token;
   };
 

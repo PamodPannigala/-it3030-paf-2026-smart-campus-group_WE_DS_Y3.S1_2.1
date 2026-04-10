@@ -13,9 +13,9 @@ import com.campus.hub.user.entity.Role;
 import com.campus.hub.user.repository.CampusUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,6 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -59,14 +58,18 @@ public class AuthController {
 
     @PostMapping("/signup")
     public AuthUserResponse signup(@Valid @RequestBody SignupRequest request) {
-        campusUserRepository.findByEmailIgnoreCase(request.email()).ifPresent(existing -> {
+        String normalizedEmail = normalizeEmail(request.email());
+        String normalizedName = normalizeName(request.fullName());
+        Role requestedRole = request.role() == null ? Role.USER : request.role();
+
+        campusUserRepository.findByEmailIgnoreCase(normalizedEmail).ifPresent(existing -> {
             throw new IllegalArgumentException("Email is already registered");
         });
 
         CampusUser user = CampusUser.builder()
-                .fullName(request.fullName().trim())
-                .email(request.email().trim())
-                .role(Role.USER) // never create admins via signup
+                .fullName(normalizedName)
+                .email(normalizedEmail)
+                .role(requestedRole)
                 .authProvider("LOCAL")
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .enabled(true)
@@ -88,8 +91,16 @@ public class AuthController {
             HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse
     ) {
+        String normalizedEmail = normalizeEmail(request.email());
+        CampusUser existingUser = campusUserRepository.findByEmailIgnoreCase(normalizedEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+
+        if (existingUser.getPasswordHash() == null || existingUser.getPasswordHash().isBlank()) {
+            throw new IllegalArgumentException("This account uses Google login. Continue with Google.");
+        }
+
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+                new UsernamePasswordAuthenticationToken(normalizedEmail, request.password())
         );
 
         SecurityContextImpl context = new SecurityContextImpl();
@@ -99,15 +110,19 @@ public class AuthController {
         SecurityContextRepository repo = new HttpSessionSecurityContextRepository();
         repo.saveContext(context, httpServletRequest, httpServletResponse);
 
-        CampusUser user = campusUserRepository.findByEmailIgnoreCase(request.email())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        return new AuthUserResponse(user.getId(), user.getFullName(), user.getEmail(), user.getRole(), user.getAuthProvider());
+        return new AuthUserResponse(
+                existingUser.getId(),
+                existingUser.getFullName(),
+                existingUser.getEmail(),
+                existingUser.getRole(),
+                existingUser.getAuthProvider()
+        );
     }
 
     @PostMapping("/forgot-password")
     public Map<String, String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        CampusUser user = campusUserRepository.findByEmailIgnoreCase(request.email())
+        String normalizedEmail = normalizeEmail(request.email());
+        CampusUser user = campusUserRepository.findByEmailIgnoreCase(normalizedEmail)
                 .orElseThrow(() -> new IllegalArgumentException("No account for that email"));
 
         String token = UUID.randomUUID().toString();
@@ -140,5 +155,17 @@ public class AuthController {
         passwordResetTokenRepository.save(token);
 
         return Map.of("status", "ok");
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeName(String fullName) {
+        String name = fullName == null ? "" : fullName.trim();
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("fullName is required");
+        }
+        return name;
     }
 }

@@ -3,6 +3,7 @@ package com.campus.hub.security;
 import com.campus.hub.exception.EntityNotFoundException;
 import com.campus.hub.user.entity.CampusUser;
 import com.campus.hub.user.repository.CampusUserRepository;
+import java.util.Locale;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -31,25 +32,29 @@ public class AuthenticatedUserResolver {
         if (principal instanceof OAuth2User oauth2User) {
             Object emailAttribute = oauth2User.getAttributes().get("email");
             if (emailAttribute != null && !emailAttribute.toString().isBlank()) {
-                return emailAttribute.toString();
+                return normalizeEmail(emailAttribute.toString());
             }
         }
 
         if (principal instanceof UserDetails userDetails && !userDetails.getUsername().isBlank()) {
-            return userDetails.getUsername();
+            return normalizeEmail(userDetails.getUsername());
         }
 
         if (principal instanceof Map<?, ?> attributes) {
             Object email = attributes.get("email");
             if (email != null && !email.toString().isBlank()) {
-                return email.toString();
+                return normalizeEmail(email.toString());
             }
         }
 
         if (principal instanceof String value && !value.isBlank() && !"anonymousUser".equals(value)) {
-            return value;
+            return normalizeEmail(value);
         }
 
         throw new AccessDeniedException("Unable to resolve authenticated user identity");
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }
