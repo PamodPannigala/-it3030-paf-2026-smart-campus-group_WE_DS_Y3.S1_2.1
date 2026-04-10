@@ -89,6 +89,10 @@ const LoginPage = () => {
           <div className="card-body p-4">
             <h2 className="mb-2">Welcome</h2>
             <p className="text-muted mb-4">Log in or create a new user/admin account.</p>
+            <p className="small text-muted mb-4">
+              Google login needs a valid redirect URI in Google Cloud. If Google sign-in fails,
+              you can still create an account using the Sign up form.
+            </p>
 
             <div className="d-flex flex-wrap gap-2 mb-3">
               <button
