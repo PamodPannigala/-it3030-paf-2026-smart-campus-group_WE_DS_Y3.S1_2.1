@@ -53,11 +53,6 @@ const AdminDashboardPage = () => {
         <div>
           <div className="kicker">Welcome</div>
           <h1>{user?.fullName || "Operator"}</h1>
-          <p className="sub">
-            {isAdmin
-              ? "You are signed in as an administrator. Use the overview below to jump into directory, support, and messaging."
-              : "You are signed in as a technician. Monitor notifications and alerts; user directory and the support queue are limited to administrators."}
-          </p>
         </div>
       </header>
 
@@ -92,17 +87,15 @@ const AdminDashboardPage = () => {
             <div className="staff-action-card">
               <span className="staff-pill">Directory</span>
               <h4>User management</h4>
-              <p>Accounts, roles, and creating new administrators or technicians.</p>
-              <Link to="/users" className="btn btn-primary">
-                Open user management
+              <Link to="/users" className="btn btn-primary w-100 mt-2">
+                User management
               </Link>
             </div>
             <div className="staff-action-card">
               <span className="staff-pill">Support</span>
               <h4>Support queue</h4>
-              <p>Review reports from campus users and post updates they receive as notifications.</p>
-              <Link to="/admin/support" className="btn btn-primary">
-                Open support queue
+              <Link to="/admin/support" className="btn btn-primary w-100 mt-2">
+                Support queue
               </Link>
             </div>
           </>
@@ -110,20 +103,14 @@ const AdminDashboardPage = () => {
         <div className="staff-action-card">
           <span className="staff-pill">Messaging</span>
           <h4>Notifications</h4>
-          <p>
-            {isAdmin
-              ? "Broadcast or targeted messages. Students use the same inbox for system notices."
-              : "Operational inbox for your campus hub session."}
-          </p>
-          <Link to="/notifications" className="btn btn-outline-primary">
-            Open notifications
+          <Link to="/notifications" className="btn btn-primary w-100 mt-2">
+            Notifications
           </Link>
         </div>
         <div className="staff-action-card">
           <span className="staff-pill">Profile</span>
           <h4>Account settings</h4>
-          <p>Update your display name, username, or password for this operator login.</p>
-          <Link to="/settings" className="btn btn-outline-secondary">
+          <Link to="/settings" className="btn btn-primary w-100 mt-2">
             Account settings
           </Link>
         </div>

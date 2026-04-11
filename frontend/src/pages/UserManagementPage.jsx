@@ -88,16 +88,11 @@ const UserManagementPage = () => {
         <div>
           <div className="kicker">Directory</div>
           <h1>User management</h1>
-          <p className="sub">Create staff accounts and update roles for everyone on the hub.</p>
         </div>
       </header>
       <div className="card shadow-sm border-0 campus-card text-dark text-start">
         <div className="card-body p-4">
-          <h3 className="mb-2">Add administrator or technician</h3>
-          <p className="text-muted small mb-3">
-            Creates a <strong>local</strong> account (username + password). Role must be <strong>Technician</strong>{" "}
-            or <strong>Administrator</strong>. Regular campus users use the public sign-up page instead.
-          </p>
+          <h3 className="mb-4">Add administrator or technician</h3>
           {message && <div className="alert alert-success">{message}</div>}
           {error && <div className="alert alert-danger">{error}</div>}
           <form className="row g-3" onSubmit={createStaff}>

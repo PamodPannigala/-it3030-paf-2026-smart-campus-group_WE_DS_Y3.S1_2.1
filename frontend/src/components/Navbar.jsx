@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
@@ -13,13 +13,24 @@ const Navbar = () => {
     ? user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
     : 'U';
 
+  const navigate = useNavigate();
+
   return (
     <nav className="navbar navbar-expand-lg campus-navbar sticky-top">
       <div className="container-fluid px-3 px-md-4">
-        <NavLink className="navbar-brand" to={brandTo}>
-          <span className="ch-logo-icon">C</span>
-          Campus Hub
-        </NavLink>
+        <div className="d-flex align-items-center">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="btn btn-link text-white-50 p-0 me-3 text-decoration-none"
+            title="Go Back"
+          >
+            <span className="fs-5">&larr;</span>
+          </button>
+          <NavLink className="navbar-brand" to={brandTo}>
+            <span className="ch-logo-icon">C</span>
+            Campus Hub
+          </NavLink>
+        </div>
 
         <button className="navbar-toggler border-0 shadow-none text-white opacity-75" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
           <span className="navbar-toggler-icon" style={{filter: 'invert(1) grayscale(100%) brightness(200%)'}}></span>
@@ -55,9 +66,9 @@ const Navbar = () => {
                   <div className="text-white fw-semibold lh-1" style={{ fontSize: '0.9rem' }}>{user.fullName}</div>
                   <div className="text-white-50 small lh-1 mt-1">{user.role}</div>
                 </div>
-                <div className="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px', fontSize: '0.9rem' }}>
+                <Link to="/settings" className="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center text-decoration-none shadow-sm" style={{ width: '38px', height: '38px', fontSize: '0.95rem', transition: 'transform 0.2s' }}>
                   {initials}
-                </div>
+                </Link>
                 <button className="btn btn-sm btn-outline-light ms-2 rounded-pill px-3" onClick={logout}>
                   Logout
                 </button>

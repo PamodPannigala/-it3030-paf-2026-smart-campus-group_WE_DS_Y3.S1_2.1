@@ -11,7 +11,7 @@ const Footer = () => {
               <span className="ch-logo-icon">C</span>
               Campus Hub
             </h5>
-            <p className="text-muted small pe-lg-4">
+            <p className="text-white-50 small pe-lg-4">
               Your centralized gateway to university services, event bookings, facility management, and support systems. Building a smarter campus experience.
             </p>
           </div>
@@ -33,7 +33,7 @@ const Footer = () => {
           </div>
           <div className="col-lg-4 col-md-12">
             <h6 className="text-white fw-semibold mb-3">Stay Connected</h6>
-            <p className="text-muted small">Join our campus newsletter for important updates.</p>
+            <p className="text-white-50 small">Join our campus newsletter for important updates.</p>
             <div className="input-group input-group-sm mb-3 footer-subscribe">
               <input type="email" className="form-control" placeholder="University email" />
               <button className="btn btn-primary px-3" type="button">Subscribe</button>
@@ -47,11 +47,11 @@ const Footer = () => {
         </div>
         <div className="row mt-5">
           <div className="col-12 border-top border-secondary pt-4 d-flex flex-column flex-md-row justify-content-between align-items-center">
-            <span className="text-muted small">© {new Date().getFullYear()} Campus Hub Operations. All rights reserved.</span>
+            <span className="text-white-50 small">© {new Date().getFullYear()} Campus Hub Operations. All rights reserved.</span>
             <div className="d-flex gap-3 mt-2 mt-md-0 small">
-              <a href="#" className="text-muted text-decoration-none">Privacy</a>
-              <a href="#" className="text-muted text-decoration-none">Terms</a>
-              <a href="#" className="text-muted text-decoration-none">Cookies</a>
+              <a href="#" className="text-white-50 text-decoration-none">Privacy</a>
+              <a href="#" className="text-white-50 text-decoration-none">Terms</a>
+              <a href="#" className="text-white-50 text-decoration-none">Cookies</a>
             </div>
           </div>
         </div>
