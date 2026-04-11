@@ -116,11 +116,6 @@ const AdminDashboardPage = () => {
         </div>
       </section>
 
-      {isStaff && (
-        <p className="small text-muted mt-4 mb-0">
-          Signed in as <strong>{user?.email}</strong> · role <code>{user?.role}</code>
-        </p>
-      )}
     </>
   );
 };
