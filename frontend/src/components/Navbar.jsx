@@ -38,10 +38,12 @@ const Navbar = () => {
 
           {!loading && user && !isStaff && (
             <div className="navbar-nav me-auto ms-lg-4 d-flex gap-1 align-items-center">
-              <span className="nav-link disabled text-white-50 small py-0 d-none d-lg-block">Campus</span>
+              <span className="nav-link disabled text-white-50 small py-0 d-none d-lg-block">Services</span>
               <NavLink to="/home" className={linkClass}>Home</NavLink>
+              <NavLink to="/booking" className={linkClass}>Booking</NavLink>
+              <NavLink to="/facilities" className={linkClass}>Facilities</NavLink>
+              <NavLink to="/tickets" className={linkClass}>Tickets</NavLink>
               <NavLink to="/notifications" className={linkClass}>Notifications</NavLink>
-              <NavLink to="/preferences" className={linkClass}>Preferences</NavLink>
               <NavLink to="/settings" className={linkClass}>Settings</NavLink>
             </div>
           )}

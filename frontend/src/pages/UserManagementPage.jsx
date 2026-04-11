@@ -91,7 +91,7 @@ const UserManagementPage = () => {
           <p className="sub">Create staff accounts and update roles for everyone on the hub.</p>
         </div>
       </header>
-      <div className="card shadow-sm border-0 campus-card">
+      <div className="card shadow-sm border-0 campus-card text-dark text-start">
         <div className="card-body p-4">
           <h3 className="mb-2">Add administrator or technician</h3>
           <p className="text-muted small mb-3">
@@ -162,14 +162,14 @@ const UserManagementPage = () => {
         </div>
       </div>
 
-      <div className="card shadow-sm border-0 campus-card">
+      <div className="card shadow-sm border-0 campus-card text-dark text-start">
         <div className="card-body p-4">
           <h2 className="mb-3">All users &amp; roles</h2>
           {loading ? (
             <p className="text-muted mb-0">Loading users...</p>
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover align-middle">
+              <table className="table table-hover align-middle text-dark">
                 <thead>
                   <tr>
                     <th>Name</th>
@@ -183,7 +183,7 @@ const UserManagementPage = () => {
                 </thead>
                 <tbody>
                   {users.map((user) => (
-                    <tr key={user.id}>
+                    <tr key={user.id} className="text-dark">
                       <td>{user.fullName}</td>
                       <td>{user.username || "—"}</td>
                       <td>{user.email}</td>
