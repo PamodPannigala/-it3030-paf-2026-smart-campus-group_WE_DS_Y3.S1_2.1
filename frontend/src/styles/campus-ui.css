@@ -96,9 +96,78 @@
 
 /* Bootstrap cards on inner pages */
 .campus-card {
-  border: 1px solid var(--ch-border) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(0, 119, 182, 0.1) !important;
   border-radius: var(--ch-radius) !important;
-  box-shadow: 0 4px 24px rgba(10, 20, 40, 0.06) !important;
+  box-shadow: 0 8px 30px rgba(0, 119, 182, 0.08) !important;
+  transition: all 0.3s ease;
+}
+
+.campus-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 119, 182, 0.12) !important;
+}
+
+/* Brilliant Vibrant Page Headers */
+.staff-page-header {
+  background: linear-gradient(135deg, var(--ch-blue) 0%, var(--ch-navy) 100%);
+  color: var(--ch-white);
+  padding: 3rem 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(0, 119, 182, 0.25);
+  margin-bottom: 2.5rem;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.staff-page-header::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.15) 0%, transparent 60%),
+              radial-gradient(circle at 20% 80%, rgba(255, 149, 0, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.staff-page-header::after {
+  content: '✦';
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  font-size: 15rem;
+  color: rgba(255, 255, 255, 0.03);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.staff-page-header .kicker {
+  color: var(--ch-yellow);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.staff-page-header h1 {
+  font-weight: 800;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+  color: var(--ch-white);
+}
+
+.staff-page-header .sub {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.15rem;
+  max-width: 600px;
+  margin-bottom: 0;
+  line-height: 1.6;
 }
 
 /* Premium Auth UI */
