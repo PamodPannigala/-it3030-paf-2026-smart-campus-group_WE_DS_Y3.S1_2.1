@@ -1,11 +1,13 @@
-package com.campus.hub.auth.dto;
+package com.campus.hub.user.dto;
 
+import com.campus.hub.user.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public record SignupRequest(
+public record AdminCreateUserRequest(
         @NotBlank(message = "fullName is required")
         @Size(max = 255, message = "fullName is too long")
         String fullName,
@@ -21,7 +23,9 @@ public record SignupRequest(
 
         @NotBlank(message = "password is required")
         @Size(min = 6, message = "password must be at least 6 characters")
-        String password
+        String password,
+
+        @NotNull(message = "role is required")
+        Role role
 ) {
 }
-

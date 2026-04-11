@@ -63,7 +63,6 @@ public class AuthController {
         String normalizedEmail = normalizeEmail(request.email());
         String normalizedName = normalizeName(request.fullName());
         String normalizedUsername = normalizeUsername(request.username());
-        Role requestedRole = request.role() == null ? Role.USER : request.role();
 
         campusUserRepository.findByEmailIgnoreCase(normalizedEmail).ifPresent(existing -> {
             throw new IllegalArgumentException("Email is already registered");
@@ -76,7 +75,7 @@ public class AuthController {
                 .fullName(normalizedName)
                 .email(normalizedEmail)
                 .username(normalizedUsername)
-                .role(requestedRole)
+                .role(Role.USER)
                 .authProvider("LOCAL")
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .enabled(true)

@@ -44,13 +44,12 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   };
 
-  const signup = async ({ fullName, username, email, password, role }) => {
+  const signup = async ({ fullName, username, email, password }) => {
     await api.post("/auth/signup", {
       fullName,
       username: username.trim().toLowerCase(),
       email: email.trim(),
       password,
-      role,
     });
   };
 

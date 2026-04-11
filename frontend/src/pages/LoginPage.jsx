@@ -24,7 +24,6 @@ const LoginPage = () => {
     username: "",
     email: "",
     password: "",
-    role: "USER",
   });
   const [forgotForm, setForgotForm] = useState({ email: "" });
   const [resetForm, setResetForm] = useState({ token: "", newPassword: "" });
@@ -202,17 +201,10 @@ const LoginPage = () => {
                     required
                   />
                 </div>
-                <div>
-                  <label className="form-label">Account type</label>
-                  <select
-                    className="form-select"
-                    value={signupForm.role}
-                    onChange={(e) => setSignupForm({ ...signupForm, role: e.target.value })}
-                  >
-                    <option value="USER">User</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
-                </div>
+                <p className="small text-muted mb-0">
+                  New accounts are <strong>campus users</strong> only. Administrators and technicians are created by
+                  an existing admin under <strong>User management</strong>.
+                </p>
                 <button className="btn btn-primary" type="submit">
                   Create account
                 </button>

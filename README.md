@@ -87,10 +87,11 @@ Set `VITE_API_ORIGIN` (and optionally `VITE_API_BASE_URL`) in `.env` to the back
 
 | Flow | Behaviour |
 |------|------------|
-| **Sign up (local)** | Requires **username** (3–32, `[a-zA-Z0-9_]`, stored lowercase), email, password. Role defaults to `USER`; self-service `ADMIN` is still available in the UI for demos—production systems would restrict that. |
+| **Sign up (local)** | Public form: **username**, email, password → always **`USER`**. No self-service admin/technician. |
+| **Create staff (local)** | **`POST /api/users`** (**ADMIN** only): full name, username, email, password, role **`ADMIN`** or **`TECHNICIAN`**. Same validation as sign-up; appears under **User management** in the UI. |
 | **Sign in (local)** | `POST /api/auth/login` with `usernameOrEmail` + `password`. Identifier may be **email** (contains `@`) or **username**. Spring Security still uses the **email** as the principal name after authentication so `/api/auth/me` and `/api/profile` stay consistent. |
 | **Google** | Browser hits `/oauth2/authorization/google` on the backend; after success, user is redirected to `app.oauth2.success-redirect` (default: `{frontend}/oauth-success`). |
-| **Roles** | `TECHNICIAN` is assigned by an **admin** under **User management**. Technicians use the **staff dashboard** (`/admin`) after login (same entry as admin, without user-management or support-queue UI unless `ADMIN`). |
+| **Roles** | New **ADMIN** / **TECHNICIAN** accounts are created by a signed-in **admin** (form + API). Existing users’ roles can still be updated in the user table. Technicians use the **staff dashboard** (`/admin`) after login. |
 
 ## Notifications (for marking / documentation)
 
@@ -111,6 +112,6 @@ Set `VITE_API_ORIGIN` (and optionally `VITE_API_BASE_URL`) in `.env` to the back
 
 - `GET /api/auth/me`, `POST /api/auth/login`, `POST /api/auth/signup`, password reset endpoints
 - `GET/PATCH/DELETE /api/profile` (delete removes dependent rows then the user)
-- `GET/PATCH /api/users/...` (**ADMIN**)
+- `GET/POST /api/users`, `PATCH /api/users/{id}/role` (**ADMIN**)
 
 Session cookies: the frontend uses Axios with `withCredentials: true`.
