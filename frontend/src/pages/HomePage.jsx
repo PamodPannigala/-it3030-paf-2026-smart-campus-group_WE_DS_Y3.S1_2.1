@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Helmet } from "react-helmet";
 import { useAuth } from "../context/AuthContext";
 
 const Home = () => {
@@ -123,12 +122,12 @@ const Home = () => {
 
   if (isStaff) return null;
 
+  useEffect(() => {
+    document.title = "Campus Hub | Home";
+  }, []);
+
   return (
-    <>
-      <Helmet>
-        <title>Campus Hub | Home</title>
-      </Helmet>
-      <div className="home-container">
+    <div className="home-container">
 
         {/* Slideshow */}
         <section className="slideshow-container">
@@ -286,7 +285,6 @@ const Home = () => {
           </div>
         </section>
       </div>
-    </>
   );
 };
 
