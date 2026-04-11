@@ -84,7 +84,14 @@ const UserManagementPage = () => {
 
   return (
     <div className="d-grid gap-4">
-      <div className="card shadow-sm border-0">
+      <header className="staff-page-header">
+        <div>
+          <div className="kicker">Directory</div>
+          <h1>User management</h1>
+          <p className="sub">Create staff accounts and update roles for everyone on the hub.</p>
+        </div>
+      </header>
+      <div className="card shadow-sm border-0 campus-card">
         <div className="card-body p-4">
           <h3 className="mb-2">Add administrator or technician</h3>
           <p className="text-muted small mb-3">
@@ -155,7 +162,7 @@ const UserManagementPage = () => {
         </div>
       </div>
 
-      <div className="card shadow-sm border-0">
+      <div className="card shadow-sm border-0 campus-card">
         <div className="card-body p-4">
           <h2 className="mb-3">All users &amp; roles</h2>
           {loading ? (

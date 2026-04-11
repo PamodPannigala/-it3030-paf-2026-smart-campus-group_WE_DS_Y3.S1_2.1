@@ -1,6 +1,8 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import StaffShell from "./components/StaffShell";
+import GateStaffLayout from "./components/GateStaffLayout";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
@@ -12,12 +14,26 @@ import UserManagementPage from "./pages/UserManagementPage";
 import SupportPage from "./pages/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage";
 import EndUserOnlyRoute from "./components/EndUserOnlyRoute";
+import { useAuth } from "./context/AuthContext";
 
-function App() {
+function AppContent() {
+  const { user, loading, isStaff } = useAuth();
+  const { pathname } = useLocation();
+
+  const staffConsole =
+    !loading &&
+    user &&
+    isStaff &&
+    (pathname === "/admin" ||
+      pathname === "/users" ||
+      pathname.startsWith("/admin/") ||
+      pathname === "/notifications" ||
+      pathname === "/settings");
+
   return (
-    <div className="min-vh-100 bg-light">
-      <Navbar />
-      <div className="container py-4">
+    <div className="min-vh-100 app-root" style={{ background: staffConsole ? "var(--ch-ice)" : "var(--ch-ice)" }}>
+      {!staffConsole && <Navbar />}
+      <div className={staffConsole ? "" : "container py-4"}>
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/oauth-success" element={<OAuthSuccessPage />} />
@@ -33,7 +49,9 @@ function App() {
             path="/admin"
             element={
               <ProtectedRoute staffOnly>
-                <AdminDashboardPage />
+                <StaffShell>
+                  <AdminDashboardPage />
+                </StaffShell>
               </ProtectedRoute>
             }
           />
@@ -41,7 +59,9 @@ function App() {
             path="/admin/support"
             element={
               <ProtectedRoute adminOnly>
-                <AdminSupportPage />
+                <StaffShell>
+                  <AdminSupportPage />
+                </StaffShell>
               </ProtectedRoute>
             }
           />
@@ -49,7 +69,9 @@ function App() {
             path="/settings"
             element={
               <ProtectedRoute>
-                <ProfileSettingsPage />
+                <GateStaffLayout>
+                  <ProfileSettingsPage />
+                </GateStaffLayout>
               </ProtectedRoute>
             }
           />
@@ -57,7 +79,9 @@ function App() {
             path="/notifications"
             element={
               <ProtectedRoute>
-                <NotificationsPage />
+                <GateStaffLayout>
+                  <NotificationsPage />
+                </GateStaffLayout>
               </ProtectedRoute>
             }
           />
@@ -75,7 +99,9 @@ function App() {
             path="/users"
             element={
               <ProtectedRoute adminOnly>
-                <UserManagementPage />
+                <StaffShell>
+                  <UserManagementPage />
+                </StaffShell>
               </ProtectedRoute>
             }
           />
@@ -94,6 +120,10 @@ function App() {
       </div>
     </div>
   );
+}
+
+function App() {
+  return <AppContent />;
 }
 
 export default App;

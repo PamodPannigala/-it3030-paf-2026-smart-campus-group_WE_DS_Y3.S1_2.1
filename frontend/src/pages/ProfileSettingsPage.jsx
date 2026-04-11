@@ -6,7 +6,7 @@ import axios from "axios";
 
 const ProfileSettingsPage = () => {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { refreshUser, isStaff } = useAuth();
   const [profile, setProfile] = useState(null);
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
@@ -68,9 +68,19 @@ const ProfileSettingsPage = () => {
   };
 
   return (
-    <div className="card shadow-sm border-0">
+    <>
+      {isStaff && (
+        <header className="staff-page-header">
+          <div>
+            <div className="kicker">Profile</div>
+            <h1>Account settings</h1>
+            <p className="sub">Operator profile for this console session.</p>
+          </div>
+        </header>
+      )}
+    <div className="card shadow-sm border-0 campus-card">
       <div className="card-body p-4">
-        <h2 className="mb-3">Settings</h2>
+        <h2 className="mb-3">{isStaff ? "Your details" : "Settings"}</h2>
 
         {loading ? (
           <p className="text-muted mb-0">Loading profile...</p>
@@ -133,6 +143,7 @@ const ProfileSettingsPage = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 

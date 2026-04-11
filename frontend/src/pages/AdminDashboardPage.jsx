@@ -1,89 +1,135 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
 
 const AdminDashboardPage = () => {
   const { isAdmin, isStaff, user } = useAuth();
+  const [stats, setStats] = useState({
+    unread: 0,
+    users: null,
+    supportOpen: null,
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const countRes = await api.get("/notifications/unread-count");
+        if (!cancelled) {
+          setStats((s) => ({ ...s, unread: countRes.data.unreadCount ?? 0 }));
+        }
+        if (isAdmin) {
+          const [usersRes, supRes] = await Promise.all([
+            api.get("/users"),
+            api.get("/support-requests"),
+          ]);
+          const open = supRes.data.filter((r) => r.status === "OPEN").length;
+          if (!cancelled) {
+            setStats((s) => ({
+              ...s,
+              users: usersRes.data.length,
+              supportOpen: open,
+            }));
+          }
+        }
+      } catch {
+        /* non-blocking */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
 
   return (
-    <div className="d-grid gap-4">
-      <div className="border-bottom pb-3">
-        <h2 className="mb-1">Operations console</h2>
-        <p className="text-muted mb-0">
-          {isAdmin
-            ? "Signed in as administrator — manage accounts, review support submissions, and broadcast notifications."
-            : "Signed in as technician — monitor notifications and campus alerts. User management and the support queue are restricted to administrators."}
-        </p>
-      </div>
+    <>
+      <header className="staff-page-header">
+        <div>
+          <div className="kicker">Welcome</div>
+          <h1>{user?.fullName || "Operator"}</h1>
+          <p className="sub">
+            {isAdmin
+              ? "You are signed in as an administrator. Use the overview below to jump into directory, support, and messaging."
+              : "You are signed in as a technician. Monitor notifications and alerts; user directory and the support queue are limited to administrators."}
+          </p>
+        </div>
+      </header>
 
-      <div className="row g-3">
+      <section className="staff-overview" aria-label="Overview">
+        <div className="staff-stat-card">
+          <h3>Unread notifications</h3>
+          <p>{stats.unread}</p>
+        </div>
         {isAdmin && (
           <>
-            <div className="col-md-6 col-xl-4">
-              <div className="card h-100 border-0 shadow-sm">
-                <div className="card-body">
-                  <h5 className="card-title">Directory &amp; access</h5>
-                  <p className="card-text text-muted small">
-                    View everyone on the hub, enable or disable access, and assign roles (user, technician, admin).
-                  </p>
-                  <Link to="/users" className="btn btn-primary">
-                    Open user management
-                  </Link>
-                </div>
-              </div>
+            <div className="staff-stat-card alt">
+              <h3>Registered users</h3>
+              <p>{stats.users ?? "—"}</p>
             </div>
-            <div className="col-md-6 col-xl-4">
-              <div className="card h-100 border-0 shadow-sm">
-                <div className="card-body">
-                  <h5 className="card-title">Support &amp; incidents</h5>
-                  <p className="card-text text-muted small">
-                    Review problems reported by students and staff. Update status and notes — users are notified
-                    automatically.
-                  </p>
-                  <Link to="/admin/support" className="btn btn-primary">
-                    Open support queue
-                  </Link>
-                </div>
-              </div>
+            <div className="staff-stat-card dark">
+              <h3>Open support requests</h3>
+              <p>{stats.supportOpen ?? "—"}</p>
             </div>
           </>
         )}
+        {!isAdmin && (
+          <div className="staff-stat-card dark">
+            <h3>Your role</h3>
+            <p style={{ fontSize: "1.1rem" }}>Technician</p>
+          </div>
+        )}
+      </section>
 
-        <div className="col-md-6 col-xl-4">
-          <div className="card h-100 border-0 shadow-sm">
-            <div className="card-body">
-              <h5 className="card-title">Notifications</h5>
-              <p className="card-text text-muted small">
-                Read operational messages and, if you are an admin, send targeted announcements to a user by ID.
-              </p>
-              <Link to="/notifications" className="btn btn-outline-primary">
-                Open notifications
+      <section className="staff-action-grid" aria-label="Quick links">
+        {isAdmin && (
+          <>
+            <div className="staff-action-card">
+              <span className="staff-pill">Directory</span>
+              <h4>User management</h4>
+              <p>Accounts, roles, and creating new administrators or technicians.</p>
+              <Link to="/users" className="btn btn-primary">
+                Open user management
               </Link>
             </div>
-          </div>
-        </div>
-
-        <div className="col-md-6 col-xl-4">
-          <div className="card h-100 border-0 shadow-sm">
-            <div className="card-body">
-              <h5 className="card-title">Your account</h5>
-              <p className="card-text text-muted small">
-                Update your name or sign-in details. This is your operator profile, separate from student self-service
-                pages.
-              </p>
-              <Link to="/settings" className="btn btn-outline-secondary">
-                Account settings
+            <div className="staff-action-card">
+              <span className="staff-pill">Support</span>
+              <h4>Support queue</h4>
+              <p>Review reports from campus users and post updates they receive as notifications.</p>
+              <Link to="/admin/support" className="btn btn-primary">
+                Open support queue
               </Link>
             </div>
-          </div>
+          </>
+        )}
+        <div className="staff-action-card">
+          <span className="staff-pill">Messaging</span>
+          <h4>Notifications</h4>
+          <p>
+            {isAdmin
+              ? "Broadcast or targeted messages. Students use the same inbox for system notices."
+              : "Operational inbox for your campus hub session."}
+          </p>
+          <Link to="/notifications" className="btn btn-outline-primary">
+            Open notifications
+          </Link>
         </div>
-      </div>
+        <div className="staff-action-card">
+          <span className="staff-pill">Profile</span>
+          <h4>Account settings</h4>
+          <p>Update your display name, username, or password for this operator login.</p>
+          <Link to="/settings" className="btn btn-outline-secondary">
+            Account settings
+          </Link>
+        </div>
+      </section>
 
       {isStaff && (
-        <div className="alert alert-light border mb-0 small">
-          <strong>Signed in:</strong> {user?.fullName} · {user?.email} · role <code>{user?.role}</code>
-        </div>
+        <p className="small text-muted mt-4 mb-0">
+          Signed in as <strong>{user?.email}</strong> · role <code>{user?.role}</code>
+        </p>
       )}
-    </div>
+    </>
   );
 };
 

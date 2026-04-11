@@ -1,0 +1,29 @@
+/* Campus Hub — design tokens */
+:root {
+  --ch-blue: #0077b6;
+  --ch-blue-dark: #005f92;
+  --ch-orange: #ff9500;
+  --ch-orange-soft: #ffb347;
+  --ch-white: #ffffff;
+  --ch-charcoal: #1c2526;
+  --ch-navy: #0a1428;
+  --ch-yellow: #ffd60a;
+  --ch-ice: #f0f7fb;
+  --ch-muted: #5c6b73;
+  --ch-border: rgba(0, 119, 182, 0.15);
+  --ch-shadow: 0 10px 40px rgba(10, 20, 40, 0.12);
+  --ch-radius: 16px;
+  --ch-font: "Poppins", system-ui, -apple-system, sans-serif;
+
+  --bs-primary: #0077b6;
+  --bs-primary-rgb: 0, 119, 182;
+  --bs-link-color: #0077b6;
+  --bs-link-hover-color: #005f92;
+}
+
+body {
+  font-family: var(--ch-font);
+  color: var(--ch-charcoal);
+  background: var(--ch-ice);
+  -webkit-font-smoothing: antialiased;
+}

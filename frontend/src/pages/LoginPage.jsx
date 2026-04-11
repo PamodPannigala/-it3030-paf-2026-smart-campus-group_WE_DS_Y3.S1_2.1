@@ -94,10 +94,11 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="row justify-content-center">
-      <div className="col-lg-7 col-xl-6">
-        <div className="card shadow-sm border-0">
-          <div className="card-body p-4">
+    <div className="auth-surface">
+      <div className="row justify-content-center">
+        <div className="col-lg-7 col-xl-6">
+          <div className="card auth-card campus-card">
+            <div className="card-body p-4">
             <h2 className="mb-2">Welcome</h2>
             <p className="text-muted mb-4">Log in or create a new account.</p>
 
@@ -154,7 +155,7 @@ const LoginPage = () => {
                   Login
                 </button>
                 <div className="text-center text-muted">or</div>
-                <button className="btn btn-outline-dark" type="button" onClick={loginWithGoogle}>
+                <button className="btn btn-outline-primary" type="button" onClick={loginWithGoogle}>
                   Continue with Google
                 </button>
               </form>
@@ -259,6 +260,7 @@ const LoginPage = () => {
                 </button>
               </form>
             )}
+            </div>
           </div>
         </div>
       </div>

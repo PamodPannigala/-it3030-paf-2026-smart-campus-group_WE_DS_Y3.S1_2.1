@@ -1,0 +1,99 @@
+/* Global polish: navbar, auth page, cards inside app container */
+.campus-navbar {
+  background: linear-gradient(90deg, var(--ch-navy) 0%, #0f2848 45%, var(--ch-blue-dark) 100%) !important;
+  box-shadow: 0 4px 24px rgba(10, 20, 40, 0.2);
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.campus-navbar .navbar-brand {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ch-white) !important;
+}
+
+.campus-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.88) !important;
+  border-radius: 8px;
+  padding: 0.4rem 0.65rem !important;
+}
+
+.campus-navbar .nav-link:hover {
+  color: var(--ch-white) !important;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.campus-navbar .nav-link.active {
+  color: var(--ch-yellow) !important;
+  background: rgba(0, 119, 182, 0.25);
+}
+
+.campus-navbar .badge {
+  background: var(--ch-white) !important;
+  color: var(--ch-navy) !important;
+  font-weight: 600;
+}
+
+.campus-navbar .btn-light {
+  background: var(--ch-white);
+  color: var(--ch-navy);
+  border: none;
+  font-weight: 600;
+  border-radius: 999px;
+}
+
+.campus-navbar .btn-light:hover {
+  background: var(--ch-yellow);
+  color: var(--ch-navy);
+}
+
+.app-page-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.app-page-shell-wide {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Bootstrap cards on inner pages */
+.campus-card {
+  border: 1px solid var(--ch-border) !important;
+  border-radius: var(--ch-radius) !important;
+  box-shadow: 0 4px 24px rgba(10, 20, 40, 0.06) !important;
+}
+
+.auth-surface {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+}
+
+.auth-card {
+  border: none !important;
+  border-radius: var(--ch-radius) !important;
+  box-shadow: var(--ch-shadow) !important;
+  overflow: hidden;
+}
+
+.auth-card .card-body {
+  padding: 2rem !important;
+}
+
+.auth-card h2 {
+  color: var(--ch-navy);
+  font-weight: 700;
+}
+
+.btn-primary {
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+}
+
+.btn-outline-primary {
+  border-radius: 10px;
+  font-weight: 600;
+}

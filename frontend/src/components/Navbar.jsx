@@ -9,7 +9,7 @@ const Navbar = () => {
   const brandTo = user ? (isStaff ? "/admin" : "/home") : "/";
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm campus-navbar">
       <div className="container-fluid">
         <NavLink className="navbar-brand fw-semibold" to={brandTo}>
           Campus Hub

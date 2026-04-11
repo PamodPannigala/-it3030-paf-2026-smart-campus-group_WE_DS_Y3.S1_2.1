@@ -89,7 +89,20 @@ const NotificationsPage = () => {
 
   return (
     <div className="d-grid gap-3">
-      <div className="card shadow-sm border-0">
+      {isStaff && (
+        <header className="staff-page-header">
+          <div>
+            <div className="kicker">Messaging</div>
+            <h1>Notifications</h1>
+            <p className="sub">
+              {isAdmin
+                ? "Your inbox plus optional targeted sends to a user by ID."
+                : "Operational inbox — compose is limited to administrators."}
+            </p>
+          </div>
+        </header>
+      )}
+      <div className="card shadow-sm border-0 campus-card">
         <div className="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div>
             <h2 className="mb-1">{isStaff ? "Operations notifications" : "Notifications"}</h2>
@@ -119,7 +132,7 @@ const NotificationsPage = () => {
       {error && <div className="alert alert-danger">{error}</div>}
 
       {isAdmin && (
-        <div className="card shadow-sm border-0">
+        <div className="card shadow-sm border-0 campus-card">
           <div className="card-body p-4">
             <h5 className="mb-3">Create Notification (Admin)</h5>
             <form className="row g-3" onSubmit={createNotification}>
@@ -192,7 +205,7 @@ const NotificationsPage = () => {
         </div>
       )}
 
-      <div className="card shadow-sm border-0">
+      <div className="card shadow-sm border-0 campus-card">
         <div className="card-body p-4">
           {loading ? (
             <p className="text-muted mb-0">Loading notifications...</p>

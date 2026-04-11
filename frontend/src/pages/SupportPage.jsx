@@ -47,7 +47,7 @@ const SupportPage = () => {
 
   return (
     <div className="d-grid gap-3">
-      <div className="card shadow-sm border-0">
+      <div className="card shadow-sm border-0 campus-card">
         <div className="card-body p-4">
           <h2 className="mb-2">Report a problem</h2>
           <p className="text-muted mb-0">
@@ -57,7 +57,7 @@ const SupportPage = () => {
         </div>
       </div>
 
-      <div className="card shadow-sm border-0">
+      <div className="card shadow-sm border-0 campus-card">
         <div className="card-body p-4">
           {error && <div className="alert alert-danger">{error}</div>}
           {message && <div className="alert alert-success">{message}</div>}
@@ -90,7 +90,7 @@ const SupportPage = () => {
         </div>
       </div>
 
-      <div className="card shadow-sm border-0">
+      <div className="card shadow-sm border-0 campus-card">
         <div className="card-body p-4">
           <h5 className="mb-3">Your requests</h5>
           {loading ? (

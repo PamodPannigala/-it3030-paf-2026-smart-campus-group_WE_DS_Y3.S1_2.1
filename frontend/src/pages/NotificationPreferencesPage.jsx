@@ -44,7 +44,7 @@ const NotificationPreferencesPage = () => {
   };
 
   return (
-    <div className="card shadow-sm border-0">
+    <div className="card shadow-sm border-0 campus-card">
       <div className="card-body p-4">
         <h2 className="mb-3">Notification Preferences</h2>
         <p className="text-muted small mb-3">
