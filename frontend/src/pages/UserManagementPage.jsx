@@ -27,9 +27,21 @@ const UserManagementPage = () => {
       setError("");
       const response = await api.get("/users");
       console.log("Users fetched successfully:", response.data);
-      setUsers(response.data);
+      
+      const realData = Array.isArray(response.data) ? response.data : [];
+      setUsers([
+        { id: "test-1", fullName: "Dummy Test User (Success)", username: "dummy_test", email: "dummy@test.local", authProvider: "DEBUG", enabled: true, role: "ADMIN" },
+        ...realData
+      ]);
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to load users");
+      console.error("Intercepted Backend Error:", err);
+      // Force the dummy data even on error so the table doesn't blank out
+      setUsers([
+        { id: "test-err", fullName: "Dummy Test User (Error Active)", username: "error_test", email: "dummy@error.local", authProvider: "SYSTEM", enabled: false, role: "USER" }
+      ]);
+      const status = err?.response?.status;
+      const dataStr = JSON.stringify(err?.response?.data || "(No Data)");
+      setError(`HTTP ${status || 'Network Error'}: ${dataStr}`);
     } finally {
       setLoading(false);
     }
@@ -162,6 +174,9 @@ const UserManagementPage = () => {
       <div className="card shadow-sm border-0 campus-card text-dark text-start">
         <div className="card-body p-4">
           <h2 className="mb-3">All users &amp; roles</h2>
+          <div className="alert alert-info">
+            <strong>Debug Data:</strong> {JSON.stringify(users.map(u => u.fullName))}
+          </div>
           {loading ? (
             <p className="text-muted mb-0">Loading users...</p>
           ) : (
