@@ -22,9 +22,11 @@ const UserManagementPage = () => {
 
   const loadUsers = async () => {
     try {
+      console.log("Fetching users from backend...");
       setLoading(true);
       setError("");
       const response = await api.get("/users");
+      console.log("Users fetched successfully:", response.data);
       setUsers(response.data);
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to load users");
@@ -177,42 +179,50 @@ const UserManagementPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="text-dark">
-                      <td>{user.fullName}</td>
-                      <td>{user.username || "—"}</td>
-                      <td>{user.email}</td>
-                      <td>{user.authProvider}</td>
-                      <td>{user.enabled ? "Enabled" : "Disabled"}</td>
-                      <td style={{ maxWidth: 180 }}>
-                        <select
-                          className="form-select"
-                          value={user.role}
-                          onChange={(e) => {
-                            const nextRole = e.target.value;
-                            setUsers((prev) =>
-                              prev.map((item) =>
-                                item.id === user.id ? { ...item, role: nextRole } : item
-                              )
-                            );
-                          }}
-                        >
-                          <option value="USER">USER</option>
-                          <option value="TECHNICIAN">TECHNICIAN</option>
-                          <option value="ADMIN">ADMIN</option>
-                        </select>
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-sm btn-primary"
-                          disabled={savingUserId === user.id}
-                          onClick={() => updateRole(user.id, user.role)}
-                        >
-                          {savingUserId === user.id ? "Saving..." : "Save"}
-                        </button>
+                  {users.length === 0 ? (
+                    <tr className="text-dark">
+                      <td colSpan="7" className="text-center py-4">
+                        <div className="text-muted">No users found in the database.</div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    users.map((user) => (
+                      <tr key={user.id} className="text-dark">
+                        <td>{user.fullName}</td>
+                        <td>{user.username || "—"}</td>
+                        <td>{user.email}</td>
+                        <td>{user.authProvider}</td>
+                        <td>{user.enabled ? "Enabled" : "Disabled"}</td>
+                        <td style={{ maxWidth: 180 }}>
+                          <select
+                            className="form-select"
+                            value={user.role}
+                            onChange={(e) => {
+                              const nextRole = e.target.value;
+                              setUsers((prev) =>
+                                prev.map((item) =>
+                                  item.id === user.id ? { ...item, role: nextRole } : item
+                                )
+                              );
+                            }}
+                          >
+                            <option value="USER">USER</option>
+                            <option value="TECHNICIAN">TECHNICIAN</option>
+                            <option value="ADMIN">ADMIN</option>
+                          </select>
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-primary"
+                            disabled={savingUserId === user.id}
+                            onClick={() => updateRole(user.id, user.role)}
+                          >
+                            {savingUserId === user.id ? "Saving..." : "Save"}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
