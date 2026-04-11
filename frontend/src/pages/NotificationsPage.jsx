@@ -2,6 +2,23 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
+function categoryLabel(category) {
+  switch (category) {
+    case "SYSTEM":
+      return "System";
+    case "BOOKING":
+      return "Booking";
+    case "FACILITY":
+      return "Facility";
+    case "TICKET_STATUS":
+      return "Ticket (status)";
+    case "TICKET_COMMENT":
+      return "Ticket (comment)";
+    default:
+      return category;
+  }
+}
+
 const NotificationsPage = () => {
   const { user, isAdmin } = useAuth();
   const [notifications, setNotifications] = useState([]);
@@ -11,10 +28,10 @@ const NotificationsPage = () => {
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     userId: "",
-    category: "TICKET_STATUS",
+    category: "SYSTEM",
     title: "",
     message: "",
-    referenceType: "TICKET",
+    referenceType: "SYSTEM",
     referenceId: "",
   });
 
@@ -76,7 +93,10 @@ const NotificationsPage = () => {
         <div className="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div>
             <h2 className="mb-1">Notifications</h2>
-            <p className="text-muted mb-0">Unread: {unreadCount}</p>
+            <p className="text-muted mb-0">
+              Unread: {unreadCount}. System messages (account, support, admin broadcasts) use the{" "}
+              <strong>System</strong> category; ticket modules can use ticket categories later.
+            </p>
           </div>
           <div className="form-check form-switch">
             <input
@@ -116,6 +136,7 @@ const NotificationsPage = () => {
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
                 >
+                  <option value="SYSTEM">SYSTEM</option>
                   <option value="BOOKING">BOOKING</option>
                   <option value="FACILITY">FACILITY</option>
                   <option value="TICKET_STATUS">TICKET_STATUS</option>
@@ -183,7 +204,7 @@ const NotificationsPage = () => {
                   <div className="d-flex justify-content-between align-items-center gap-2">
                     <div>
                       <strong>{item.title}</strong>{" "}
-                      <span className="badge text-bg-secondary">{item.category}</span>
+                      <span className="badge text-bg-secondary">{categoryLabel(item.category)}</span>
                     </div>
                     {!isRead && (
                       <button

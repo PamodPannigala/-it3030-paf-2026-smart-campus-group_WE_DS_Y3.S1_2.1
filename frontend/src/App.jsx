@@ -9,6 +9,8 @@ import NotificationPreferencesPage from "./pages/NotificationPreferencesPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import OAuthSuccessPage from "./pages/OAuthSuccessPage";
 import UserManagementPage from "./pages/UserManagementPage";
+import SupportPage from "./pages/SupportPage";
+import AdminSupportPage from "./pages/AdminSupportPage";
 
 function App() {
   return (
@@ -29,8 +31,16 @@ function App() {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute adminOnly>
+              <ProtectedRoute staffOnly>
                 <AdminDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/support"
+            element={
+              <ProtectedRoute adminOnly>
+                <AdminSupportPage />
               </ProtectedRoute>
             }
           />
@@ -63,6 +73,14 @@ function App() {
             element={
               <ProtectedRoute adminOnly>
                 <UserManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/support"
+            element={
+              <ProtectedRoute>
+                <SupportPage />
               </ProtectedRoute>
             }
           />

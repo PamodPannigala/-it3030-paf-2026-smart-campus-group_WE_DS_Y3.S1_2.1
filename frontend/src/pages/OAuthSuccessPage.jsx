@@ -8,7 +8,10 @@ const OAuthSuccessPage = () => {
 
   useEffect(() => {
     refreshUser()
-      .then((u) => navigate(u?.role === "ADMIN" ? "/admin" : "/home", { replace: true }))
+      .then((u) => {
+        const staff = u?.role === "ADMIN" || u?.role === "TECHNICIAN";
+        navigate(staff ? "/admin" : "/home", { replace: true });
+      })
       .catch(() => navigate("/", { replace: true }));
   }, [navigate, refreshUser]);
 

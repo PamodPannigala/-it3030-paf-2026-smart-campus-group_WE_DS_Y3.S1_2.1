@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = ({ children, adminOnly = false }) => {
+const ProtectedRoute = ({ children, adminOnly = false, staffOnly = false }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -10,6 +10,10 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 
   if (!user) {
     return <Navigate to="/" replace />;
+  }
+
+  if (staffOnly && user.role !== "ADMIN" && user.role !== "TECHNICIAN") {
+    return <div className="alert alert-warning">Staff access required.</div>;
   }
 
   if (adminOnly && user.role !== "ADMIN") {

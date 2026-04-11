@@ -9,6 +9,7 @@ const ProfileSettingsPage = () => {
   const { refreshUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -21,6 +22,7 @@ const ProfileSettingsPage = () => {
       const res = await api.get("/profile");
       setProfile(res.data);
       setFullName(res.data.fullName || "");
+      setUsername(res.data.username || "");
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to load profile");
     } finally {
@@ -38,7 +40,10 @@ const ProfileSettingsPage = () => {
     setError("");
     setMessage("");
     try {
-      await api.patch("/profile", { fullName });
+      await api.patch("/profile", {
+        fullName,
+        username: profile?.authProvider === "LOCAL" ? username : undefined,
+      });
       await refreshUser();
       setMessage("Profile updated.");
       await load();
@@ -84,6 +89,12 @@ const ProfileSettingsPage = () => {
                   <small className="text-muted d-block">Provider</small>
                   <strong>{profile?.authProvider}</strong>
                 </div>
+                {profile?.authProvider === "LOCAL" && (
+                  <div className="col-md-6">
+                    <small className="text-muted d-block">Username</small>
+                    <strong>{profile?.username || "—"}</strong>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -97,6 +108,18 @@ const ProfileSettingsPage = () => {
                   required
                 />
               </div>
+              {profile?.authProvider === "LOCAL" && (
+                <div>
+                  <label className="form-label">Username (for sign-in)</label>
+                  <input
+                    className="form-control"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="3–32 characters: letters, digits, underscore"
+                  />
+                  <div className="form-text">Leave empty to clear your username (you can still sign in with email).</div>
+                </div>
+              )}
               <div className="d-flex gap-2">
                 <button className="btn btn-primary" type="submit" disabled={saving}>
                   {saving ? "Saving..." : "Save"}

@@ -58,6 +58,9 @@ const HomePage = () => {
           <Link to="/settings" className="btn btn-outline-secondary">
             Profile Settings
           </Link>
+          <Link to="/support" className="btn btn-outline-secondary">
+            Help / Support
+          </Link>
         </div>
       </section>
     </div>

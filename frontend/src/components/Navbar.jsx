@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
-  const { user, loading, loginWithGoogle, logout } = useAuth();
+  const { user, loading, loginWithGoogle, logout, isStaff, isAdmin } = useAuth();
   const linkClass = ({ isActive }) =>
     `nav-link ${isActive ? "active fw-semibold" : ""}`;
 
@@ -24,15 +24,18 @@ const Navbar = () => {
             <NavLink to="/settings" className={linkClass}>
               Settings
             </NavLink>
-            {user.role === "ADMIN" && (
-              <>
-                <NavLink to="/admin" className={linkClass}>
-                  Admin
-                </NavLink>
-                <NavLink to="/users" className={linkClass}>
-                  Users
-                </NavLink>
-              </>
+            <NavLink to="/support" className={linkClass}>
+              Help / Support
+            </NavLink>
+            {isStaff && (
+              <NavLink to="/admin" className={linkClass}>
+                Admin
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink to="/users" className={linkClass}>
+                Users
+              </NavLink>
             )}
           </div>
         )}

@@ -47,6 +47,10 @@ const NotificationPreferencesPage = () => {
     <div className="card shadow-sm border-0">
       <div className="card-body p-4">
         <h2 className="mb-3">Notification Preferences</h2>
+        <p className="text-muted small mb-3">
+          These switches apply to <strong>ticket-related</strong> categories only. <strong>System</strong> notifications
+          (support updates, admin messages, and similar) are always delivered.
+        </p>
 
         {loading ? (
           <p className="text-muted mb-0">Loading preferences...</p>

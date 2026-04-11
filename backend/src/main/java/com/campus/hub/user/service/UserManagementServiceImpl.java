@@ -40,6 +40,7 @@ public class UserManagementServiceImpl implements UserManagementService {
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
+                user.getUsername(),
                 user.getRole(),
                 user.getAuthProvider(),
                 user.isEnabled()

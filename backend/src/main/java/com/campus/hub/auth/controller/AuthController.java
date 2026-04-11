@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -51,6 +52,7 @@ public class AuthController {
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
+                user.getUsername(),
                 user.getRole(),
                 user.getAuthProvider()
         );
@@ -60,15 +62,20 @@ public class AuthController {
     public AuthUserResponse signup(@Valid @RequestBody SignupRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
         String normalizedName = normalizeName(request.fullName());
+        String normalizedUsername = normalizeUsername(request.username());
         Role requestedRole = request.role() == null ? Role.USER : request.role();
 
         campusUserRepository.findByEmailIgnoreCase(normalizedEmail).ifPresent(existing -> {
             throw new IllegalArgumentException("Email is already registered");
         });
+        if (campusUserRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
+            throw new IllegalArgumentException("Username is already taken");
+        }
 
         CampusUser user = CampusUser.builder()
                 .fullName(normalizedName)
                 .email(normalizedEmail)
+                .username(normalizedUsername)
                 .role(requestedRole)
                 .authProvider("LOCAL")
                 .passwordHash(passwordEncoder.encode(request.password()))
@@ -80,6 +87,7 @@ public class AuthController {
                 saved.getId(),
                 saved.getFullName(),
                 saved.getEmail(),
+                saved.getUsername(),
                 saved.getRole(),
                 saved.getAuthProvider()
         );
@@ -91,16 +99,14 @@ public class AuthController {
             HttpServletRequest httpServletRequest,
             HttpServletResponse httpServletResponse
     ) {
-        String normalizedEmail = normalizeEmail(request.email());
-        CampusUser existingUser = campusUserRepository.findByEmailIgnoreCase(normalizedEmail)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+        CampusUser existingUser = resolveUserForPasswordLogin(request.usernameOrEmail());
 
         if (existingUser.getPasswordHash() == null || existingUser.getPasswordHash().isBlank()) {
             throw new IllegalArgumentException("This account uses Google login. Continue with Google.");
         }
 
         Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(normalizedEmail, request.password())
+                new UsernamePasswordAuthenticationToken(existingUser.getEmail(), request.password())
         );
 
         SecurityContextImpl context = new SecurityContextImpl();
@@ -114,6 +120,7 @@ public class AuthController {
                 existingUser.getId(),
                 existingUser.getFullName(),
                 existingUser.getEmail(),
+                existingUser.getUsername(),
                 existingUser.getRole(),
                 existingUser.getAuthProvider()
         );
@@ -167,5 +174,31 @@ public class AuthController {
             throw new IllegalArgumentException("fullName is required");
         }
         return name;
+    }
+
+    private String normalizeUsername(String username) {
+        if (username == null) {
+            throw new IllegalArgumentException("username is required");
+        }
+        String normalized = username.trim().toLowerCase(Locale.ROOT);
+        if (normalized.length() < 3) {
+            throw new IllegalArgumentException("username is required");
+        }
+        return normalized;
+    }
+
+    private CampusUser resolveUserForPasswordLogin(String raw) {
+        String trimmed = raw == null ? "" : raw.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+        Optional<CampusUser> byEmail = trimmed.contains("@")
+                ? campusUserRepository.findByEmailIgnoreCase(normalizeEmail(trimmed))
+                : Optional.empty();
+        if (byEmail.isPresent()) {
+            return byEmail.get();
+        }
+        return campusUserRepository.findByUsernameIgnoreCase(trimmed.toLowerCase(Locale.ROOT))
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
     }
 }

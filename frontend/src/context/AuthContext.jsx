@@ -35,14 +35,23 @@ export const AuthProvider = ({ children }) => {
     window.location.href = OAUTH_LOGIN_URL;
   };
 
-  const loginWithPassword = async ({ email, password }) => {
-    const response = await api.post("/auth/login", { email: email.trim(), password });
+  const loginWithPassword = async ({ usernameOrEmail, password }) => {
+    const response = await api.post("/auth/login", {
+      usernameOrEmail: usernameOrEmail.trim(),
+      password,
+    });
     setUser(response.data);
     return response.data;
   };
 
-  const signup = async ({ fullName, email, password, role }) => {
-    await api.post("/auth/signup", { fullName, email: email.trim(), password, role });
+  const signup = async ({ fullName, username, email, password, role }) => {
+    await api.post("/auth/signup", {
+      fullName,
+      username: username.trim().toLowerCase(),
+      email: email.trim(),
+      password,
+      role,
+    });
   };
 
   const forgotPassword = async ({ email }) => {
@@ -70,6 +79,7 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     logout,
     isAdmin: user?.role === "ADMIN",
+    isStaff: user?.role === "ADMIN" || user?.role === "TECHNICIAN",
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -18,14 +18,23 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { loginWithGoogle, loginWithPassword, signup, resetPassword, forgotPassword } = useAuth();
 
-  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [signupForm, setSignupForm] = useState({ fullName: "", email: "", password: "", role: "USER" });
+  const [loginForm, setLoginForm] = useState({ usernameOrEmail: "", password: "" });
+  const [signupForm, setSignupForm] = useState({
+    fullName: "",
+    username: "",
+    email: "",
+    password: "",
+    role: "USER",
+  });
   const [forgotForm, setForgotForm] = useState({ email: "" });
   const [resetForm, setResetForm] = useState({ token: "", newPassword: "" });
 
   const goAfterAuth = (user) => {
-    if (user?.role === "ADMIN") navigate("/admin", { replace: true });
-    else navigate("/home", { replace: true });
+    if (user?.role === "ADMIN" || user?.role === "TECHNICIAN") {
+      navigate("/admin", { replace: true });
+    } else {
+      navigate("/home", { replace: true });
+    }
   };
 
   const onLogin = async (e) => {
@@ -33,7 +42,10 @@ const LoginPage = () => {
     setError("");
     setInfo("");
     try {
-      const user = await loginWithPassword(loginForm);
+      const user = await loginWithPassword({
+        usernameOrEmail: loginForm.usernameOrEmail,
+        password: loginForm.password,
+      });
       goAfterAuth(user);
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Login failed");
@@ -48,7 +60,7 @@ const LoginPage = () => {
       await signup(signupForm);
       setInfo("Account created. Please log in.");
       setMode("login");
-      setLoginForm({ email: signupForm.email, password: "" });
+      setLoginForm({ usernameOrEmail: signupForm.username, password: "" });
     } catch (err) {
       setError(err?.response?.data?.message || err?.message || "Signup failed");
     }
@@ -90,8 +102,10 @@ const LoginPage = () => {
             <h2 className="mb-2">Welcome</h2>
             <p className="text-muted mb-4">Log in or create a new user/admin account.</p>
             <p className="small text-muted mb-4">
-              Google login needs a valid redirect URI in Google Cloud. If Google sign-in fails,
-              you can still create an account using the Sign up form.
+              Google sign-in requires matching ports: your backend redirect URI (for example{" "}
+              <code>http://localhost:8080/login/oauth2/code/google</code>) must use the same port as{" "}
+              <code>server.port</code> in <code>application.properties</code> (default 8080). Local sign-in accepts
+              either your <strong>username</strong> or <strong>email</strong>.
             </p>
 
             <div className="d-flex flex-wrap gap-2 mb-3">
@@ -124,11 +138,12 @@ const LoginPage = () => {
             {mode === "login" && (
               <form onSubmit={onLogin} className="d-grid gap-3">
                 <div>
-                  <label className="form-label">Email / Username</label>
+                  <label className="form-label">Username or email</label>
                   <input
                     className="form-control"
-                    value={loginForm.email}
-                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                    autoComplete="username"
+                    value={loginForm.usernameOrEmail}
+                    onChange={(e) => setLoginForm({ ...loginForm, usernameOrEmail: e.target.value })}
                     required
                   />
                 </div>
@@ -160,6 +175,17 @@ const LoginPage = () => {
                     className="form-control"
                     value={signupForm.fullName}
                     onChange={(e) => setSignupForm({ ...signupForm, fullName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Username</label>
+                  <input
+                    className="form-control"
+                    autoComplete="off"
+                    value={signupForm.username}
+                    onChange={(e) => setSignupForm({ ...signupForm, username: e.target.value })}
+                    placeholder="letters, digits, underscore (3–32)"
                     required
                   />
                 </div>

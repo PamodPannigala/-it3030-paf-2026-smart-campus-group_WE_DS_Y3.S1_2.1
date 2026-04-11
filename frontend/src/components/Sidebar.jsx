@@ -7,7 +7,7 @@ const navLinkClass = ({ isActive }) =>
   `list-group-item list-group-item-action p-3 d-flex align-items-center ${isActive ? "active-nav-link" : ""}`;
 
 const Sidebar = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isStaff } = useAuth();
 
   return (
     <div className="bg-light border-right" id="sidebar-wrapper">
@@ -22,9 +22,9 @@ const Sidebar = () => {
 
         {user && (
           <>
-            <NavLink to={isAdmin ? "/admin" : "/home"} className={navLinkClass}>
+            <NavLink to={isStaff ? "/admin" : "/home"} className={navLinkClass}>
               <LayoutDashboard className="me-2" size={18} />
-              {isAdmin ? "Admin Dashboard" : "Home"}
+              {isStaff ? "Staff dashboard" : "Home"}
             </NavLink>
             <NavLink to="/settings" className={navLinkClass}>
               <Settings className="me-2" size={18} />

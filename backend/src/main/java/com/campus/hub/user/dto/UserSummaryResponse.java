@@ -6,6 +6,7 @@ public record UserSummaryResponse(
         Long id,
         String fullName,
         String email,
+        String username,
         Role role,
         String authProvider,
         boolean enabled

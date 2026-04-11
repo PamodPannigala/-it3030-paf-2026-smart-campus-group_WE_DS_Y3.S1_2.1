@@ -44,7 +44,13 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password"
                         ).permitAll()
-                        .requestMatchers("/api/auth/**", "/api/notifications/**", "/api/users/**", "/api/profile/**").authenticated()
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/notifications/**",
+                                "/api/users/**",
+                                "/api/profile/**",
+                                "/api/support-requests/**"
+                        ).authenticated()
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2

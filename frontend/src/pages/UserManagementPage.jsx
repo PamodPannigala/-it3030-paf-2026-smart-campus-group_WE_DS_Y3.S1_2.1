@@ -61,6 +61,7 @@ const UserManagementPage = () => {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Username</th>
                   <th>Email</th>
                   <th>Provider</th>
                   <th>Status</th>
@@ -72,6 +73,7 @@ const UserManagementPage = () => {
                 {users.map((user) => (
                   <tr key={user.id}>
                     <td>{user.fullName}</td>
+                    <td>{user.username || "—"}</td>
                     <td>{user.email}</td>
                     <td>{user.authProvider}</td>
                     <td>{user.enabled ? "Enabled" : "Disabled"}</td>
@@ -89,6 +91,7 @@ const UserManagementPage = () => {
                         }}
                       >
                         <option value="USER">USER</option>
+                        <option value="TECHNICIAN">TECHNICIAN</option>
                         <option value="ADMIN">ADMIN</option>
                       </select>
                     </td>
