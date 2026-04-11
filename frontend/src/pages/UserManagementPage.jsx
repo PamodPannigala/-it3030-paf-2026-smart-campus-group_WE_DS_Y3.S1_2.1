@@ -84,13 +84,13 @@ const UserManagementPage = () => {
 
   return (
     <div className="d-grid gap-4">
-      <header className="staff-page-header">
+      <header className="m4-staff-header">
         <div>
           <div className="kicker">Directory</div>
           <h1>User management</h1>
         </div>
       </header>
-      <div className="card shadow-sm border-0 campus-card text-dark text-start">
+      <div className="card shadow-sm border-0 campus-card m4-glass-card text-dark text-start">
         <div className="card-body p-4">
           <h3 className="mb-4">Add administrator or technician</h3>
           {message && <div className="alert alert-success">{message}</div>}
@@ -157,7 +157,7 @@ const UserManagementPage = () => {
         </div>
       </div>
 
-      <div className="card shadow-sm border-0 campus-card text-dark text-start">
+      <div className="card shadow-sm border-0 campus-card m4-glass-card text-dark text-start">
         <div className="card-body p-4">
           <h2 className="mb-3">All users &amp; roles</h2>
           {loading ? (

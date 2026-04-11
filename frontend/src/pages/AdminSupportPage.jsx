@@ -42,14 +42,14 @@ const AdminSupportPage = () => {
 
   return (
     <>
-      <header className="staff-page-header">
+      <header className="m4-staff-header">
         <div>
           <div className="kicker">Incidents</div>
           <h1>Support queue</h1>
           <p className="sub">Review user reports, set status and notes — they receive system notifications on each save.</p>
         </div>
       </header>
-    <div className="card shadow-sm border-0 campus-card">
+    <div className="card shadow-sm border-0 campus-card m4-glass-card">
       <div className="card-body p-4">
         <h2 className="mb-3 h5 text-muted">Open requests</h2>
         <p className="text-muted small">

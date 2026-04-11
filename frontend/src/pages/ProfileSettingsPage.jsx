@@ -70,7 +70,7 @@ const ProfileSettingsPage = () => {
   return (
     <>
       {isStaff && (
-        <header className="staff-page-header">
+        <header className="m4-staff-header">
           <div>
             <div className="kicker">Profile</div>
             <h1>Account settings</h1>
@@ -78,7 +78,7 @@ const ProfileSettingsPage = () => {
           </div>
         </header>
       )}
-    <div className="card shadow-sm border-0 campus-card">
+    <div className="card shadow-sm border-0 campus-card m4-glass-card">
       <div className="card-body p-4">
         <h2 className="mb-3">{isStaff ? "Your details" : "Settings"}</h2>
 

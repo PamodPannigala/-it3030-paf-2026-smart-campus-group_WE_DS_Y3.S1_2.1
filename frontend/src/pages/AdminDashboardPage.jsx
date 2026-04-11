@@ -49,7 +49,7 @@ const AdminDashboardPage = () => {
 
   return (
     <>
-      <header className="staff-page-header">
+      <header className="m4-staff-header">
         <div>
           <div className="kicker">Welcome</div>
           <h1>{user?.fullName || "Operator"}</h1>
