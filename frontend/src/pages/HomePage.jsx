@@ -2,58 +2,42 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import api from "../services/api";
-import { CheckCircle2 } from "lucide-react";
-
-const slides = [
-  {
-    gradient: "linear-gradient(125deg, #0a1428 0%, #0077b6 55%, #00b4d8 100%)",
-    title: "Smart campus operations",
-    subtitle: "One hub for notices, support, and your profile — built for clarity and speed.",
-  },
-  {
-    gradient: "linear-gradient(125deg, #1c2526 0%, #005f92 50%, #0077b6 100%)",
-    title: "Stay informed",
-    subtitle: "System updates and responses from administrators land in your notifications inbox.",
-  },
-  {
-    gradient: "linear-gradient(125deg, #0a1428 0%, #ff9500 35%, #0077b6 90%)",
-    title: "Get help when you need it",
-    subtitle: "Report a problem directly to the operations team and track progress from your account.",
-  },
-];
-
-const qualityData = [
-  { percentage: "24/7", description: "Access to your hub dashboard" },
-  { percentage: "1 place", description: "Notifications, settings & support" },
-  { percentage: "Secure", description: "Session-based sign-in you control" },
-  { percentage: "Fast", description: "Lightweight tools for daily campus tasks" },
-  { percentage: "Clear", description: "Preferences for how we reach you" },
-  { percentage: "Human", description: "Real staff on the other end of support" },
-];
 
 const services = [
   {
+    title: "Booking",
+    description: "Reserve campus rooms and equipment seamlessly.",
+    icon: "📅",
+    path: "#booking",
+  },
+  {
+    title: "Facilities",
+    description: "View availability and rules for sports and study areas.",
+    icon: "🏢",
+    path: "#facility",
+  },
+  {
+    title: "Tickets",
+    description: "Manage your upcoming event passes and entry tickets.",
+    icon: "🎟️",
+    path: "#tickets",
+  },
+  {
     title: "Notifications",
-    description: "Unread counts, read receipts, and campus-wide updates in one stream.",
-    emoji: "🔔",
+    description: "Stay up-to-date with messages and alerts.",
+    icon: "🔔",
     path: "/notifications",
   },
   {
-    title: "Preferences",
-    description: "Choose how ticket-style alerts behave when modules are connected.",
-    emoji: "⚙️",
-    path: "/preferences",
-  },
-  {
-    title: "Report a problem",
-    description: "Send details to administrators and get system messages when it’s handled.",
-    emoji: "💬",
+    title: "Report an Issue",
+    description: "Direct line to operations team for support.",
+    icon: "💬",
     path: "/support",
   },
   {
-    title: "Profile & security",
-    description: "Update your name, username, or password for local sign-in.",
-    emoji: "👤",
+    title: "Settings",
+    description: "Update your personal account configuration.",
+    icon: "⚙️",
     path: "/settings",
   },
 ];
@@ -62,7 +46,6 @@ const HomePage = () => {
   const { user, isStaff } = useAuth();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [slide, setSlide] = useState(0);
 
   useEffect(() => {
     if (isStaff) {
@@ -77,138 +60,87 @@ const HomePage = () => {
       .catch(() => setUnreadCount(0));
   }, []);
 
-  useEffect(() => {
-    const t = setInterval(() => setSlide((s) => (s + 1) % slides.length), 5500);
-    return () => clearInterval(t);
-  }, []);
-
   if (isStaff) {
     return null;
   }
 
+  // Get initials for avatar
+  const initials = user?.fullName
+    ? user.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    : 'U';
+
   return (
-    <div className="home-landing">
-      <section className="home-slideshow" aria-label="Highlights">
-        {slides.map((s, i) => (
-          <div
-            key={i}
-            className={`home-slide ${i === slide ? "active" : ""}`}
-            style={{ background: s.gradient }}
-          >
-            <div className="home-slide-overlay">
-              <div className="home-slide-content">
-                <h2>{s.title}</h2>
-                <p>{s.subtitle}</p>
+    <div className="hq-dashboard-layout">
+      {/* Profile Overview Section */}
+      <section className="hq-profile-header mb-4 mt-3">
+        <div className="hq-profile-card">
+          <div className="hq-profile-bg"></div>
+          <div className="hq-profile-content">
+            <div className="hq-avatar-wrapper">
+              <div className="hq-avatar">{initials}</div>
+              <div className="hq-status-indicator online"></div>
+            </div>
+            <div className="hq-user-details">
+              <h2>{user?.fullName || "Scholar"}</h2>
+              <div className="hq-badge-row">
+                <span className="badge-role">{user?.role || "STUDENT"}</span>
+                <span className="badge-id">ID: #{user?.id || "---"}</span>
+              </div>
+              <p className="hq-email-txt">{user?.email}</p>
+            </div>
+          </div>
+          
+          <div className="hq-profile-stats">
+            <div className="hq-stat-item" onClick={() => navigate('/notifications')}>
+              <span className="hq-stat-value text-primary">{unreadCount}</span>
+              <span className="hq-stat-label">Unread<br/>Alerts</span>
+            </div>
+            <div className="hq-stat-item">
+              <span className="hq-stat-value">Active</span>
+              <span className="hq-stat-label">Session<br/>Status</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Grid Content */}
+      <div className="row gy-4 hq-main-grid">
+        <div className="col-lg-8">
+          <div className="hq-module-header">
+            <h3>Campus Hub Services</h3>
+            <p>Access your favorite tools, manage your bookings, and stay aligned.</p>
+          </div>
+          <div className="row gy-3">
+            {services.map((svc) => (
+              <div className="col-md-6 col-sm-6" key={svc.title}>
+                <Link to={svc.path} className="hq-service-card">
+                  <div className="hq-service-icon">{svc.icon}</div>
+                  <div className="hq-service-info">
+                    <h4>{svc.title}</h4>
+                    <p>{svc.description}</p>
+                  </div>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="col-lg-4">
+          <div className="hq-side-panel">
+            <h4>Quick Updates</h4>
+            <div className="hq-update-item">
+              <div className="icon">🚀</div>
+              <div>
+                <h5>System Upgraded</h5>
+                <p>Welcome to the new streamlined dashboard design.</p>
               </div>
             </div>
-          </div>
-        ))}
-        <div className="home-slide-dots">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              className={i === slide ? "active" : ""}
-              aria-label={`Slide ${i + 1}`}
-              onClick={() => setSlide(i)}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="home-hero">
-        <h1>Your campus hub, simplified</h1>
-        <p>
-          Welcome back, {user?.fullName?.split(" ")[0] || "scholar"}. Jump into notifications, tune your preferences,
-          or reach the operations team — everything stays in sync with your account.
-        </p>
-        <Link className="home-cta" to="/notifications">
-          Go to notifications
-        </Link>
-      </section>
-
-      <section className="home-stats">
-        <h2>Designed around your day</h2>
-        <div className="home-stats-grid">
-          {qualityData.map((d, i) => (
-            <div key={i} className="home-stat-tile">
-              <span className="pct">{d.percentage}</span>
-              <span className="desc">{d.description}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="home-services">
-        <div className="home-services-head">
-          <h2>What you can do here</h2>
-          <p>Shortcuts to the tools included in this module — same routes and behavior as before.</p>
-        </div>
-        <div className="home-service-grid">
-          {services.map((svc) => (
-            <Link key={svc.path} to={svc.path} className="home-service-card">
-              <div className="emoji" aria-hidden>
-                {svc.emoji}
-              </div>
-              <h3>{svc.title}</h3>
-              <p>{svc.description}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="home-why">
-        <div className="home-why-grid">
-          <div>
-            <h2>Why use Campus Hub?</h2>
-            <p className="lead">
-              This slice focuses on trustworthy authentication and dependable notifications — so you always know when
-              something needs your attention, and you have a direct line to people who can help.
-            </p>
-            <div className="home-check">
-              <CheckCircle2 size={20} aria-hidden />
-              <span>Session-based security with optional Google sign-in.</span>
-            </div>
-            <div className="home-check">
-              <CheckCircle2 size={20} aria-hidden />
-              <span>System notices separated from future ticket-style alerts.</span>
-            </div>
-            <div className="home-check">
-              <CheckCircle2 size={20} aria-hidden />
-              <span>Support workflow that writes back to your notification inbox.</span>
-            </div>
-            <div className="home-check">
-              <CheckCircle2 size={20} aria-hidden />
-              <span>Unread count on this page: {unreadCount} — open notifications to clear them.</span>
-            </div>
-          </div>
-          <div className="home-why-visual">
-            <div className="home-why-visual-inner">
-              <strong>{unreadCount}</strong>
-              unread message{unreadCount === 1 ? "" : "s"} waiting
-              <div className="small text-muted mt-2" style={{ color: "var(--ch-muted)" }}>
-                Campus Hub · {user?.role || "USER"}
-              </div>
+            <div className="hq-update-item empty-state">
+              <p>You have {unreadCount} notices demanding attention. <Link to="/notifications">Check inbox.</Link></p>
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="home-newsletter">
-        <div className="home-newsletter-inner">
-          <h2>Stay in the loop</h2>
-          <p>
-            This demo doesn’t send marketing email — use notifications inside the app for real campus updates from your
-            team.
-          </p>
-          <div className="home-newsletter-form">
-            <input type="email" placeholder="Campus email (display only)" readOnly aria-readonly />
-            <button type="button" onClick={() => navigate("/notifications")}>
-              Open inbox
-            </button>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
   );
 };

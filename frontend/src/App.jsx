@@ -6,6 +6,7 @@ import GateStaffLayout from "./components/GateStaffLayout";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import Footer from "./components/Footer";
 import ProfileSettingsPage from "./pages/ProfileSettingsPage";
 import NotificationPreferencesPage from "./pages/NotificationPreferencesPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -31,9 +32,9 @@ function AppContent() {
       pathname === "/settings");
 
   return (
-    <div className="min-vh-100 app-root" style={{ background: staffConsole ? "var(--ch-ice)" : "var(--ch-ice)" }}>
+    <div className="min-vh-100 app-root d-flex flex-column" style={{ background: staffConsole ? "var(--ch-ice)" : "var(--ch-ice)" }}>
       {!staffConsole && <Navbar />}
-      <div className={staffConsole ? "" : "container py-4"}>
+      <div className={staffConsole ? "flex-grow-1" : "container py-4 flex-grow-1"}>
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/oauth-success" element={<OAuthSuccessPage />} />
@@ -118,6 +119,7 @@ function AppContent() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      {!staffConsole && <Footer />}
     </div>
   );
 }

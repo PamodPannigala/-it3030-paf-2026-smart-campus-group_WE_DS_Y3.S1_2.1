@@ -13,30 +13,35 @@ const AdminDashboardPage = () => {
 
   useEffect(() => {
     let cancelled = false;
+    
+    // Fetch notifications config unconditionally
     (async () => {
       try {
         const countRes = await api.get("/notifications/unread-count");
-        if (!cancelled) {
-          setStats((s) => ({ ...s, unread: countRes.data.unreadCount ?? 0 }));
-        }
-        if (isAdmin) {
-          const [usersRes, supRes] = await Promise.all([
-            api.get("/users"),
-            api.get("/support-requests"),
-          ]);
-          const open = supRes.data.filter((r) => r.status === "OPEN").length;
-          if (!cancelled) {
-            setStats((s) => ({
-              ...s,
-              users: usersRes.data.length,
-              supportOpen: open,
-            }));
-          }
-        }
-      } catch {
-        /* non-blocking */
-      }
+        if (!cancelled) setStats((s) => ({ ...s, unread: countRes.data.unreadCount ?? 0 }));
+      } catch { /* ... */ }
     })();
+
+    // Fetch admin-only resources independently
+    if (isAdmin) {
+      (async () => {
+        try {
+          const usersRes = await api.get("/users");
+          if (!cancelled) setStats((s) => ({ ...s, users: usersRes.data.length }));
+        } catch { /* ... */ }
+      })();
+
+      (async () => {
+        try {
+          const supRes = await api.get("/support-requests");
+          if (!cancelled) {
+             const open = supRes.data.filter((r) => r.status === "OPEN").length;
+             setStats((s) => ({ ...s, supportOpen: open }));
+          }
+        } catch { /* ... */ }
+      })();
+    }
+
     return () => {
       cancelled = true;
     };
