@@ -100,13 +100,7 @@ const LoginPage = () => {
         <div className="card shadow-sm border-0">
           <div className="card-body p-4">
             <h2 className="mb-2">Welcome</h2>
-            <p className="text-muted mb-4">Log in or create a new user/admin account.</p>
-            <p className="small text-muted mb-4">
-              Google sign-in requires matching ports: your backend redirect URI (for example{" "}
-              <code>http://localhost:8080/login/oauth2/code/google</code>) must use the same port as{" "}
-              <code>server.port</code> in <code>application.properties</code> (default 8080). Local sign-in accepts
-              either your <strong>username</strong> or <strong>email</strong>.
-            </p>
+            <p className="text-muted mb-4">Log in or create a new account.</p>
 
             <div className="d-flex flex-wrap gap-2 mb-3">
               <button

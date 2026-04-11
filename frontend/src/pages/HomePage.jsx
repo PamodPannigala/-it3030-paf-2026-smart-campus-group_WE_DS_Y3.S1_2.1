@@ -1,10 +1,14 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import api from "../services/api";
 
 const HomePage = () => {
-  const { user } = useAuth();
+  const { user, isStaff } = useAuth();
+
+  if (isStaff) {
+    return <Navigate to="/admin" replace />;
+  }
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingCount, setLoadingCount] = useState(true);
 

@@ -20,7 +20,7 @@ function categoryLabel(category) {
 }
 
 const NotificationsPage = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isStaff } = useAuth();
   const [notifications, setNotifications] = useState([]);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -92,10 +92,13 @@ const NotificationsPage = () => {
       <div className="card shadow-sm border-0">
         <div className="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
           <div>
-            <h2 className="mb-1">Notifications</h2>
+            <h2 className="mb-1">{isStaff ? "Operations notifications" : "Notifications"}</h2>
             <p className="text-muted mb-0">
-              Unread: {unreadCount}. System messages (account, support, admin broadcasts) use the{" "}
-              <strong>System</strong> category; ticket modules can use ticket categories later.
+              {isAdmin
+                ? `Unread: ${unreadCount}. Use the form below to send a targeted message (user ID).`
+                : isStaff
+                  ? `Unread: ${unreadCount}. Operational messages for your role.`
+                  : `Unread: ${unreadCount}. Updates from support and the campus hub appear here.`}
             </p>
           </div>
           <div className="form-check form-switch">

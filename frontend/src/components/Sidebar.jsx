@@ -1,4 +1,13 @@
-import { Bell, LayoutDashboard, LogIn, Settings, Users } from "lucide-react";
+import {
+  Bell,
+  Headphones,
+  LayoutDashboard,
+  LogIn,
+  MessageSquare,
+  Settings,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Sidebar.css";
@@ -20,26 +29,57 @@ const Sidebar = () => {
           </NavLink>
         )}
 
-        {user && (
+        {user && isStaff && (
           <>
-            <NavLink to={isStaff ? "/admin" : "/home"} className={navLinkClass}>
+            <NavLink to="/admin" className={navLinkClass} end>
               <LayoutDashboard className="me-2" size={18} />
-              {isStaff ? "Staff dashboard" : "Home"}
+              Operations dashboard
+            </NavLink>
+            {isAdmin && (
+              <NavLink to="/users" className={navLinkClass}>
+                <Users className="me-2" size={18} />
+                User management
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink to="/admin/support" className={navLinkClass}>
+                <Headphones className="me-2" size={18} />
+                Support queue
+              </NavLink>
+            )}
+            <NavLink to="/notifications" className={navLinkClass}>
+              <Bell className="me-2" size={18} />
+              Notifications
             </NavLink>
             <NavLink to="/settings" className={navLinkClass}>
               <Settings className="me-2" size={18} />
-              Settings
+              Account
+            </NavLink>
+          </>
+        )}
+
+        {user && !isStaff && (
+          <>
+            <NavLink to="/home" className={navLinkClass}>
+              <LayoutDashboard className="me-2" size={18} />
+              Home
             </NavLink>
             <NavLink to="/notifications" className={navLinkClass}>
               <Bell className="me-2" size={18} />
               Notifications
             </NavLink>
-            {isAdmin && (
-              <NavLink to="/users" className={navLinkClass}>
-                <Users className="me-2" size={18} />
-                Manage Users
-              </NavLink>
-            )}
+            <NavLink to="/preferences" className={navLinkClass}>
+              <SlidersHorizontal className="me-2" size={18} />
+              Preferences
+            </NavLink>
+            <NavLink to="/settings" className={navLinkClass}>
+              <Settings className="me-2" size={18} />
+              Settings
+            </NavLink>
+            <NavLink to="/support" className={navLinkClass}>
+              <MessageSquare className="me-2" size={18} />
+              Report a problem
+            </NavLink>
           </>
         )}
       </div>
@@ -48,4 +88,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

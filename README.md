@@ -2,6 +2,8 @@
 
 This slice implements **session-based authentication** (local username/email + password, **Google OAuth2**), **roles** (`USER`, `TECHNICIAN`, `ADMIN`), **in-app notifications** (categories include **System** for hub-wide messages; ticket categories reserved for a future ticket module), **notification preferences** (ticket-related toggles), **admin user / role management**, **support / problem reports** from users to admins with **system notifications**, and **safe account deletion** (cascading related rows so the delete action completes).
 
+The **UI separates student self-service** (home, preferences, report a problem) from the **operations console** (dashboard, users, support queue, broadcast notifications, account) for `ADMIN` and `TECHNICIAN` roles.
+
 ## Prerequisites
 
 - **JDK 21** (`pom.xml` targets Java 21)
@@ -19,6 +21,14 @@ $env:DB_PASSWORD = "your_mysql_password"
 ```
 
 3. **Reference DDL** (for ERD / documentation): `backend/src/main/resources/db/schema-reference.sql`. At runtime, Hibernate `ddl-auto=update` updates the schema from JPA entities.
+
+### If you see `Data truncated for column 'category'` (notifications)
+
+Older databases may have `notifications.category` as a MySQL `ENUM` that does not include `SYSTEM`. Run once:
+
+`backend/src/main/resources/db/fix-notifications-category-mysql.sql`
+
+(Converts the column to `VARCHAR(64)` so all categories, including `SYSTEM`, persist correctly.)
 
 | Table / area | Purpose |
 |----------------|---------|

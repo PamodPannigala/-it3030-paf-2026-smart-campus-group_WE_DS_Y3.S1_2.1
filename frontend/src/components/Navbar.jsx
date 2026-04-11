@@ -6,37 +6,58 @@ const Navbar = () => {
   const linkClass = ({ isActive }) =>
     `nav-link ${isActive ? "active fw-semibold" : ""}`;
 
+  const brandTo = user ? (isStaff ? "/admin" : "/home") : "/";
+
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
       <div className="container-fluid">
-        <NavLink className="navbar-brand fw-semibold" to={user ? "/home" : "/"}>
+        <NavLink className="navbar-brand fw-semibold" to={brandTo}>
           Campus Hub
         </NavLink>
 
-        {!loading && user && (
-          <div className="navbar-nav me-auto ms-3 d-flex flex-row gap-2">
+        {!loading && user && isStaff && (
+          <div className="navbar-nav me-auto ms-3 d-flex flex-row flex-wrap gap-1 align-items-center">
+            <span className="nav-link disabled text-white-50 small py-0">Operations</span>
+            <NavLink to="/admin" className={linkClass} end>
+              Dashboard
+            </NavLink>
+            {isAdmin && (
+              <NavLink to="/users" className={linkClass}>
+                Users
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink to="/admin/support" className={linkClass}>
+                Support queue
+              </NavLink>
+            )}
+            <NavLink to="/notifications" className={linkClass}>
+              Notifications
+            </NavLink>
+            <NavLink to="/settings" className={linkClass}>
+              Account
+            </NavLink>
+          </div>
+        )}
+
+        {!loading && user && !isStaff && (
+          <div className="navbar-nav me-auto ms-3 d-flex flex-row flex-wrap gap-1 align-items-center">
+            <span className="nav-link disabled text-white-50 small py-0">Campus</span>
             <NavLink to="/home" className={linkClass}>
               Home
             </NavLink>
             <NavLink to="/notifications" className={linkClass}>
               Notifications
             </NavLink>
+            <NavLink to="/preferences" className={linkClass}>
+              Preferences
+            </NavLink>
             <NavLink to="/settings" className={linkClass}>
               Settings
             </NavLink>
             <NavLink to="/support" className={linkClass}>
-              Help / Support
+              Report a problem
             </NavLink>
-            {isStaff && (
-              <NavLink to="/admin" className={linkClass}>
-                Admin
-              </NavLink>
-            )}
-            {isAdmin && (
-              <NavLink to="/users" className={linkClass}>
-                Users
-              </NavLink>
-            )}
           </div>
         )}
 

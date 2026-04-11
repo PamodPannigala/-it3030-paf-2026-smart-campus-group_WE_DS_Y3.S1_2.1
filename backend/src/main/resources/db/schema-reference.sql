@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS notifications (
     id              BIGINT       NOT NULL AUTO_INCREMENT,
     user_id         BIGINT       NOT NULL,
-    category        VARCHAR(255) NOT NULL,
+    category        VARCHAR(64)  NOT NULL,
     title           VARCHAR(255) NOT NULL,
     message         VARCHAR(1000) NOT NULL,
     is_read         BOOLEAN      NOT NULL,

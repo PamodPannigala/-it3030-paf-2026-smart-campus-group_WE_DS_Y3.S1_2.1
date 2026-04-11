@@ -11,6 +11,7 @@ import OAuthSuccessPage from "./pages/OAuthSuccessPage";
 import UserManagementPage from "./pages/UserManagementPage";
 import SupportPage from "./pages/SupportPage";
 import AdminSupportPage from "./pages/AdminSupportPage";
+import EndUserOnlyRoute from "./components/EndUserOnlyRoute";
 
 function App() {
   return (
@@ -64,7 +65,9 @@ function App() {
             path="/preferences"
             element={
               <ProtectedRoute>
-                <NotificationPreferencesPage />
+                <EndUserOnlyRoute>
+                  <NotificationPreferencesPage />
+                </EndUserOnlyRoute>
               </ProtectedRoute>
             }
           />
@@ -80,7 +83,9 @@ function App() {
             path="/support"
             element={
               <ProtectedRoute>
-                <SupportPage />
+                <EndUserOnlyRoute>
+                  <SupportPage />
+                </EndUserOnlyRoute>
               </ProtectedRoute>
             }
           />
