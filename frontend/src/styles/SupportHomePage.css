@@ -1,0 +1,224 @@
+/* General page styling */
+.support-homepage {
+  min-height: 100vh;
+  background-color: #f1f5f9;
+  color: #1e293b;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Hero Section */
+.hero-section {
+  position: relative;
+  background: linear-gradient(to right, #2563eb, #4f46e5, #1e293b);
+  overflow: hidden;
+  padding: 5rem 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0.2;
+  background: radial-gradient(circle at top right, white, transparent 40%);
+}
+
+.hero-content h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.hero-content p {
+  margin-top: 1.5rem;
+  font-size: 1.125rem;
+  color: #bfdbfe;
+  max-width: 32rem;
+}
+
+.hero-content .sparkles-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255,255,255,0.15);
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(4px);
+}
+
+/* Search form */
+.search-form {
+  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  max-width: 32rem;
+}
+
+.search-input {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #fff;
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.search-input input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  color: #334155;
+}
+
+.search-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  background-color: #fff;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.search-button:hover {
+  transform: scale(1.05);
+}
+
+/* Hero side info */
+.hero-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.hero-card {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 2rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  text-align: center;
+}
+
+.hero-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.hero-card p {
+  font-size: 0.875rem;
+  color: #bfdbfe;
+  line-height: 1.5;
+}
+
+/* Quick Actions Section */
+.quick-actions-section {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 5rem 2rem;
+}
+
+.quick-actions-section h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.quick-actions-section p {
+  text-align: center;
+  max-width: 32rem;
+  margin: 0 auto 3rem auto;
+  color: #64748b;
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 2rem;
+}
+
+.quick-action-card {
+  cursor: pointer;
+  border-radius: 1.5rem;
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  padding: 2rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.quick-action-card:hover {
+  transform: translateY(-0.5rem);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.quick-action-card h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.quick-action-card p {
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.quick-action-card .cta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* Bottom CTA Section */
+.bottom-cta {
+  margin-top: 4rem;
+  background: linear-gradient(to right, #1e293b, #2563eb);
+  padding: 3rem;
+  border-radius: 2rem;
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.bottom-cta h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.bottom-cta p {
+  font-size: 1.125rem;
+  max-width: 48rem;
+  margin: 0 auto 2rem auto;
+}
+
+.bottom-cta button {
+  padding: 0.75rem 2rem;
+  border-radius: 1rem;
+  background-color: #fff;
+  color: #1e293b;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.bottom-cta button:hover {
+  transform: scale(1.05);
+}
