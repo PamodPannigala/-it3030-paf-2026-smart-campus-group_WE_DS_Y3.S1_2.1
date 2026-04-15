@@ -13,7 +13,7 @@ import TechnicianPortalPage from "./pages/tickets/TechnicianPortalPage";
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<h1>Home Works</h1>} />
+      <Route path="/" element={<h1>Home</h1>} />
       <Route path="/support" element={<SupportHomePage />} />
      <Route path="/ticket/:ticketId" element={<TicketDetails />} />
       <Route path="/create-ticket" element={<CreateTicket />} />

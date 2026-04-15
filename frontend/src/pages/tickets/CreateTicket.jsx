@@ -1,17 +1,59 @@
 // src/pages/tickets/CreateTicket.jsx
-import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { createTicket } from "../../services/ticketApi";
-import "../../styles/CreateTicket.css";
 
 export default function CreateTicket({ userName = "", userEmail = "" }) {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
+  // Dropdown options (like example)
+  const PRIORITY_OPTIONS = useMemo(
+    () => [
+      { value: "", label: "Select priority" },
+      { value: "LOW", label: "Low" },
+      { value: "MEDIUM", label: "Medium" },
+      { value: "HIGH", label: "High" },
+      { value: "URGENT", label: "Urgent" },
+    ],
+    []
+  );
+
+  const CATEGORY_OPTIONS = useMemo(
+    () => [
+      { value: "", label: "Select a category" },
+      { value: "TECHNICAL", label: "Technical Issue" },
+      { value: "BILLING", label: "Billing & Payments" },
+      { value: "ACCOUNT", label: "Account Access" },
+      { value: "FEATURE_REQUEST", label: "Feature Request" },
+      { value: "BUG_REPORT", label: "Bug Report" },
+      { value: "GENERAL", label: "General Inquiry" },
+      { value: "SECURITY", label: "Security Concern" },
+    ],
+    []
+  );
+
+  const LOCATION_OPTIONS = useMemo(
+    () => [
+      { value: "", label: "Select location" },
+      { value: "MAIN_BUILDING", label: "Main Building" },
+      { value: "ENGINEERING", label: "Engineering Block" },
+      { value: "COMPUTING", label: "Computing Center" },
+      { value: "LIBRARY", label: "Library" },
+      { value: "ADMIN", label: "Administration" },
+      { value: "AUDITORIUM", label: "Auditorium" },
+      { value: "CAFETERIA", label: "Cafeteria" },
+      { value: "HOSTEL", label: "Hostel Area" },
+      { value: "OUTDOOR", label: "Outdoor Area" },
+      { value: "OTHER", label: "Other" },
+    ],
+    []
+  );
+
   const initialForm = {
     title: "",
     description: "",
-    priority: "LOW",
+    priority: "",
     reporterName: userName || localStorage.getItem("userName") || "",
     reporterEmail: userEmail || localStorage.getItem("userEmail") || "",
     location: "",
@@ -23,35 +65,63 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
 
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
+  const [dateLimits, setDateLimits] = useState({ min: "", max: "" });
   const [fileError, setFileError] = useState("");
   const [previewImage, setPreviewImage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // Set date limits on mount (like example)
+  useEffect(() => {
+    const today = new Date();
+    const maxDate = today.toISOString().split("T")[0];
+
+    const minDateObj = new Date();
+    minDateObj.setDate(today.getDate() - 30);
+    const minDate = minDateObj.toISOString().split("T")[0];
+
+    setDateLimits({ min: minDate, max: maxDate });
+    
+    // Set default date to today if empty
+    setForm((prev) => ({
+      ...prev,
+      incidentDate: prev.incidentDate || maxDate,
+    }));
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // Special handling for contactNumber: only digits, max 10 characters (like example)
+    let processedValue = value;
+    if (name === "contactNumber") {
+      processedValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: processedValue,
     }));
 
-    setErrors((prev) => ({
-      ...prev,
-      [name]: "",
-      general: "",
-    }));
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files || []);
+    setFileError("");
+    const newFiles = Array.from(e.target.files || []);
 
-    if (files.some((f) => !f.type.startsWith("image/"))) {
-      setFileError("Only image files are allowed.");
+    if (newFiles.length === 0) return;
+
+    const invalidFiles = newFiles.filter((file) => !file.type.startsWith("image/"));
+    if (invalidFiles.length > 0) {
+      setFileError("Only image files are allowed. Please upload JPG, PNG, WEBP, or GIF files only.");
       e.target.value = "";
       return;
     }
 
-    if (form.attachments.length + files.length > 3) {
+    if (form.attachments.length + newFiles.length > 3) {
       setFileError("You can upload a maximum of 3 images only.");
       e.target.value = "";
       return;
@@ -59,48 +129,97 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
 
     setForm((prev) => ({
       ...prev,
-      attachments: [...prev.attachments, ...files],
+      attachments: [...prev.attachments, ...newFiles],
     }));
-
-    setFileError("");
     e.target.value = "";
   };
 
-  const removeAttachment = (index) => {
+  const removeAttachment = (indexToRemove) => {
     setForm((prev) => ({
       ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index),
+      attachments: prev.attachments.filter((_, index) => index !== indexToRemove),
     }));
     setFileError("");
   };
 
+  const resetForm = () => {
+    setForm({
+      ...initialForm,
+      incidentDate: dateLimits.max || "",
+      reporterName: userName || localStorage.getItem("userName") || "",
+      reporterEmail: userEmail || localStorage.getItem("userEmail") || "",
+    });
+    setErrors({});
+    setFileError("");
+  };
+
+  // Enhanced validation (like example)
   const validateForm = () => {
-    const errs = {};
+    const newErrors = {};
 
-    if (!form.title.trim()) errs.title = "Title is required.";
-    if (!form.description.trim()) errs.description = "Description is required.";
-    if (!form.location.trim()) errs.location = "Location is required.";
-    if (!form.category.trim()) errs.category = "Category is required.";
-    if (!form.contactNumber.trim())
-      errs.contactNumber = "Contact Number is required.";
-    if (!form.incidentDate) errs.incidentDate = "Incident Date is required.";
+    if (!form.title.trim()) {
+      newErrors.title = "Title is required.";
+    } else if (form.title.trim().length < 5) {
+      newErrors.title = "Title must be at least 5 characters.";
+    }
 
-    return errs;
+    if (!form.description.trim()) {
+      newErrors.description = "Description is required.";
+    } else if (form.description.trim().length < 20) {
+      newErrors.description = "Description must be at least 20 characters.";
+    }
+
+    if (!form.priority) {
+      newErrors.priority = "Please select a priority level.";
+    }
+
+    if (!form.category) {
+      newErrors.category = "Please select a category.";
+    }
+
+    if (!form.location) {
+      newErrors.location = "Please select a location.";
+    }
+
+    if (!form.contactNumber.trim()) {
+      newErrors.contactNumber = "Contact number is required.";
+    } else if (form.contactNumber.length < 10) {
+      newErrors.contactNumber = "Contact number must be 10 digits.";
+    }
+
+    if (!form.incidentDate) {
+      newErrors.incidentDate = "Incident date is required.";
+    }
+
+    if (!form.reporterName.trim()) {
+      newErrors.reporterName = "Name is required.";
+    }
+
+    if (!form.reporterEmail.trim()) {
+      newErrors.reporterEmail = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.reporterEmail)) {
+      newErrors.reporterEmail = "Please enter a valid email address.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const errs = validateForm();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
+    if (!validateForm()) {
+      // Scroll to first error
+      const firstError = document.querySelector(".field-error");
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
 
     setSubmitting(true);
 
     try {
-      // ✅ SEND NORMAL OBJECT ONLY
       const response = await createTicket(form);
 
       localStorage.setItem("userEmail", form.reporterEmail);
@@ -116,265 +235,502 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
       });
     } catch (err) {
       console.error("Ticket creation failed:", err);
-
-      setErrors({
-        general:
-          err.response?.data?.message ||
-          "Failed to create ticket. Please try again.",
-      });
+      if (err.response?.data && typeof err.response.data === "object") {
+        setErrors(err.response.data);
+      } else {
+        setErrors({
+          general:
+            err.response?.data?.message ||
+            "Failed to create ticket. Please try again.",
+        });
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const resetForm = () => {
-    setForm(initialForm);
-    setErrors({});
-    setFileError("");
-    setPreviewImage("");
+  const getImageText = () => {
+    const count = form.attachments.length;
+    if (count === 0) return "No images selected. You may upload up to 3 images.";
+    if (count === 1) return "1 image selected.";
+    return `${count} images selected.`;
   };
 
   return (
-    <div className="page-shell">
-      <div className="form-card">
-        <h2>Create a Ticket</h2>
-        <p>Fill in the details below to submit a new support ticket.</p>
+    <>
+      <style>{`
+        * { box-sizing: border-box; }
+        body { background: #f6f7f8; color: #1c1c1c; font-family: Arial, sans-serif; }
+        .page-shell { max-width: 1180px; margin: 0 auto; padding: 32px 24px 60px; }
+        .report-layout { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
+        .report-main { display: flex; flex-direction: column; gap: 18px; }
+        .page-header, .form-card, .side-card, .premium-actions {
+          background: #ffffff; border: 1px solid #edeff1; border-radius: 18px;
+        }
+        .page-header { padding: 28px 30px; }
+        .eyebrow {
+          display: inline-block; font-size: 13px; font-weight: 700; color: #2563eb;
+          text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px;
+        }
+        .page-header h1 { font-size: 36px; line-height: 1.15; color: #111827; margin-bottom: 12px; }
+        .page-header p { font-size: 16px; line-height: 1.7; color: #4b5563; max-width: 820px; }
+        .form-card { padding: 26px 28px 30px; }
+        .section-title { font-size: 21px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+        .section-subtitle { font-size: 14px; line-height: 1.6; color: #6b7280; margin-bottom: 22px; }
+        .alert { margin-bottom: 16px; padding: 14px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; line-height: 1.6; }
+        .alert-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        form { display: flex; flex-direction: column; gap: 24px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .full-width { grid-column: 1 / -1; }
+        label { font-size: 14px; font-weight: 700; color: #374151; }
+        .required { color: #dc2626; margin-left: 3px; }
+        input, select, textarea {
+          width: 100%; border: 1px solid #d1d5db; border-radius: 12px; background: #ffffff;
+          color: #111827; font-size: 15px; padding: 14px 15px; outline: none;
+        }
+        input:focus, select:focus, textarea:focus {
+          border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+        }
+        input[readonly] { background: #f3f4f6; color: #4b5563; cursor: not-allowed; }
+        textarea { resize: vertical; min-height: 170px; line-height: 1.6; }
+        .hint { font-size: 12.5px; color: #6b7280; line-height: 1.5; }
+        .upload-box { border: 1.5px dashed #cbd5e1; border-radius: 16px; background: #f9fafb; padding: 20px; }
+        .inline-note { margin-top: 10px; font-size: 13px; color: #6b7280; line-height: 1.6; }
+        .upload-trigger {
+          border: 1px solid #d1d5db; background: #e0dfdf; color: #374151; font-size: 14px;
+          font-weight: 600; padding: 10px 16px; border-radius: 999px; cursor: pointer;
+        }
+        .upload-trigger:disabled { background: #e5e7eb; color: #9ca3af; border-color: #e5e7eb; cursor: not-allowed; }
+        .image-preview-container { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+        .image-preview-item {
+          position: relative; width: 120px; height: 120px; border-radius: 14px; overflow: hidden;
+          border: 1px solid #d1d5db; background: #ffffff;
+        }
+        .image-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+        .remove-image-btn {
+          position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border: none;
+          border-radius: 999px; background: rgba(17, 24, 39, 0.88); color: #ffffff; font-size: 16px; cursor: pointer;
+        }
+        .file-error, .field-error { font-size: 13px; color: #dc2626; line-height: 1.5; font-weight: 600; }
+        .action-row { display: flex; justify-content: flex-end; gap: 12px; padding-top: 4px; }
+        .btn {
+          border: none; border-radius: 999px; padding: 13px 22px; font-size: 14px;
+          font-weight: 700; cursor: pointer;
+        }
+        .btn-secondary { background: #e5e7eb; color: #111827; }
+        .btn-primary { background: #2563eb; color: #ffffff; box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .report-side { display: flex; flex-direction: column; gap: 18px; }
+        .side-panel { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 18px; }
+        .premium-actions {
+          background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+          border: 1px solid #e6eef8; border-radius: 22px; padding: 22px 20px;
+          box-shadow: 0 18px 30px rgba(15, 23, 42, 0.04);
+        }
+        .premium-actions h3, .side-card h3 { font-size: 17px; color: #111827; margin-bottom: 14px; }
+        .premium-actions p { font-size: 14px; color: #6b7280; line-height: 1.7; margin-bottom: 18px; }
+        .action-links { display: flex; flex-direction: column; gap: 12px; }
+        .action-link {
+          display: flex; align-items: center; justify-content: space-between; gap: 12px; text-decoration: none;
+          color: #111827; padding: 14px 16px; border-radius: 16px; background: #ffffff; border: 1px solid #e5e7eb;
+        }
+        .action-link-title { font-size: 15px; font-weight: 700; color: #111827; }
+        .action-link-sub { font-size: 12px; color: #6b7280; margin-top: 3px; }
+        .action-arrow { font-size: 18px; color: #94a3b8; flex-shrink: 0; }
+        .side-card { padding: 22px 20px; }
+        .side-card ul { padding-left: 18px; color: #4b5563; }
+        .side-card li { margin-bottom: 10px; line-height: 1.6; font-size: 14px; }
+        .status-pill {
+          display: inline-block; padding: 6px 10px; font-size: 12px; font-weight: 700;
+          border-radius: 999px; background: #dbeafe; color: #1d4ed8; margin-right: 8px; margin-bottom: 8px;
+        }
+        .image-modal {
+          display: flex; position: fixed; z-index: 9999; inset: 0; background: rgba(15, 23, 42, 0.92);
+          align-items: center; justify-content: center; padding: 30px;
+        }
+        .image-modal-content { max-width: 90vw; max-height: 85vh; border-radius: 16px; object-fit: contain; background: #fff; }
+        .image-modal-close {
+          position: absolute; top: 18px; right: 24px; font-size: 40px; color: #fff; cursor: pointer; border: none; background: transparent;
+        }
+        @media (max-width: 1024px) {
+          .report-layout { grid-template-columns: 1fr; }
+          .report-side { order: -1; }
+        }
+        @media (max-width: 768px) {
+          .page-shell { padding: 20px 14px 40px; }
+          .page-header { padding: 22px 20px; }
+          .page-header h1 { font-size: 29px; }
+          .form-card { padding: 22px 18px 24px; }
+          .form-grid { grid-template-columns: 1fr; }
+          .action-row { flex-direction: column; }
+          .btn { width: 100%; }
+        }
+      `}</style>
 
-        {errors.general && (
-          <div className="alert-error">{errors.general}</div>
-        )}
+      <div className="page-shell">
+        <div className="report-layout">
+          <main className="report-main">
+            <section className="page-header">
+              <span className="eyebrow">Support Ticket</span>
+              <h1>Create a Ticket</h1>
+              <p>
+                Submit a new support request by filling out the form below. 
+                Provide clear details so our team can assist you faster and more effectively.
+              </p>
+            </section>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Name*</label>
-              <input
-                type="text"
-                name="reporterName"
-                value={form.reporterName}
-                onChange={handleChange}
-              />
-            </div>
+            <section className="form-card">
+              <div className="section-title">Ticket Submission Form</div>
+              <div className="section-subtitle">
+                Fields marked with <span className="required">*</span> are required. 
+                Your contact information helps us reach you with updates.
+              </div>
 
-            <div className="form-group">
-              <label>Email*</label>
-              <input
-                type="email"
-                name="reporterEmail"
-                value={form.reporterEmail}
-                onChange={handleChange}
-              />
-            </div>
+              {errors.general && <div className="alert alert-error">{errors.general}</div>}
 
-            <div className="form-group full-width">
-              <label>Title*</label>
-              <input
-                type="text"
-                name="title"
-                value={form.title}
-                onChange={handleChange}
-              />
-              {errors.title && (
-                <div className="field-error">{errors.title}</div>
-              )}
-            </div>
+              <form onSubmit={handleSubmit} noValidate>
+                <div className="form-grid">
+                  {/* Name Field */}
+                  <div className="form-group">
+                    <label>
+                      Name<span className="required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="reporterName"
+                      value={form.reporterName}
+                      onChange={handleChange}
+                      placeholder="Enter your full name"
+                    />
+                    {errors.reporterName && (
+                      <div className="field-error">{errors.reporterName}</div>
+                    )}
+                  </div>
 
-            <div className="form-group full-width">
-              <label>Description*</label>
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-              />
-              {errors.description && (
-                <div className="field-error">{errors.description}</div>
-              )}
-            </div>
+                  {/* Email Field */}
+                  <div className="form-group">
+                    <label>
+                      Email<span className="required">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="reporterEmail"
+                      value={form.reporterEmail}
+                      onChange={handleChange}
+                      placeholder="your.email@example.com"
+                    />
+                    {errors.reporterEmail && (
+                      <div className="field-error">{errors.reporterEmail}</div>
+                    )}
+                  </div>
 
-            <div className="form-group">
-              <label>Priority*</label>
-              <select
-                name="priority"
-                value={form.priority}
-                onChange={handleChange}
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-            </div>
+                  {/* Title Field */}
+                  <div className="form-group full-width">
+                    <label>
+                      Issue Title<span className="required">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      maxLength="120"
+                      placeholder="Brief summary of your issue (e.g., 'Projector not working in Lab 3')"
+                      value={form.title}
+                      onChange={handleChange}
+                    />
+                    <div className="hint">Minimum 5 characters required.</div>
+                    {errors.title && (
+                      <div className="field-error">{errors.title}</div>
+                    )}
+                  </div>
 
-            <div className="form-group">
-              <label>Location*</label>
-              <input
-                type="text"
-                name="location"
-                value={form.location}
-                onChange={handleChange}
-              />
-              {errors.location && (
-                <div className="field-error">{errors.location}</div>
-              )}
-            </div>
+                  {/* Category Dropdown */}
+                  <div className="form-group">
+                    <label>
+                      Category<span className="required">*</span>
+                    </label>
+                    <select
+                      name="category"
+                      value={form.category}
+                      onChange={handleChange}
+                    >
+                      {CATEGORY_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.category && (
+                      <div className="field-error">{errors.category}</div>
+                    )}
+                  </div>
 
-            <div className="form-group">
-              <label>Category*</label>
-              <input
-                type="text"
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-              />
-              {errors.category && (
-                <div className="field-error">{errors.category}</div>
-              )}
-            </div>
+                  {/* Priority Dropdown */}
+                  <div className="form-group">
+                    <label>
+                      Priority<span className="required">*</span>
+                    </label>
+                    <select
+                      name="priority"
+                      value={form.priority}
+                      onChange={handleChange}
+                    >
+                      {PRIORITY_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.priority && (
+                      <div className="field-error">{errors.priority}</div>
+                    )}
+                  </div>
 
-            <div className="form-group">
-              <label>Contact Number*</label>
-              <input
-                type="text"
-                name="contactNumber"
-                value={form.contactNumber}
-                onChange={handleChange}
-              />
-              {errors.contactNumber && (
-                <div className="field-error">{errors.contactNumber}</div>
-              )}
-            </div>
+                  {/* Location Dropdown */}
+                  <div className="form-group">
+                    <label>
+                      Location<span className="required">*</span>
+                    </label>
+                    <select
+                      name="location"
+                      value={form.location}
+                      onChange={handleChange}
+                    >
+                      {LOCATION_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.location && (
+                      <div className="field-error">{errors.location}</div>
+                    )}
+                  </div>
 
-            <div className="form-group">
-              <label>Incident Date*</label>
-              <input
-                type="date"
-                name="incidentDate"
-                value={form.incidentDate}
-                onChange={handleChange}
-              />
-              {errors.incidentDate && (
-                <div className="field-error">{errors.incidentDate}</div>
-              )}
-            </div>
+                  {/* Contact Number */}
+                  <div className="form-group">
+                    <label>
+                      Contact Number<span className="required">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="contactNumber"
+                      placeholder="07XXXXXXXX"
+                      value={form.contactNumber}
+                      onChange={handleChange}
+                      maxLength="10"
+                    />
+                    <div className="hint">10 digits only, no spaces or dashes.</div>
+                    {errors.contactNumber && (
+                      <div className="field-error">{errors.contactNumber}</div>
+                    )}
+                  </div>
 
-            <div className="form-group full-width">
-              <label>Attachments</label>
-              <div className="upload-box">
-                <div className="image-preview-container">
-                  {form.attachments.map((file, idx) => {
-                    const previewUrl = URL.createObjectURL(file);
+                  {/* Incident Date */}
+                  <div className="form-group">
+                    <label>
+                      Incident Date<span className="required">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      name="incidentDate"
+                      min={dateLimits.min}
+                      max={dateLimits.max}
+                      value={form.incidentDate}
+                      onChange={handleChange}
+                    />
+                    <div className="hint">Can select dates within the last 30 days.</div>
+                    {errors.incidentDate && (
+                      <div className="field-error">{errors.incidentDate}</div>
+                    )}
+                  </div>
 
-                    return (
-                      <div
-                        className="image-preview-item"
-                        key={`${file.name}-${idx}`}
-                      >
-                        <img
-                          src={previewUrl}
-                          alt="preview"
-                          onClick={() => setPreviewImage(previewUrl)}
-                        />
-                        <button
-                          type="button"
-                          className="remove-image-btn"
-                          onClick={() => removeAttachment(idx)}
-                        >
-                          &times;
-                        </button>
+                  {/* Description */}
+                  <div className="form-group full-width">
+                    <label>
+                      Description<span className="required">*</span>
+                    </label>
+                    <textarea
+                      name="description"
+                      placeholder="Describe your issue in detail. Include what happened, when it started, and how it's affecting your work."
+                      value={form.description}
+                      onChange={handleChange}
+                      rows={5}
+                    />
+                    <div className="hint">
+                      Be specific. Minimum 20 characters required. Clear descriptions help us resolve issues faster.
+                    </div>
+                    {errors.description && (
+                      <div className="field-error">{errors.description}</div>
+                    )}
+                  </div>
+
+                  {/* Attachments */}
+                  <div className="form-group full-width">
+                    <label>Upload Images</label>
+                    <div className="upload-box">
+                      <div className="image-preview-container">
+                        {form.attachments.map((file, index) => (
+                          <div
+                            className="image-preview-item"
+                            key={`${file.name}-${index}`}
+                          >
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`Attachment ${index + 1}`}
+                              onClick={() =>
+                                setPreviewImage(URL.createObjectURL(file))
+                              }
+                            />
+                            <button
+                              type="button"
+                              className="remove-image-btn"
+                              onClick={() => removeAttachment(index)}
+                              aria-label={`Remove attachment ${index + 1}`}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })}
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        hidden
+                        onChange={handleFileChange}
+                      />
+
+                      <button
+                        type="button"
+                        className="upload-trigger"
+                        disabled={form.attachments.length >= 3}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {form.attachments.length >= 3
+                          ? "Maximum Reached"
+                          : "Choose Images"}
+                      </button>
+
+                      <div className="inline-note">{getImageText()}</div>
+                      <div className="inline-note">
+                        Supported files: JPG, PNG, WEBP, GIF. Max 3 images.
+                      </div>
+
+                      {fileError && (
+                        <div className="file-error">{fileError}</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  hidden
-                  onChange={handleFileChange}
-                />
+                <div className="action-row">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={resetForm}
+                    disabled={submitting}
+                  >
+                    Clear Form
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Submitting..." : "Submit Ticket"}
+                  </button>
+                </div>
+              </form>
+            </section>
+          </main>
 
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => fileInputRef.current.click()}
-                  disabled={form.attachments.length >= 3}
-                >
-                  {form.attachments.length >= 3
-                    ? "Maximum Reached"
-                    : "Choose Images"}
-                </button>
+          <aside className="report-side">
+            <div className="side-panel">
+              <section className="premium-actions">
+                <h3>Quick Links</h3>
+                <p>Navigate to other sections or check your existing tickets.</p>
 
-                {fileError && (
-                  <div className="field-error">{fileError}</div>
-                )}
-              </div>
+                <div className="action-links">
+                  <Link to="/support" className="action-link">
+                    <div>
+                      <div className="action-link-title">Dashboard</div>
+                      <div className="action-link-sub">Return to main page</div>
+                    </div>
+                    <div className="action-arrow">→</div>
+                  </Link>
+
+                  <Link to="/my-reports" className="action-link">
+                    <div>
+                      <div className="action-link-title">My Tickets</div>
+                      <div className="action-link-sub">View your ticket history</div>
+                    </div>
+                    <div className="action-arrow">→</div>
+                  </Link>
+
+                  <Link to="/community-tickets" className="action-link">
+                    <div>
+                      <div className="action-link-title">Support Discussions</div>
+                      <div className="action-link-sub">Explore common issues and useful support conversations</div>
+                    </div>
+                    <div className="action-arrow">→</div>
+                  </Link>
+                </div>
+              </section>
+
+              <section className="side-card">
+                <h3>What happens next?</h3>
+                <ul>
+                  <li>Your ticket is logged into our support system.</li>
+                  <li>Our team reviews the priority and category.</li>
+                  <li>You'll receive email updates as we work on your issue.</li>
+                  <li>Track progress anytime from "My Tickets".</li>
+                </ul>
+              </section>
+
+              <section className="side-card">
+                <h3>Ticket Statuses</h3>
+                <span className="status-pill">Open</span>
+                <span className="status-pill">In Progress</span>
+                <span className="status-pill">Resolved</span>
+                <span className="status-pill">Closed</span>
+              </section>
+
+              <section className="side-card">
+                <h3>Tips for faster resolution</h3>
+                <ul>
+                  <li>Use a clear, descriptive title.</li>
+                  <li>Select the correct category and priority.</li>
+                  <li>Include specific location details.</li>
+                  <li>Upload photos if the issue is visible.</li>
+                  <li>Use "Urgent" priority only for critical issues.</li>
+                </ul>
+              </section>
             </div>
-          </div>
-
-          <div className="action-row">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={resetForm}
-            >
-              Clear Form
-            </button>
-
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={submitting}
-            >
-              {submitting ? "Submitting..." : "Submit Ticket"}
-            </button>
-          </div>
-        </form>
+          </aside>
+        </div>
       </div>
 
+      {/* Image Preview Modal */}
       {previewImage && (
-        <div
-          className="image-modal"
-          onClick={() => setPreviewImage("")}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.65)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-          }}
-        >
-          <img
-            src={previewImage}
-            alt="Preview"
-            style={{
-              maxWidth: "80%",
-              maxHeight: "80%",
-              borderRadius: "12px",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
-
+        <div className="image-modal" onClick={() => setPreviewImage("")}>
           <button
+            className="image-modal-close"
             onClick={() => setPreviewImage("")}
-            style={{
-              position: "absolute",
-              top: "20px",
-              right: "20px",
-              fontSize: "28px",
-              color: "#fff",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-            }}
+            aria-label="Close preview"
           >
             &times;
           </button>
+          <img
+            className="image-modal-content"
+            src={previewImage}
+            alt="Preview"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
-    </div>
+    </>
   );
 }
