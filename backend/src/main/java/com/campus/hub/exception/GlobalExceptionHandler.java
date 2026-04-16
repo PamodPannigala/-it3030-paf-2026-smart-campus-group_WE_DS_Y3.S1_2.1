@@ -16,7 +16,8 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex,
+            WebRequest request) {
         ErrorResponse errorDetails = new ErrorResponse(
                 LocalDateTime.now(),
                 ex.getMessage(),
@@ -33,7 +34,7 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        
+
         ErrorResponse errorDetails = new ErrorResponse(
                 LocalDateTime.now(),
                 "Validation Failed",
@@ -51,4 +52,16 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    // backend validation for business rules
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex, WebRequest request) {
+        ErrorResponse errorDetails = new ErrorResponse(
+                java.time.LocalDateTime.now(),
+                ex.getMessage(),
+                request.getDescription(false),
+                org.springframework.http.HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(errorDetails, org.springframework.http.HttpStatus.BAD_REQUEST);
+    }
+
 }
