@@ -96,23 +96,64 @@ public class CommentService {
     }
 
     // =========================
-    // EDIT COMMENT
-    // =========================
-    public CommentDTO editComment(Long commentId, String author, String role, String newMessage) {
+// EDIT COMMENT WITH IMAGES
+// =========================
+public CommentDTO editCommentWithImages(
+        Long commentId,
+        String author,
+        String role,
+        String newMessage,
+        List<MultipartFile> newImages,
+        List<String> keptImageUrls
+) {
 
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comment not found"));
+    Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new RuntimeException("Comment not found"));
 
-        if (!"ADMIN".equalsIgnoreCase(role)
-                && !"SUPPORT".equalsIgnoreCase(role)
-                && !comment.getAuthor().equals(author)) {
-            throw new RuntimeException("Not allowed to edit this comment");
-        }
-
-        comment.setMessage(newMessage);
-        return mapToDTO(commentRepository.save(comment));
+    // Check permission
+    if (!"ADMIN".equalsIgnoreCase(role)
+            && !"SUPPORT".equalsIgnoreCase(role)
+            && !comment.getAuthor().equals(author)) {
+        throw new RuntimeException("Not allowed to edit this comment");
     }
 
+    // Update message
+    comment.setMessage(newMessage);
+
+    // Handle images
+    List<String> finalImageUrls = new ArrayList<>();
+
+    // Add kept existing images
+    if (keptImageUrls != null) {
+        finalImageUrls.addAll(keptImageUrls);
+    }
+
+    // Add new images
+    if (newImages != null && !newImages.isEmpty()) {
+        try {
+            File dir = new File(uploadDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            for (MultipartFile image : newImages) {
+                if (image == null || image.isEmpty()) continue;
+
+                String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+                File file = new File(uploadDir + fileName);
+                image.transferTo(file);
+
+                finalImageUrls.add("/uploads/comments/" + fileName);
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload images");
+        }
+    }
+
+    comment.setImageUrls(finalImageUrls);
+    comment.setUpdatedAt(LocalDateTime.now());
+
+    return mapToDTO(commentRepository.save(comment));
+}
     // =========================
     // DELETE COMMENT
     // =========================
@@ -156,6 +197,8 @@ public class CommentService {
         dto.setIsAdminResponse(
                 "ADMIN".equalsIgnoreCase(comment.getAuthorRole())
         );
+
+        dto.setUpdatedAt(comment.getUpdatedAt());
 
         return dto;
     }

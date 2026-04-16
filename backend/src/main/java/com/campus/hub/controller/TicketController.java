@@ -9,6 +9,9 @@ import com.campus.hub.entity.Technician;
 import com.campus.hub.repository.TechnicianRepository;
 import com.campus.hub.service.CommentService;
 import com.campus.hub.service.TicketService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -19,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -259,31 +263,40 @@ public class TicketController {
         return ResponseEntity.ok(commentService.getCommentsByTicket(ticketId));
     }
 
-    @PutMapping("/{ticketId}/comments/{commentId}")
-    public ResponseEntity<?> editComment(
-            @PathVariable Long ticketId,
-            @PathVariable Long commentId,
-            @RequestParam String author,
-            @RequestParam String authorRole,
-            @RequestBody Map<String, String> body
-    ) {
-        try {
-            String newMessage = body.get("message");
-
-            CommentDTO updated = commentService.editComment(
-                    commentId,
-                    author,
-                    authorRole,
-                    newMessage
-            );
-
-            return ResponseEntity.ok(updated);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    @PostMapping(value = "/{ticketId}/comments/{commentId}/edit", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<?> editComment(
+        @PathVariable Long ticketId,
+        @PathVariable Long commentId,
+        @RequestParam String author,
+        @RequestParam String authorRole,
+        @RequestParam String message,
+        @RequestParam(required = false) List<MultipartFile> images,
+        @RequestParam(required = false) String existingImages
+) {
+    try {
+        // Parse existing images JSON
+        List<String> keptImageUrls = new ArrayList<>();
+        if (existingImages != null && !existingImages.isEmpty()) {
+            ObjectMapper mapper = new ObjectMapper();
+            keptImageUrls = mapper.readValue(existingImages, new TypeReference<List<String>>() {});
         }
+
+        CommentDTO updated = commentService.editCommentWithImages(
+                commentId,
+                author,
+                authorRole,
+                message,
+                images,
+                keptImageUrls
+        );
+
+        return ResponseEntity.ok(updated);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
     }
+}
 
     @DeleteMapping("/{ticketId}/comments/{commentId}")
     public ResponseEntity<?> deleteComment(

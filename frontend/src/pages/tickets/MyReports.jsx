@@ -2,7 +2,24 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMyTickets } from "../../services/ticketApi";
-import { Search, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpDown,
+  Ticket,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Plus,
+  Filter,
+  Calendar,
+  Tag,
+  MoreHorizontal,
+  Inbox,
+  Loader2,
+  TrendingUp,
+} from "lucide-react";
 
 export default function MyReports() {
   const [tickets, setTickets] = useState([]);
@@ -11,19 +28,26 @@ export default function MyReports() {
   const [sortField, setSortField] = useState("createdAt");
   const [sortDirection, setSortDirection] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 6;
 
   const navigate = useNavigate();
 
   const fetchMyTickets = async () => {
     try {
+      setLoading(true);
       const storedEmail = localStorage.getItem("userEmail");
-      if (!storedEmail) return;
+      if (!storedEmail) {
+        setLoading(false);
+        return;
+      }
       const email = storedEmail.trim().toLowerCase();
       const res = await getMyTickets(email);
       setTickets(res.data || []);
     } catch (error) {
       console.error("Error fetching tickets", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -44,15 +68,64 @@ export default function MyReports() {
     }
   };
 
-  const getStatusStyle = (status) => {
+  const getStatusConfig = (status) => {
     const s = (status || "new").toLowerCase();
-    const colors = {
-      new: { background: "#dbeafe", color: "#1d4ed8" },
-      open: { background: "#fef3c7", color: "#d97706" },
-      resolved: { background: "#dcfce7", color: "#15803d" },
-      closed: { background: "#e5e7eb", color: "#4b5563" },
+    const configs = {
+      new: {
+        icon: AlertCircle,
+        bg: "#dbeafe",
+        color: "#1d4ed8",
+        border: "#93c5fd",
+        label: "New",
+      },
+      open: {
+        icon: Clock,
+        bg: "#fef3c7",
+        color: "#d97706",
+        border: "#fbbf24",
+        label: "Open",
+      },
+      "in progress": {
+        icon: TrendingUp,
+        bg: "#e0e7ff",
+        color: "#4f46e5",
+        border: "#a5b4fc",
+        label: "In Progress",
+      },
+      resolved: {
+        icon: CheckCircle2,
+        bg: "#dcfce7",
+        color: "#15803d",
+        border: "#86efac",
+        label: "Resolved",
+      },
+      closed: {
+        icon: Ticket,
+        bg: "#f3f4f6",
+        color: "#4b5563",
+        border: "#d1d5db",
+        label: "Closed",
+      },
+      rejected: {
+        icon: AlertCircle,
+        bg: "#fee2e2",
+        color: "#dc2626",
+        border: "#fca5a5",
+        label: "Rejected",
+      },
     };
-    return colors[s] || colors.new;
+    return configs[s] || configs.new;
+  };
+
+  const getPriorityColor = (priority) => {
+    const p = (priority || "low").toLowerCase();
+    const colors = {
+      low: { bg: "#f3f4f6", color: "#6b7280" },
+      medium: { bg: "#dbeafe", color: "#2563eb" },
+      high: { bg: "#fef3c7", color: "#d97706" },
+      urgent: { bg: "#fee2e2", color: "#dc2626" },
+    };
+    return colors[p] || colors.low;
   };
 
   const filteredAndSortedTickets = useMemo(() => {
@@ -86,323 +159,798 @@ export default function MyReports() {
     startIndex + itemsPerPage
   );
 
+  const stats = useMemo(() => {
+    return {
+      total: tickets.length,
+      open: tickets.filter((t) => ["new", "open"].includes((t.status || "").toLowerCase())).length,
+      resolved: tickets.filter((t) => (t.status || "").toLowerCase() === "resolved").length,
+      inProgress: tickets.filter((t) => (t.status || "").toLowerCase() === "in progress").length,
+    };
+  }, [tickets]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
+
+  const statusTabs = [
+    { value: "all", label: "All Tickets", count: stats.total },
+    { value: "new", label: "New", count: tickets.filter((t) => (t.status || "").toLowerCase() === "new").length },
+    { value: "open", label: "Open", count: tickets.filter((t) => (t.status || "").toLowerCase() === "open").length },
+    { value: "in progress", label: "In Progress", count: stats.inProgress },
+    { value: "resolved", label: "Resolved", count: stats.resolved },
+    { value: "closed", label: "Closed", count: tickets.filter((t) => (t.status || "").toLowerCase() === "closed").length },
+  ];
+
   const styles = {
     page: {
-      padding: "30px",
-      background: "#f8fafc",
       minHeight: "100vh",
-      fontFamily: "Inter, sans-serif",
+      background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+      padding: "32px 24px",
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     },
-    headerRow: {
-      display: "flex",
-      justifyContent: "space-between",
+    container: {
+      maxWidth: "1200px",
+      margin: "0 auto",
+    },
+    header: {
+      marginBottom: "28px",
+    },
+    eyebrow: {
+      display: "inline-flex",
       alignItems: "center",
-      marginBottom: "25px",
-      flexWrap: "wrap",
-      gap: "15px",
+      gap: "6px",
+      padding: "6px 12px",
+      background: "#e9ebfe",
+      color: "#5577ff",
+      borderRadius: "999px",
+      fontSize: "12px",
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+      marginBottom: "12px",
     },
     title: {
-      fontSize: "28px",
-      fontWeight: "700",
-      color: "#1e293b",
+      fontSize: "36px",
+      fontWeight: "800",
+      color: "#0f172a",
+      marginBottom: "8px",
+      letterSpacing: "-0.025em",
     },
     subtitle: {
       color: "#64748b",
-      marginTop: "4px",
+      fontSize: "16px",
+      lineHeight: "1.6",
     },
-    createBtn: {
-      background: "#30185a",
-      color: "#fff",
-      border: "none",
+    statsGrid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+      gap: "16px",
+      marginBottom: "28px",
+    },
+    statCard: {
+      background: "#fff",
+      borderRadius: "16px",
+      padding: "20px",
+      border: "1px solid #e2e8f0",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+      display: "flex",
+      alignItems: "center",
+      gap: "16px",
+      transition: "all 0.2s ease",
+    },
+    statIcon: {
+      width: "48px",
+      height: "48px",
       borderRadius: "12px",
-      padding: "12px 18px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    statContent: {
+      flex: 1,
+    },
+    statValue: {
+      fontSize: "28px",
+      fontWeight: "800",
+      color: "#0f172a",
+      marginBottom: "4px",
+    },
+    statLabel: {
+      fontSize: "13px",
+      color: "#64748b",
+      fontWeight: "600",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+    },
+    controlsCard: {
+      background: "#fff",
+      borderRadius: "16px",
+      padding: "20px",
+      border: "1px solid #e2e8f0",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+      marginBottom: "24px",
+    },
+    tabsContainer: {
+      display: "flex",
+      gap: "8px",
+      marginBottom: "20px",
+      flexWrap: "wrap",
+      borderBottom: "1px solid #e2e8f0",
+      paddingBottom: "16px",
+    },
+    tab: {
+      padding: "8px 16px",
+      borderRadius: "999px",
       fontSize: "14px",
       fontWeight: "600",
       cursor: "pointer",
-      boxShadow: "0 4px 14px rgba(124,58,237,0.25)",
+      border: "none",
+      background: "transparent",
+      color: "#64748b",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
       transition: "all 0.2s ease",
     },
-    statsBox: {
-      background: "#ffffff",
-      border: "1px solid #e2e8f0",
-      borderRadius: "14px",
-      padding: "14px 18px",
-      boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
-      minWidth: "160px",
+    tabActive: {
+      background: "#0f172a",
+      color: "#fff",
     },
-    statsLabel: {
-      fontSize: "13px",
-      color: "#64748b",
-    },
-    statsValue: {
-      fontSize: "24px",
+    tabCount: {
+      padding: "2px 8px",
+      borderRadius: "999px",
+      fontSize: "12px",
       fontWeight: "700",
-      color: "#0f172a",
+      background: "rgba(255,255,255,0.2)",
     },
     filterRow: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      gap: "15px",
-      marginBottom: "20px",
+      gap: "16px",
       flexWrap: "wrap",
     },
     searchWrapper: {
       position: "relative",
       flex: 1,
-      minWidth: "250px",
+      minWidth: "280px",
+      maxWidth: "400px",
     },
     searchIcon: {
       position: "absolute",
-      top: "50%",
       left: "14px",
+      top: "50%",
       transform: "translateY(-50%)",
       color: "#94a3b8",
-      width: "18px",
-      height: "18px",
+      pointerEvents: "none",
     },
     input: {
       width: "100%",
-      padding: "12px 14px 12px 42px",
-      borderRadius: "10px",
+      padding: "12px 16px 12px 44px",
+      borderRadius: "12px",
       border: "1px solid #e2e8f0",
       fontSize: "14px",
-      background: "#fff",
+      background: "#f8fafc",
+      color: "#0f172a",
       outline: "none",
+      transition: "all 0.2s ease",
     },
-    select: {
-      padding: "12px 14px",
-      borderRadius: "10px",
-      border: "1px solid #e2e8f0",
-      background: "#fff",
-      minWidth: "180px",
+    createBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      background: "#3a46ed",
+      color: "#fff",
+      border: "none",
+      borderRadius: "12px",
+      padding: "12px 20px",
       fontSize: "14px",
+      fontWeight: "700",
+      cursor: "pointer",
+      boxShadow: "0 4px 14px rgba(124,58,237,0.25)",
+      transition: "all 0.2s ease",
     },
     tableCard: {
       background: "#fff",
-      borderRadius: "18px",
-      boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+      borderRadius: "16px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+      border: "1px solid #e2e8f0",
       overflow: "hidden",
-      border: "1px solid #f1f5f9",
     },
     tableWrapper: {
       overflowX: "auto",
     },
     table: {
       width: "100%",
-      borderCollapse: "collapse",
+      borderCollapse: "separate",
+      borderSpacing: "0",
     },
     th: {
       padding: "16px 20px",
       textAlign: "left",
-      fontSize: "14px",
-      fontWeight: "600",
+      fontSize: "12px",
+      fontWeight: "700",
       color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
       background: "#f8fafc",
       borderBottom: "1px solid #e2e8f0",
       cursor: "pointer",
       userSelect: "none",
+      whiteSpace: "nowrap",
     },
     td: {
-      padding: "16px 20px",
+      padding: "20px",
       borderBottom: "1px solid #f1f5f9",
       fontSize: "14px",
       color: "#334155",
+      verticalAlign: "middle",
     },
     row: {
       cursor: "pointer",
-      transition: "all 0.2s ease",
+      transition: "all 0.15s ease",
     },
-    badge: {
+    ticketId: {
+      fontFamily: "monospace",
+      fontSize: "13px",
+      fontWeight: "700",
+      color: "#0f172a",
+      background: "#f1f5f9",
+      padding: "6px 10px",
+      borderRadius: "8px",
+      display: "inline-block",
+    },
+    subjectCell: {
+      fontWeight: "600",
+      color: "#0f172a",
+      maxWidth: "300px",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    },
+    categoryBadge: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "6px",
       padding: "6px 12px",
-      borderRadius: "20px",
+      borderRadius: "999px",
       fontSize: "12px",
       fontWeight: "600",
-      display: "inline-block",
-      textTransform: "capitalize",
+      background: "#f1f5f9",
+      color: "#475569",
+    },
+    priorityBadge: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "6px",
+      padding: "6px 12px",
+      borderRadius: "999px",
+      fontSize: "12px",
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+    },
+    statusBadge: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "6px",
+      padding: "6px 14px",
+      borderRadius: "999px",
+      fontSize: "12px",
+      fontWeight: "700",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+      border: "1px solid",
+    },
+    dateCell: {
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      color: "#64748b",
+      fontSize: "13px",
     },
     footer: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      padding: "16px 20px",
-      flexWrap: "wrap",
-      gap: "12px",
+      padding: "20px",
       background: "#fff",
+      borderTop: "1px solid #f1f5f9",
+      flexWrap: "wrap",
+      gap: "16px",
+    },
+    pageInfo: {
+      color: "#64748b",
+      fontSize: "14px",
+      fontWeight: "500",
     },
     pageControls: {
       display: "flex",
       alignItems: "center",
-      gap: "10px",
+      gap: "8px",
     },
     pageBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "36px",
+      height: "36px",
       border: "1px solid #e2e8f0",
-      background: "#fff",
       borderRadius: "8px",
-      padding: "8px 12px",
+      background: "#fff",
+      color: "#475569",
       cursor: "pointer",
+      transition: "all 0.2s ease",
+    },
+    pageBtnDisabled: {
+      opacity: 0.5,
+      cursor: "not-allowed",
+    },
+    pageBtnActive: {
+      background: "#0f172a",
+      color: "#fff",
+      borderColor: "#0f172a",
+    },
+    loadingContainer: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "80px 20px",
+      color: "#64748b",
+    },
+    emptyState: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "60px 20px",
+      textAlign: "center",
+    },
+    emptyIcon: {
+      width: "80px",
+      height: "80px",
+      background: "#f1f5f9",
+      borderRadius: "20px",
       display: "flex",
       alignItems: "center",
-      gap: "6px",
-    },
-    emptyRow: {
-      textAlign: "center",
-      padding: "30px",
+      justifyContent: "center",
+      marginBottom: "20px",
       color: "#94a3b8",
+    },
+    emptyTitle: {
+      fontSize: "20px",
+      fontWeight: "700",
+      color: "#0f172a",
+      marginBottom: "8px",
+    },
+    emptyText: {
+      color: "#64748b",
       fontSize: "15px",
+      maxWidth: "400px",
+      marginBottom: "24px",
     },
   };
 
   const sortableHeader = (label, field) => (
-    <th style={styles.th} onClick={() => handleSort(field)}>
+    <th
+      style={styles.th}
+      onClick={() => handleSort(field)}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.color = "#0f172a";
+        e.currentTarget.style.background = "#f1f5f9";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.color = "#64748b";
+        e.currentTarget.style.background = "#f8fafc";
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
         {label}
-        <ArrowUpDown size={14} />
+        <ArrowUpDown size={14} style={{ opacity: sortField === field ? 1 : 0.5 }} />
       </div>
     </th>
   );
 
+  if (loading) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.container}>
+          <div style={styles.loadingContainer}>
+            <Loader2 size={48} style={{ animation: "spin 1s linear infinite", marginBottom: "16px" }} />
+            <p>Loading your tickets...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.page}>
-      <div style={styles.headerRow}>
-        <div>
-          <div style={styles.title}>My Submitted Tickets</div>
-          <div style={styles.subtitle}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+      
+      <div style={styles.container}>
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.eyebrow}>
+            <Ticket size={14} />
+            Ticket Management
+          </div>
+          <h1 style={styles.title}>My Submitted Tickets</h1>
+          <p style={styles.subtitle}>
             Track status, progress, and updates of your support requests
+          </p>
+        </div>
+
+        {/* Stats Grid */}
+        <div style={styles.statsGrid}>
+          <div
+            style={styles.statCard}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 10px 40px -10px rgba(0,0,0,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = styles.statCard.boxShadow;
+            }}
+          >
+            <div style={{ ...styles.statIcon, background: "#ede9fe", color: "#7c3aed" }}>
+              <Ticket size={24} />
+            </div>
+            <div style={styles.statContent}>
+              <div style={styles.statValue}>{stats.total}</div>
+              <div style={styles.statLabel}>Total Tickets</div>
+            </div>
+          </div>
+
+          <div
+            style={styles.statCard}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 10px 40px -10px rgba(0,0,0,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = styles.statCard.boxShadow;
+            }}
+          >
+            <div style={{ ...styles.statIcon, background: "#fef3c7", color: "#d97706" }}>
+              <Clock size={24} />
+            </div>
+            <div style={styles.statContent}>
+              <div style={{ ...styles.statValue, color: "#d97706" }}>{stats.open}</div>
+              <div style={styles.statLabel}>Open / New</div>
+            </div>
+          </div>
+
+          <div
+            style={styles.statCard}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 10px 40px -10px rgba(0,0,0,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = styles.statCard.boxShadow;
+            }}
+          >
+            <div style={{ ...styles.statIcon, background: "#e0e7ff", color: "#4f46e5" }}>
+              <TrendingUp size={24} />
+            </div>
+            <div style={styles.statContent}>
+              <div style={{ ...styles.statValue, color: "#4f46e5" }}>{stats.inProgress}</div>
+              <div style={styles.statLabel}>In Progress</div>
+            </div>
+          </div>
+
+          <div
+            style={styles.statCard}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 10px 40px -10px rgba(0,0,0,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = styles.statCard.boxShadow;
+            }}
+          >
+            <div style={{ ...styles.statIcon, background: "#dcfce7", color: "#15803d" }}>
+              <CheckCircle2 size={24} />
+            </div>
+            <div style={styles.statContent}>
+              <div style={{ ...styles.statValue, color: "#15803d" }}>{stats.resolved}</div>
+              <div style={styles.statLabel}>Resolved</div>
+            </div>
           </div>
         </div>
 
-        <button
-          style={styles.createBtn}
-          onClick={() => navigate("/create-ticket")}
-          onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
-        >
-          + Create Ticket
-        </button>
+        {/* Controls Card */}
+        <div style={styles.controlsCard}>
+          {/* Status Tabs */}
+          <div style={styles.tabsContainer}>
+            {statusTabs.map((tab) => (
+              <button
+                key={tab.value}
+                style={{
+                  ...styles.tab,
+                  ...(statusFilter === tab.value ? styles.tabActive : {}),
+                }}
+                onClick={() => setStatusFilter(tab.value)}
+                onMouseEnter={(e) => {
+                  if (statusFilter !== tab.value) {
+                    e.currentTarget.style.background = "#f1f5f9";
+                    e.currentTarget.style.color = "#0f172a";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (statusFilter !== tab.value) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "#64748b";
+                  }
+                }}
+              >
+                {tab.label}
+                <span style={styles.tabCount}>{tab.count}</span>
+              </button>
+            ))}
+          </div>
 
-        <div style={styles.statsBox}>
-          <div style={styles.statsLabel}>Total Tickets</div>
-          <div style={styles.statsValue}>{filteredAndSortedTickets.length}</div>
+          {/* Filter Row */}
+          <div style={styles.filterRow}>
+            <div style={styles.searchWrapper}>
+              <Search size={18} style={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Search by subject or ticket ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={styles.input}
+                onFocus={(e) => {
+                  e.target.style.background = "#fff";
+                  e.target.style.borderColor = "#7c3aed";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(124,58,237,0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.background = "#f8fafc";
+                  e.target.style.borderColor = "#e2e8f0";
+                  e.target.style.boxShadow = "none";
+                }}
+              />
+            </div>
+
+            <button
+              style={styles.createBtn}
+              onClick={() => navigate("/create-ticket")}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 6px 20px rgba(124,58,237,0.35)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = styles.createBtn.boxShadow;
+              }}
+            >
+              <Plus size={18} />
+              Create Ticket
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div style={styles.filterRow}>
-        <div style={styles.searchWrapper}>
-          <Search style={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder="Search by subject..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.input}
-          />
-        </div>
+        {/* Table Card */}
+        <div style={styles.tableCard}>
+          {filteredAndSortedTickets.length === 0 ? (
+            <div style={styles.emptyState}>
+              <div style={styles.emptyIcon}>
+                <Inbox size={40} />
+              </div>
+              <h3 style={styles.emptyTitle}>No tickets found</h3>
+              <p style={styles.emptyText}>
+                {searchTerm || statusFilter !== "all"
+                  ? "Try adjusting your search or filter criteria to see more results."
+                  : "You haven't submitted any tickets yet. Create your first ticket to get started."}
+              </p>
+              <button
+                style={styles.createBtn}
+                onClick={() => navigate("/create-ticket")}
+              >
+                <Plus size={18} />
+                Create Your First Ticket
+              </button>
+            </div>
+          ) : (
+            <>
+              <div style={styles.tableWrapper}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      {sortableHeader("Ticket ID", "id")}
+                      {sortableHeader("Subject", "subject")}
+                      {sortableHeader("Category", "category")}
+                      {sortableHeader("Priority", "priority")}
+                      {sortableHeader("Status", "status")}
+                      {sortableHeader("Created", "createdAt")}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedTickets.map((ticket) => {
+                      const statusConfig = getStatusConfig(ticket.status);
+                      const StatusIcon = statusConfig.icon;
+                      const priorityStyle = getPriorityColor(ticket.priority);
 
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          style={styles.select}
-        >
-          <option value="all">All Tickets</option>
-          <option value="new">New</option>
-          <option value="open">Open</option>
-          <option value="resolved">Resolved</option>
-          <option value="closed">Closed</option>
-        </select>
-      </div>
+                      return (
+                        <tr
+                          key={ticket.id}
+                          style={styles.row}
+                          onClick={() => handleRowClick(ticket.id)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#f8fafc";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#fff";
+                          }}
+                        >
+                          <td style={styles.td}>
+                            <span style={styles.ticketId}>#{ticket.id}</span>
+                          </td>
+                          <td style={styles.td}>
+                            <div style={styles.subjectCell} title={ticket.subject || ticket.title}>
+                              {ticket.subject || ticket.title || "-"}
+                            </div>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={styles.categoryBadge}>
+                              <Tag size={12} />
+                              {ticket.category || "General"}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span
+                              style={{
+                                ...styles.priorityBadge,
+                                background: priorityStyle.bg,
+                                color: priorityStyle.color,
+                              }}
+                            >
+                              {ticket.priority || "Low"}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span
+                              style={{
+                                ...styles.statusBadge,
+                                background: statusConfig.bg,
+                                color: statusConfig.color,
+                                borderColor: statusConfig.border,
+                              }}
+                            >
+                              <StatusIcon size={12} />
+                              {statusConfig.label}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <div style={styles.dateCell}>
+                              <Calendar size={14} />
+                              {formatDate(ticket.createdAt)}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-      <div style={styles.tableCard}>
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                {sortableHeader("Ticket ID", "id")}
-                {sortableHeader("Subject", "subject")}
-                {sortableHeader("Category", "category")}
-                {sortableHeader("Priority", "priority")}
-                {sortableHeader("Status", "status")}
-                {sortableHeader("Created", "createdAt")}
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedTickets.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={styles.emptyRow}>
-                    No tickets found
-                  </td>
-                </tr>
-              ) : (
-                paginatedTickets.map((ticket) => (
-                  <tr
-                    key={ticket.id}
-                    style={styles.row}
-                    onClick={() => handleRowClick(ticket.id)}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "#f8fafc")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "#fff")
-                    }
+              {/* Footer */}
+              <div style={styles.footer}>
+                <div style={styles.pageInfo}>
+                  Showing {paginatedTickets.length > 0 ? startIndex + 1 : 0} -{" "}
+                  {Math.min(startIndex + itemsPerPage, filteredAndSortedTickets.length)} of{" "}
+                  {filteredAndSortedTickets.length} tickets
+                </div>
+
+                <div style={styles.pageControls}>
+                  <button
+                    style={{
+                      ...styles.pageBtn,
+                      ...(currentPage === 1 ? styles.pageBtnDisabled : {}),
+                    }}
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onMouseEnter={(e) => {
+                      if (currentPage !== 1) {
+                        e.currentTarget.style.borderColor = "#0f172a";
+                        e.currentTarget.style.color = "#0f172a";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#e2e8f0";
+                      e.currentTarget.style.color = "#475569";
+                    }}
                   >
-                    <td style={styles.td}>#{ticket.id}</td>
-                    <td style={styles.td}>{ticket.subject || ticket.title}</td>
-                    <td style={styles.td}>{ticket.category || "-"}</td>
-                    <td style={styles.td}>{ticket.priority || "-"}</td>
-                    <td style={styles.td}>
-                      <span
+                    <ChevronLeft size={18} />
+                  </button>
+
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
                         style={{
-                          ...styles.badge,
-                          ...getStatusStyle(ticket.status),
+                          ...styles.pageBtn,
+                          ...(pageNum === currentPage ? styles.pageBtnActive : {}),
+                          minWidth: "36px",
+                        }}
+                        onClick={() => setCurrentPage(pageNum)}
+                        onMouseEnter={(e) => {
+                          if (pageNum !== currentPage) {
+                            e.currentTarget.style.borderColor = "#0f172a";
+                            e.currentTarget.style.color = "#0f172a";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (pageNum !== currentPage) {
+                            e.currentTarget.style.borderColor = "#e2e8f0";
+                            e.currentTarget.style.color = "#475569";
+                          }
                         }}
                       >
-                        {ticket.status || "New"}
-                      </span>
-                    </td>
-                    <td style={styles.td}>
-                      {ticket.createdAt
-                        ? ticket.createdAt.substring(0, 10)
-                        : "-"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                        {pageNum}
+                      </button>
+                    );
+                  })}
 
-        <div style={styles.footer}>
-          <div>
-            Showing {paginatedTickets.length} of {filteredAndSortedTickets.length} tickets
-          </div>
-
-          <div style={styles.pageControls}>
-            <button
-              style={styles.pageBtn}
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            >
-              <ChevronLeft size={16} /> Prev
-            </button>
-
-            <span>
-              Page {currentPage} of {totalPages || 1}
-            </span>
-
-            <button
-              style={styles.pageBtn}
-              disabled={currentPage === totalPages || totalPages === 0}
-              onClick={() =>
-                setCurrentPage((p) => Math.min(totalPages, p + 1))
-              }
-            >
-              Next <ChevronRight size={16} />
-            </button>
-          </div>
+                  <button
+                    style={{
+                      ...styles.pageBtn,
+                      ...(currentPage === totalPages || totalPages === 0
+                        ? styles.pageBtnDisabled
+                        : {}),
+                    }}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onMouseEnter={(e) => {
+                      if (currentPage !== totalPages && totalPages !== 0) {
+                        e.currentTarget.style.borderColor = "#0f172a";
+                        e.currentTarget.style.color = "#0f172a";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#e2e8f0";
+                      e.currentTarget.style.color = "#475569";
+                    }}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

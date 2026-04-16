@@ -24,6 +24,9 @@ public class Comment {
 
     private LocalDateTime createdAt;
 
+    // NEW: Track when comment was last edited
+    private LocalDateTime updatedAt;
+
     // =========================
     // THREAD SUPPORT (KEEP DB AS parentId)
     // =========================
@@ -94,6 +97,15 @@ public class Comment {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    // NEW: updatedAt getter and setter
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     // =========================

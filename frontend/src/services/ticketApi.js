@@ -126,19 +126,31 @@ export const getCommentsByTicket = (ticketId) =>
   api.get(`/tickets/${ticketId}/comments`);
 
 // =======================
-// EDIT COMMENT FIXED
+// EDIT COMMENT - Send as JSON (backend doesn't support multipart for PUT)
 // =======================
 export const editComment = (
   ticketId,
   commentId,
   author,
   role,
-  message
-) =>
-  api.put(
+  message,
+  images = []
+) => {
+  const payload = {
+    message: message,
+  };
+
+  // Only include images if backend supports them on edit
+  // If backend ignores this, remove the line below
+  if (images && images.length > 0) {
+    payload.images = images;
+  }
+
+  return api.put(
     `/tickets/${ticketId}/comments/${commentId}?author=${author}&authorRole=${role}`,
-    { message }
+    payload
   );
+};
 
 // =======================
 // DELETE COMMENT FIXED

@@ -10,6 +10,7 @@ public class CommentDTO {
     private String author;
     private String message;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;  // NEW: Track edit time
 
     // =========================
     // PHASE 2 UPGRADE FIELDS
@@ -77,6 +78,15 @@ public class CommentDTO {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    // NEW: updatedAt getter and setter
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     // =========================
