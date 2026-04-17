@@ -300,14 +300,30 @@ const NotificationsPage = () => {
                           {item.referenceId ? ` #${item.referenceId}` : ""} |{" "}
                           {new Date(item.createdAt).toLocaleString()}
                         </small>
-                        {item.referenceId && (item.category.startsWith("TICKET") || item.category === "SYSTEM") && (
-                           <Link 
-                             to={item.category === "SYSTEM" ? "/settings" : (isStaff ? "/admin/support" : "/support")}
-                             className="btn btn-sm btn-link p-0 text-decoration-none"
-                           >
-                             View details →
-                           </Link>
-                        )}
+                        {(() => {
+                           if (!item.referenceId) return null;
+                           let targetUrl = null;
+                           if (item.category.startsWith("TICKET")) {
+                             targetUrl = isStaff ? "/admin/support" : "/support";
+                           } else if (item.category === "BOOKING") {
+                             targetUrl = isStaff ? "/admin" : "/booking"; // Staff might manage bookings in dashboard
+                           } else if (item.category === "FACILITY") {
+                             targetUrl = isStaff ? "/admin" : "/facilities";
+                           } else if (item.category === "SYSTEM") {
+                             targetUrl = isStaff ? (item.referenceType?.toUpperCase() === "USER" ? "/users" : "/admin") : "/settings";
+                           }
+                           
+                           if (!targetUrl) return null;
+                           
+                           return (
+                             <Link 
+                               to={targetUrl}
+                               className="btn btn-sm btn-link p-0 text-decoration-none"
+                             >
+                               View details →
+                             </Link>
+                           );
+                        })()}
                       </div>
                     </div>
                     {!isRead && (
