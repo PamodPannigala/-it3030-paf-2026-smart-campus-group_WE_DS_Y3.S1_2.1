@@ -168,6 +168,11 @@ export default function TechnicianPortalPage() {
   const [commentImagePreviews, setCommentImagePreviews] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
 
+  // NEW: Comment edit image state
+  const [editingImages, setEditingImages] = useState([]);
+  const [existingEditImages, setExistingEditImages] = useState([]);
+  const editFileInputRef = useRef(null);
+
   // Work management state
   const [resolutionNote, setResolutionNote] = useState("");
   const [showResolutionModal, setShowResolutionModal] = useState(false);
@@ -277,7 +282,6 @@ export default function TechnicianPortalPage() {
     const resolved = tickets.filter(t => t.status === "RESOLVED").length;
     const closed = tickets.filter(t => t.status === "CLOSED").length;
 
-    // Vertical bar chart data - REAL DATA, not fake
     const barChartData = [
       { name: 'Open', value: open, color: CHART_COLORS.red },
       { name: 'In Progress', value: inProgress, color: CHART_COLORS.amber },
@@ -482,40 +486,95 @@ export default function TechnicianPortalPage() {
     }
   };
 
-  // Edit comment
+  // NEW: Start editing a comment with image support
+  const startEditComment = (comment) => {
+    setEditingId(comment.id);
+    setEditText(comment.message || "");
+    setExistingEditImages(comment.imageUrls || []);
+    setEditingImages([]);
+  };
 
-const saveEdit = async () => {
-  if (!editText.trim() && commentImages.length === 0 && !selectedTicket) return;
-  
-  try {
-    const formData = new FormData();
-    formData.append("author", currentTechnician.name);
-    formData.append("authorRole", "TECHNICIAN");
-    formData.append("message", editText);
-    
-    // Include existing images if you track them, or send empty array
-    formData.append("existingImages", JSON.stringify([]));
-    
-    // Add any new images if applicable (though edit usually doesn't add new images)
-     commentImages.forEach((file) => {
-      formData.append("images", file);
+  // NEW: Handle image selection for editing
+  const handleEditImageSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const totalImages = existingEditImages.length + editingImages.length + files.length;
+    if (totalImages > 5) {
+      alert("Maximum 5 images allowed per comment");
+      return;
+    }
+
+    const validFiles = files.filter((file) => {
+      if (!file.type.startsWith('image/')) {
+        alert(`${file.name} is not an image file`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`${file.name} exceeds 5MB limit`);
+        return false;
+      }
+      return true;
     });
 
-    const res = await axios.post(
-      `${BACKEND_URL}/api/tickets/${selectedTicket.id}/comments/${editingId}/edit`,
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    );
+    setEditingImages((prev) => [...prev, ...validFiles]);
+    e.target.value = "";
+  };
 
-    setComments((prev) => prev.map((c) => (c.id === editingId ? res.data : c)));
+  // NEW: Remove new image from edit
+  const removeEditImage = (index) => {
+    setEditingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // NEW: Remove existing image from edit
+  const removeExistingEditImage = (index) => {
+    setExistingEditImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // NEW: Cancel editing
+  const cancelEdit = () => {
     setEditingId(null);
     setEditText("");
-    alert("Comment updated successfully!");
-  } catch (err) {
-    console.error("Edit failed:", err);
-    alert("Failed to edit comment: " + (err.response?.data?.message || err.message));
-  }
-};
+    setEditingImages([]);
+    setExistingEditImages([]);
+  };
+
+  // NEW: Enhanced save edit with image support
+  const saveEdit = async () => {
+    if (!editText.trim() && existingEditImages.length === 0 && editingImages.length === 0) {
+      alert("Please add a message or at least one image");
+      return;
+    }
+    if (!editingId || !selectedTicket) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("author", currentTechnician.name);
+      formData.append("authorRole", "TECHNICIAN");
+      formData.append("message", editText);
+      formData.append("existingImages", JSON.stringify(existingEditImages));
+
+      editingImages.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      const res = await axios.post(
+        `${BACKEND_URL}/api/tickets/${selectedTicket.id}/comments/${editingId}/edit`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      setComments((prev) => prev.map((c) => (c.id === editingId ? res.data : c)));
+      setEditingId(null);
+      setEditText("");
+      setEditingImages([]);
+      setExistingEditImages([]);
+    } catch (err) {
+      console.error("Edit failed:", err);
+      alert("Failed to edit comment: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   // Delete comment
   const handleDeleteComment = async (commentId) => {
     if (!selectedTicket) return;
@@ -589,10 +648,10 @@ const saveEdit = async () => {
     return roots;
   };
 
-  // FIXED: Render comment with working edit functionality
+  // UPDATED: Render comment with image editing support
   const renderComment = (c, level = 0) => {
     const isOwnComment = c.author === currentTechnician?.name;
-    const commentImageUrls = c.imageUrls || []; // Renamed to avoid shadowing
+    const commentImageUrls = c.imageUrls || [];
     const isEditing = editingId === c.id;
     
     return (
@@ -703,16 +762,17 @@ const saveEdit = async () => {
             </div>
           </div>
 
-          {/* Edit Mode */}
+          {/* Edit Mode with Image Support */}
           {isEditing ? (
-            <div>
+            <>
               <textarea
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
+                placeholder="Edit your comment..."
                 style={{
                   width: "100%",
                   minHeight: "100px",
-                  padding: "12px 16px",
+                  padding: "14px",
                   border: "1px solid #e2e8f0",
                   borderRadius: "12px",
                   fontSize: "14px",
@@ -720,49 +780,247 @@ const saveEdit = async () => {
                   color: COLORS.text.primary,
                   background: "#ffffff",
                   resize: "vertical",
-                  fontFamily: "Inter, system-ui, sans-serif",
-                  marginBottom: "12px"
+                  fontFamily: "inherit",
+                  marginBottom: "16px",
+                  outline: "none",
+                  transition: "all 0.2s"
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = "#3b82f6";
+                  e.target.style.boxShadow = "0 0 0 3px rgba(59, 130, 246, 0.1)";
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = "#e2e8f0";
+                  e.target.style.boxShadow = "none";
                 }}
               />
-              <div style={{ display: "flex", gap: "10px" }}>
+
+              {/* Existing Images */}
+              {existingEditImages.length > 0 && (
+                <div style={{ marginBottom: "16px" }}>
+                  <p style={{
+                    fontSize: "12px",
+                    color: "#64748b",
+                    marginBottom: "10px",
+                    fontWeight: "600"
+                  }}>
+                    Current images (click × to remove):
+                  </p>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    {existingEditImages.map((url, i) => (
+                      <div key={`existing-${i}`} style={{
+                        position: "relative",
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "10px",
+                        overflow: "hidden",
+                        border: "1px solid #e2e8f0",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+                      }}>
+                        <img
+                          src={`${BACKEND_URL}${url}`}
+                          alt={`Current ${i + 1}`}
+                          style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer" }}
+                          onClick={() => setPreviewImage(`${BACKEND_URL}${url}`)}
+                        />
+                        <button
+                          onClick={() => removeExistingEditImage(i)}
+                          style={{
+                            position: "absolute",
+                            top: "4px",
+                            right: "4px",
+                            width: "22px",
+                            height: "22px",
+                            borderRadius: "50%",
+                            background: "rgba(0,0,0,0.6)",
+                            color: "white",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "14px",
+                            transition: "all 0.2s",
+                            backdropFilter: "blur(4px)"
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = "rgba(220,38,38,0.9)"}
+                          onMouseLeave={(e) => e.currentTarget.style.background = "rgba(0,0,0,0.6)"}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add New Images */}
+              <div style={{ marginBottom: "16px" }}>
+                <input
+                  ref={editFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleEditImageSelect}
+                  style={{ display: "none" }}
+                />
                 <button
-                  onClick={saveEdit}
+                  onClick={() => editFileInputRef.current?.click()}
+                  disabled={existingEditImages.length + editingImages.length >= 5}
                   style={{
-                    padding: "10px 20px",
-                    background: COLORS.success,
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    display: "flex",
+                    display: "inline-flex",
                     alignItems: "center",
-                    gap: "6px"
+                    gap: "8px",
+                    padding: "10px 16px",
+                    background: (existingEditImages.length + editingImages.length >= 5) ? "#f1f5f9" : "#f8fafc",
+                    color: (existingEditImages.length + editingImages.length >= 5) ? "#94a3b8" : "#2563eb",
+                    border: "1px dashed #cbd5e1",
+                    borderRadius: "10px",
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: (existingEditImages.length + editingImages.length >= 5) ? "not-allowed" : "pointer",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseEnter={(e) => {
+                    if (existingEditImages.length + editingImages.length < 5) {
+                      e.currentTarget.style.background = "#eff6ff";
+                      e.currentTarget.style.borderColor = "#3b82f6";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = (existingEditImages.length + editingImages.length >= 5) ? "#f1f5f9" : "#f8fafc";
+                    e.currentTarget.style.borderColor = "#cbd5e1";
                   }}
                 >
-                  <CheckCircle size={16} />
-                  Save
+                  <ImageIcon size={16} />
+                  Add New Image ({existingEditImages.length + editingImages.length}/5)
+                </button>
+              </div>
+
+              {/* New Images Preview */}
+              {editingImages.length > 0 && (
+                <div style={{ marginBottom: "16px" }}>
+                  <p style={{
+                    fontSize: "12px",
+                    color: "#64748b",
+                    marginBottom: "10px",
+                    fontWeight: "600"
+                  }}>
+                    New images to upload:
+                  </p>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                    {editingImages.map((file, i) => (
+                      <div key={`new-${i}`} style={{
+                        position: "relative",
+                        padding: "10px 14px",
+                        background: "#f1f5f9",
+                        borderRadius: "8px",
+                        border: "1px solid #e2e8f0",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px"
+                      }}>
+                        <ImageIcon size={16} color="#64748b" />
+                        <span style={{
+                          fontSize: "13px",
+                          color: "#374151",
+                          maxWidth: "150px",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}>
+                          {file.name}
+                        </span>
+                        <button
+                          onClick={() => removeEditImage(i)}
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            borderRadius: "50%",
+                            background: "#ef4444",
+                            color: "white",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "12px",
+                            transition: "all 0.2s"
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
+                          onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  onClick={saveEdit}
+                  disabled={!editText.trim() && existingEditImages.length === 0 && editingImages.length === 0}
+                  style={{
+                    padding: "12px 24px",
+                    background: (editText.trim() || existingEditImages.length > 0 || editingImages.length > 0) ? "#10b981" : "#9ca3af",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "10px",
+                    fontSize: "14px",
+                    fontWeight: "700",
+                    cursor: (editText.trim() || existingEditImages.length > 0 || editingImages.length > 0) ? "pointer" : "not-allowed",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "all 0.2s",
+                    boxShadow: (editText.trim() || existingEditImages.length > 0 || editingImages.length > 0) ? "0 4px 6px -1px rgba(16, 185, 129, 0.2)" : "none"
+                  }}
+                  onMouseEnter={(e) => {
+                    if (editText.trim() || existingEditImages.length > 0 || editingImages.length > 0) {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 6px 8px -1px rgba(16, 185, 129, 0.3)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow = (editText.trim() || existingEditImages.length > 0 || editingImages.length > 0) ? "0 4px 6px -1px rgba(16, 185, 129, 0.2)" : "none";
+                  }}
+                >
+                  <CheckCircle size={18} />
+                  Save Changes
                 </button>
                 <button
-                  onClick={() => { setEditingId(null); setEditText(""); }}
+                  onClick={cancelEdit}
                   style={{
-                    padding: "10px 20px",
+                    padding: "12px 24px",
                     background: "#f1f5f9",
-                    color: COLORS.text.secondary,
-                    border: "none",
-                    borderRadius: "8px",
+                    color: "#4b5563",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "10px",
                     fontSize: "14px",
-                    fontWeight: "600",
-                    cursor: "pointer"
+                    fontWeight: "700",
+                    cursor: "pointer",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#e2e8f0";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#f1f5f9";
+                    e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
                   Cancel
                 </button>
               </div>
-            </div>
+            </>
           ) : (
             <>
+              {/* Display Mode */}
               <div style={{
                 fontSize: "14px",
                 lineHeight: "1.7",
@@ -814,7 +1072,7 @@ const saveEdit = async () => {
                 </div>
               )}
               
-              {/* FIXED: Action buttons with e.currentTarget */}
+              {/* Action buttons */}
               <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
                 <button
                   onClick={() => setReplyTo(c)}
@@ -848,7 +1106,7 @@ const saveEdit = async () => {
                 {isOwnComment && (
                   <>
                     <button
-                      onClick={() => { setEditingId(c.id); setEditText(c.message || ""); }}
+                      onClick={() => startEditComment(c)}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -1898,7 +2156,7 @@ const saveEdit = async () => {
                   Comments ({comments.length})
                 </h3>
 
-                {/* Reply Banner - FIXED: removed misplaced Reply button */}
+                {/* Reply Banner */}
                 {replyTo && (
                   <div style={{
                     background: "#eff6ff",
