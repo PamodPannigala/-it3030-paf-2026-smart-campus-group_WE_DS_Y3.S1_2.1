@@ -48,6 +48,7 @@ public class SupportRequestServiceImpl implements SupportRequestService {
         for (CampusUser admin : campusUserRepository.findByRole(Role.ADMIN)) {
             notificationService.create(new NotificationCreateRequest(
                     admin.getId(),
+                    "SPECIFIC",
                     NotificationCategory.SYSTEM,
                     "New support request",
                     user.getFullName() + " submitted: " + preview,
@@ -104,6 +105,7 @@ public class SupportRequestServiceImpl implements SupportRequestService {
 
         notificationService.create(new NotificationCreateRequest(
                 owner.getId(),
+                "SPECIFIC",
                 NotificationCategory.SYSTEM,
                 "Update on your support request",
                 body,
