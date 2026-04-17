@@ -1377,7 +1377,7 @@ export default function TechnicianManagementPage() {
         </div>
       )}
 
-      {/* esults count */}
+      {/* Results count */}
       {!loading && filteredTechnicians.length > 0 && (
         <div style={{ 
           marginTop: "24px", 
