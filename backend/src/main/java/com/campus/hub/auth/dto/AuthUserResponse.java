@@ -8,6 +8,7 @@ public record AuthUserResponse(
         String email,
         String username,
         Role role,
-        String authProvider
+        String authProvider,
+        String profilePictureUrl
 ) {
 }

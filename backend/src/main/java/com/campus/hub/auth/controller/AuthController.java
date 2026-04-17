@@ -54,7 +54,8 @@ public class AuthController {
                 user.getEmail(),
                 user.getUsername(),
                 user.getRole(),
-                user.getAuthProvider()
+                user.getAuthProvider(),
+                user.getProfilePictureUrl()
         );
     }
 
@@ -88,7 +89,8 @@ public class AuthController {
                 saved.getEmail(),
                 saved.getUsername(),
                 saved.getRole(),
-                saved.getAuthProvider()
+                saved.getAuthProvider(),
+                saved.getProfilePictureUrl()
         );
     }
 
@@ -125,7 +127,8 @@ public class AuthController {
                 existingUser.getEmail(),
                 existingUser.getUsername(),
                 existingUser.getRole(),
-                existingUser.getAuthProvider()
+                existingUser.getAuthProvider(),
+                existingUser.getProfilePictureUrl()
         );
     }
 

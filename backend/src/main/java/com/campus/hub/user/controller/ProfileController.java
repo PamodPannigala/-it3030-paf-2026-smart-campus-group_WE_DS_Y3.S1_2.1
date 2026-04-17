@@ -29,7 +29,8 @@ public class ProfileController {
     public record ProfileUpdateRequest(
             @NotBlank(message = "fullName is required")
             String fullName,
-            String username
+            String username,
+            String profilePictureUrl
     ) {}
 
     @GetMapping
@@ -42,7 +43,8 @@ public class ProfileController {
                 "username", user.getUsername() != null ? user.getUsername() : "",
                 "role", user.getRole(),
                 "authProvider", user.getAuthProvider(),
-                "lastLoginAt", user.getLastLoginAt()
+                "lastLoginAt", user.getLastLoginAt(),
+                "profilePictureUrl", user.getProfilePictureUrl() != null ? user.getProfilePictureUrl() : ""
         );
     }
 
@@ -68,6 +70,11 @@ public class ProfileController {
             }
         }
 
+        if (request.profilePictureUrl() != null) {
+            String url = request.profilePictureUrl().trim();
+            user.setProfilePictureUrl(url.isEmpty() ? null : url);
+        }
+
         CampusUser saved = campusUserRepository.save(user);
         return Map.of(
                 "id", saved.getId(),
@@ -76,7 +83,8 @@ public class ProfileController {
                 "username", saved.getUsername() != null ? saved.getUsername() : "",
                 "role", saved.getRole(),
                 "authProvider", saved.getAuthProvider(),
-                "lastLoginAt", saved.getLastLoginAt()
+                "lastLoginAt", saved.getLastLoginAt(),
+                "profilePictureUrl", saved.getProfilePictureUrl() != null ? saved.getProfilePictureUrl() : ""
         );
     }
 

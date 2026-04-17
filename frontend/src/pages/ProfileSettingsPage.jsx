@@ -90,6 +90,93 @@ const ProfileSettingsPage = () => {
             {message && <div className="alert alert-success">{message}</div>}
 
             <div className="border rounded p-3 mb-3">
+              <div className="d-flex align-items-center gap-3 mb-3">
+                <div 
+                  className="rounded-circle bg-light border d-flex align-items-center justify-content-center text-primary fw-bold" 
+                  style={{ width: "80px", height: "80px", fontSize: "1.5rem", overflow: "hidden" }}
+                >
+                  {profile?.profilePictureUrl ? (
+                    <img src={profile.profilePictureUrl} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    fullName.charAt(0).toUpperCase() || "U"
+                  )}
+                </div>
+                <div>
+                  <label className="btn btn-outline-primary btn-sm mb-0">
+                    {saving ? "Uploading..." : "Change Picture"}
+                    <input 
+                      type="file" 
+                      hidden 
+                      accept="image/*" 
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+
+                        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+                        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+                        if (!cloudName || !uploadPreset) {
+                          setError("Cloudinary not configured. Please set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET in .env");
+                          return;
+                        }
+
+                        setSaving(true);
+                        const formData = new FormData();
+                        formData.append("file", file);
+                        formData.append("upload_preset", uploadPreset);
+
+                        try {
+                          const res = await axios.post(
+                            `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+                            formData
+                          );
+                          const imageUrl = res.data.secure_url;
+                          
+                          // Update profile on backend
+                          await api.patch("/profile", {
+                            fullName,
+                            username: profile?.authProvider === "LOCAL" ? username : undefined,
+                            profilePictureUrl: imageUrl
+                          });
+                          
+                          await refreshUser();
+                          setMessage("Profile picture updated.");
+                          await load();
+                        } catch (err) {
+                          setError("Failed to upload image to Cloudinary.");
+                        } finally {
+                          setSaving(false);
+                        }
+                      }} 
+                    />
+                  </label>
+                  {profile?.profilePictureUrl && (
+                    <button 
+                      className="btn btn-link btn-sm text-danger ms-2" 
+                      onClick={async () => {
+                        setSaving(true);
+                        try {
+                          await api.patch("/profile", { 
+                            fullName, 
+                            username, 
+                            profilePictureUrl: "" 
+                          });
+                          await refreshUser();
+                          await load();
+                          setMessage("Profile picture removed.");
+                        } catch (err) {
+                          setError("Failed to remove picture.");
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="row g-2">
                 <div className="col-md-6">
                   <small className="text-muted d-block">Email</small>

@@ -66,4 +66,7 @@ public class CampusUser {
 
     @Column
     private LocalDateTime lastLoginAt;
+
+    @Column
+    private String profilePictureUrl;
 }

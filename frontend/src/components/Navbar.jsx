@@ -72,8 +72,12 @@ const Navbar = () => {
                   <div className="text-white fw-semibold lh-1" style={{ fontSize: '0.9rem' }}>{user.fullName}</div>
                   <div className="text-white-50 small lh-1 mt-1">{user.role}</div>
                 </div>
-                <Link to="/settings" className="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center text-decoration-none shadow-sm" style={{ width: '38px', height: '38px', fontSize: '0.95rem', transition: 'transform 0.2s' }}>
-                  {initials}
+                <Link to="/settings" className="rounded-circle bg-white text-primary fw-bold d-flex align-items-center justify-content-center text-decoration-none shadow-sm" style={{ width: '38px', height: '38px', fontSize: '0.95rem', transition: 'transform 0.2s', overflow: 'hidden' }}>
+                  {user.profilePictureUrl ? (
+                    <img src={user.profilePictureUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    initials
+                  )}
                 </Link>
                 <button className="btn btn-sm btn-outline-light ms-2 rounded-pill px-3" onClick={logout}>
                   Logout
