@@ -499,7 +499,7 @@ export default function AdminTicketsPage() {
 
   const handleDeleteComment = async (commentId) => {
     if (!selectedTicket) return;
-    if (!window.confirm("Are you sure you want to delete this comment?")) return;
+    if (!window.confirm("re you sure you want to delete this comment?")) return;
     
     try {
       await deleteComment(selectedTicket.id, commentId, adminEmail, adminRole);
