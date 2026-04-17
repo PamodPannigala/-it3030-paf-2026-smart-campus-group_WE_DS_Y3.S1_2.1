@@ -8,8 +8,134 @@ import {
   editComment,
   deleteComment,
 } from "../../services/ticketApi";
+import { 
+  MessageSquare, 
+  Image as ImageIcon, 
+  X, 
+  Send, 
+  Reply, 
+  Edit3, 
+  Trash2, 
+  Search,
+  Filter,
+  User,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Wrench,
+  Lock,
+  RotateCcw,
+  XCircle,
+  MoreVertical,
+  Upload,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  BarChart3,
+  PieChart,
+  Activity
+} from "lucide-react";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  AreaChart,
+  Area
+} from 'recharts';
 
 const BACKEND_URL = "http://localhost:8080";
+
+// Professional color palette
+const COLORS = {
+  primary: "#2563eb",
+  primaryHover: "#1d4ed8",
+  secondary: "#64748b",
+  success: "#10b981",
+  warning: "#f59e0b",
+  danger: "#ef4444",
+  info: "#3b82f6",
+  purple: "#8b5cf6",
+  background: "#f8fafc",
+  surface: "#ffffff",
+  border: "#e2e8f0",
+  text: {
+    primary: "#0f172a",
+    secondary: "#475569",
+    muted: "#94a3b8"
+  }
+};
+
+// Chart colors
+const CHART_COLORS = {
+  blue: "#3b82f6",
+  green: "#10b981",
+  amber: "#f59e0b",
+  red: "#ef4444",
+  purple: "#8b5cf6",
+  cyan: "#06b6d4",
+  slate: "#64748b"
+};
+
+// Status configuration
+const STATUS_CONFIG = {
+  OPEN: { 
+    label: "Open", 
+    color: "#dc2626", 
+    bg: "#fef2f2", 
+    border: "#fecaca", 
+    icon: AlertCircle,
+    gradient: "linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)"
+  },
+  "IN PROGRESS": { 
+    label: "In Progress", 
+    color: "#d97706", 
+    bg: "#fffbeb", 
+    border: "#fde68a", 
+    icon: Wrench,
+    gradient: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)"
+  },
+  IN_PROGRESS: { 
+    label: "In Progress", 
+    color: "#d97706", 
+    bg: "#fffbeb", 
+    border: "#fde68a", 
+    icon: Wrench,
+    gradient: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)"
+  },
+  RESOLVED: { 
+    label: "Resolved", 
+    color: "#059669", 
+    bg: "#ecfdf5", 
+    border: "#a7f3d0", 
+    icon: CheckCircle,
+    gradient: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)"
+  },
+  CLOSED: { 
+    label: "Closed", 
+    color: "#2563eb", 
+    bg: "#eff6ff", 
+    border: "#bfdbfe", 
+    icon: Lock,
+    gradient: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)"
+  },
+  REJECTED: { 
+    label: "Rejected", 
+    color: "#7c3aed", 
+    bg: "#f5f3ff", 
+    border: "#ddd6fe", 
+    icon: XCircle,
+    gradient: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)"
+  }
+};
 
 export default function AdminTicketsPage() {
   const [tickets, setTickets] = useState([]);
@@ -26,17 +152,24 @@ export default function AdminTicketsPage() {
   const [previewImage, setPreviewImage] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   
-  // ✅ ADDED: Technicians state
+  // Image upload states
+  const [commentImages, setCommentImages] = useState([]);
+  const [commentImagePreview, setCommentImagePreview] = useState([]);
+  const [editImages, setEditImages] = useState([]);
+  const [editExistingImages, setEditExistingImages] = useState([]);
+  
   const [technicians, setTechnicians] = useState([]);
   const [assigningTechnician, setAssigningTechnician] = useState(false);
+  const [timeRange, setTimeRange] = useState("7d"); // 7d, 30d, 90d
 
   const commentNodeRefs = useRef({});
+  const fileInputRef = useRef(null);
+  const editFileInputRef = useRef(null);
+  
   const adminEmail = "Admin";
   const adminRole = "ADMIN";
 
-  console.log("AdminTicketsPage rendering...");
-
-  // ✅ ADDED: Load all technicians
+  // Load technicians
   const loadTechnicians = async () => {
     try {
       const res = await axios.get(`${BACKEND_URL}/api/tickets/technicians`);
@@ -51,7 +184,6 @@ export default function AdminTicketsPage() {
       setLoading(true);
       const res = await getAllTickets();
       const data = res.data || [];
-      console.log("Tickets loaded:", data.length);
       setTickets(data);
 
       if (data.length > 0) {
@@ -67,9 +199,8 @@ export default function AdminTicketsPage() {
   };
 
   useEffect(() => {
-    console.log("useEffect - loading tickets and technicians");
     loadTickets();
-    loadTechnicians(); // ✅ Load technicians on mount
+    loadTechnicians();
   }, []);
 
   const loadTicketDetails = async (id) => {
@@ -79,7 +210,6 @@ export default function AdminTicketsPage() {
         getTicketById(id),
         axios.get(`${BACKEND_URL}/api/tickets/${id}/comments`),
       ]);
-      console.log("Ticket details loaded:", ticketRes.data);
       setSelectedTicket(ticketRes.data || null);
       setComments(commentRes.data || []);
     } catch (err) {
@@ -91,7 +221,109 @@ export default function AdminTicketsPage() {
     loadTicketDetails(selectedTicketId);
   }, [selectedTicketId]);
 
-  // ✅ FIXED: Normalize status for comparison (handle both IN_PROGRESS and IN PROGRESS)
+  // Analytics calculations
+  const analytics = useMemo(() => {
+    const total = tickets.length;
+    const open = tickets.filter(t => t.status === "OPEN").length;
+    const inProgress = tickets.filter(t => t.status === "IN_PROGRESS" || t.status === "IN PROGRESS").length;
+    const resolved = tickets.filter(t => t.status === "RESOLVED").length;
+    const closed = tickets.filter(t => t.status === "CLOSED").length;
+    const rejected = tickets.filter(t => t.status === "REJECTED").length;
+    
+    // Calculate trend (mock data - replace with actual historical data)
+    const trendData = [
+      { name: 'Mon', tickets: Math.floor(total * 0.15), resolved: Math.floor(resolved * 0.2) },
+      { name: 'Tue', tickets: Math.floor(total * 0.25), resolved: Math.floor(resolved * 0.3) },
+      { name: 'Wed', tickets: Math.floor(total * 0.2), resolved: Math.floor(resolved * 0.25) },
+      { name: 'Thu', tickets: Math.floor(total * 0.3), resolved: Math.floor(resolved * 0.35) },
+      { name: 'Fri', tickets: Math.floor(total * 0.35), resolved: Math.floor(resolved * 0.4) },
+      { name: 'Sat', tickets: Math.floor(total * 0.1), resolved: Math.floor(resolved * 0.15) },
+      { name: 'Sun', tickets: Math.floor(total * 0.08), resolved: Math.floor(resolved * 0.1) },
+    ];
+
+    const statusData = [
+      { name: 'Open', value: open, color: CHART_COLORS.red },
+      { name: 'In Progress', value: inProgress, color: CHART_COLORS.amber },
+      { name: 'Resolved', value: resolved, color: CHART_COLORS.green },
+      { name: 'Closed', value: closed, color: CHART_COLORS.blue },
+      { name: 'Rejected', value: rejected, color: CHART_COLORS.purple },
+    ].filter(d => d.value > 0);
+
+    const priorityData = [
+      { name: 'Low', count: tickets.filter(t => t.priority === 'LOW').length },
+      { name: 'Medium', count: tickets.filter(t => t.priority === 'MEDIUM').length },
+      { name: 'High', count: tickets.filter(t => t.priority === 'HIGH').length },
+      { name: 'Urgent', count: tickets.filter(t => t.priority === 'URGENT').length },
+    ];
+
+    // Calculate resolution rate
+    const resolutionRate = total > 0 ? Math.round(((resolved + closed) / total) * 100) : 0;
+    
+    // Calculate avg resolution time (mock)
+    const avgResolutionTime = "4.2h";
+
+    return {
+      total,
+      open,
+      inProgress,
+      resolved,
+      closed,
+      rejected,
+      trendData,
+      statusData,
+      priorityData,
+      resolutionRate,
+      avgResolutionTime
+    };
+  }, [tickets]);
+
+  // Image handling functions
+  const handleImageSelect = (e, isEdit = false) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const currentImages = isEdit ? editImages : commentImages;
+    const maxImages = 3;
+    
+    if (currentImages.length + files.length > maxImages) {
+      alert(`Maximum ${maxImages} images allowed`);
+      return;
+    }
+
+    const validFiles = files.filter((f) => f.type.startsWith("image/"));
+    if (validFiles.length !== files.length) {
+      alert("Only image files are allowed");
+      return;
+    }
+
+    if (isEdit) {
+      setEditImages((prev) => [...prev, ...validFiles]);
+    } else {
+      setCommentImages((prev) => [...prev, ...validFiles]);
+      validFiles.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setCommentImagePreview((prev) => [...prev, reader.result]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    e.target.value = "";
+  };
+
+  const removeImage = (index, isEdit = false) => {
+    if (isEdit) {
+      setEditImages((prev) => prev.filter((_, i) => i !== index));
+    } else {
+      setCommentImages((prev) => prev.filter((_, i) => i !== index));
+      setCommentImagePreview((prev) => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const removeExistingEditImage = (index) => {
+    setEditExistingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
       const ticketStatus = t.status?.replace("_", " ") || t.status;
@@ -120,7 +352,6 @@ export default function AdminTicketsPage() {
     }
   }, [filteredTickets, selectedTicketId]);
 
-  // ✅ ADDED: Map display status to backend enum value
   const getBackendStatusValue = (displayStatus) => {
     const statusMap = {
       "OPEN": "OPEN",
@@ -134,7 +365,6 @@ export default function AdminTicketsPage() {
     return statusMap[displayStatus] || displayStatus;
   };
 
-  // ✅ FIXED: Status update with correct enum mapping
   const changeStatus = async (newStatus) => {
     if (!selectedTicket) return;
     
@@ -146,10 +376,7 @@ export default function AdminTicketsPage() {
     }
 
     try {
-      // Convert display status to backend enum format
       const backendStatus = getBackendStatusValue(newStatus);
-      console.log("Sending status to backend:", backendStatus);
-
       const response = await updateTicketStatus(
         selectedTicket.id,
         "ADMIN",
@@ -160,7 +387,6 @@ export default function AdminTicketsPage() {
         },
         adminEmail
       );
-      console.log("Status update response:", response.data);
 
       setSelectedTicket((prev) => ({
         ...prev,
@@ -173,7 +399,6 @@ export default function AdminTicketsPage() {
     }
   };
 
-  // ✅ ADDED: Assign technician to ticket
   const assignTechnician = async (technicianId) => {
     if (!selectedTicket) return;
     
@@ -182,11 +407,9 @@ export default function AdminTicketsPage() {
       const response = await axios.put(
         `${BACKEND_URL}/api/tickets/${selectedTicket.id}/assign/${technicianId}`
       );
-      console.log("Technician assigned:", response.data);
       
-      // Update selected ticket with new technician
       setSelectedTicket(response.data);
-      await loadTickets(); // Refresh ticket list
+      await loadTickets();
       alert("Technician assigned successfully!");
     } catch (err) {
       console.error("Assign technician failed:", err);
@@ -196,19 +419,34 @@ export default function AdminTicketsPage() {
     }
   };
 
+  // Send comment with image support
   const sendComment = async () => {
     const trimmed = comment.trim();
-    if (!trimmed || !selectedTicket) return;
+    if (!trimmed && commentImages.length === 0) return;
+    
     try {
-      await addComment(
-        selectedTicket.id,
-        "Admin",
-        trimmed,
-        [],
-        replyTo ? replyTo.id : null,
-        "ADMIN"
+      const formData = new FormData();
+      formData.append("author", adminEmail);
+      formData.append("message", trimmed);
+      formData.append("authorRole", "ADMIN");
+      
+      if (replyTo) {
+        formData.append("parentId", replyTo.id);
+      }
+
+      commentImages.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      await axios.post(
+        `${BACKEND_URL}/api/tickets/${selectedTicket.id}/comments`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
+      
       setComment("");
+      setCommentImages([]);
+      setCommentImagePreview([]);
       setReplyTo(null);
       await loadTicketDetails(selectedTicket.id);
     } catch (err) {
@@ -217,28 +455,52 @@ export default function AdminTicketsPage() {
     }
   };
 
+  // Save edit with image support
   const saveEdit = async () => {
-    if (!editText.trim() || !editingId || !selectedTicket) return;
+    if (!editText.trim() && editExistingImages.length === 0 && editImages.length === 0) {
+      alert("Please add a message or at least one image");
+      return;
+    }
+    
     try {
-      const res = await editComment(
-        selectedTicket.id,
-        editingId,
-        adminEmail,
-        adminRole,
-        editText
+      const formData = new FormData();
+      formData.append("author", adminEmail);
+      formData.append("authorRole", adminRole);
+      formData.append("message", editText);
+      formData.append("existingImages", JSON.stringify(editExistingImages));
+
+      editImages.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      const res = await axios.post(
+        `${BACKEND_URL}/api/tickets/${selectedTicket.id}/comments/${editingId}/edit`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
       );
+      
       setComments((prev) => prev.map((c) => (c.id === editingId ? res.data : c)));
       setEditingId(null);
       setEditText("");
+      setEditImages([]);
+      setEditExistingImages([]);
     } catch (err) {
       console.error("Edit failed:", err);
       alert("Failed to edit comment: " + (err.response?.data?.message || err.message));
     }
   };
 
+  const startEdit = (c) => {
+    setEditingId(c.id);
+    setEditText(c.message || "");
+    setEditExistingImages(c.imageUrls || []);
+    setEditImages([]);
+  };
+
   const handleDeleteComment = async (commentId) => {
     if (!selectedTicket) return;
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
+    
     try {
       await deleteComment(selectedTicket.id, commentId, adminEmail, adminRole);
       setComments((prev) => prev.filter((c) => c.id !== commentId));
@@ -254,9 +516,9 @@ export default function AdminTicketsPage() {
       const normalized = value.replace("T", " ").split(".")[0];
       const date = new Date(normalized);
       if (Number.isNaN(date.getTime())) return "—";
-      return date.toLocaleString("en-GB", {
-        day: "2-digit",
+      return date.toLocaleString("en-US", {
         month: "short",
+        day: "numeric",
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
@@ -266,46 +528,35 @@ export default function AdminTicketsPage() {
     }
   };
 
-  const statusConfig = {
-    OPEN: { label: "Open", color: "#dc2626", bg: "#fee2e2", border: "#fecaca", step: 1, icon: "📥" },
-    "IN PROGRESS": { label: "In Progress", color: "#d97706", bg: "#fef3c7", border: "#fde68a", step: 2, icon: "🔧" },
-    IN_PROGRESS: { label: "In Progress", color: "#d97706", bg: "#fef3c7", border: "#fde68a", step: 2, icon: "🔧" },
-    RESOLVED: { label: "Resolved", color: "#16a34a", bg: "#d1fae5", border: "#a7f3d0", step: 3, icon: "✅" },
-    CLOSED: { label: "Closed", color: "#2563eb", bg: "#dbeafe", border: "#bfdbfe", step: 4, icon: "🔒" },
-    REJECTED: { label: "Rejected", color: "#7c3aed", bg: "#ede9fe", border: "#ddd6fe", step: 0, icon: "❌" },
-  };
+  const getStatusStyle = (status) => STATUS_CONFIG[status] || STATUS_CONFIG.OPEN;
 
-  const getStatusStyle = (status) => statusConfig[status] || statusConfig.OPEN;
-
-  // ✅ FIXED: Handle both IN PROGRESS and IN_PROGRESS formats
   const getAvailableTransitions = (currentStatus) => {
     const normalizedStatus = currentStatus?.replace("_", " ") || currentStatus;
     
     const transitions = {
       "OPEN": [
-        { status: "IN PROGRESS", label: "Start Work", color: "btn-amber", icon: "🔧" },
-        { status: "REJECTED", label: "Reject", color: "btn-purple", icon: "❌" },
+        { status: "IN PROGRESS", label: "Start Work", color: "#f59e0b", icon: Wrench },
+        { status: "REJECTED", label: "Reject", color: "#7c3aed", icon: XCircle },
       ],
       "IN PROGRESS": [
-        { status: "RESOLVED", label: "Mark Resolved", color: "btn-green", icon: "✅" },
-        { status: "OPEN", label: "Reopen", color: "btn-secondary", icon: "↩️" },
+        { status: "RESOLVED", label: "Mark Resolved", color: "#10b981", icon: CheckCircle },
+        { status: "OPEN", label: "Reopen", color: "#64748b", icon: RotateCcw },
       ],
       "IN_PROGRESS": [
-        { status: "RESOLVED", label: "Mark Resolved", color: "btn-green", icon: "✅" },
-        { status: "OPEN", label: "Reopen", color: "btn-secondary", icon: "↩️" },
+        { status: "RESOLVED", label: "Mark Resolved", color: "#10b981", icon: CheckCircle },
+        { status: "OPEN", label: "Reopen", color: "#64748b", icon: RotateCcw },
       ],
       "RESOLVED": [
-        { status: "CLOSED", label: "Close Ticket", color: "btn-blue", icon: "🔒" },
-        { status: "IN PROGRESS", label: "Reopen Work", color: "btn-amber", icon: "🔧" },
+        { status: "CLOSED", label: "Close Ticket", color: "#2563eb", icon: Lock },
+        { status: "IN PROGRESS", label: "Reopen Work", color: "#f59e0b", icon: Wrench },
       ],
-      "CLOSED": [{ status: "OPEN", label: "Reopen", color: "btn-secondary", icon: "↩️" }],
-      "REJECTED": [{ status: "OPEN", label: "Reopen", color: "btn-secondary", icon: "↩️" }],
+      "CLOSED": [{ status: "OPEN", label: "Reopen", color: "#64748b", icon: RotateCcw }],
+      "REJECTED": [{ status: "OPEN", label: "Reopen", color: "#64748b", icon: RotateCcw }],
     };
     
     return transitions[currentStatus] || transitions[normalizedStatus] || [];
   };
 
-  // ✅ FIXED: Normalize status for comparison
   const isStatusCompleted = (status, checkStatus) => {
     const order = ["OPEN", "IN PROGRESS", "RESOLVED", "CLOSED"];
     const normalizedStatus = status?.replace("_", " ");
@@ -335,42 +586,299 @@ export default function AdminTicketsPage() {
   };
 
   const renderComment = (c, level = 0) => {
-    const statusStyle = getStatusStyle(selectedTicket?.status);
+    const isEditing = editingId === c.id;
+    
     return (
       <div
         key={c.id}
         ref={(el) => { if (el) commentNodeRefs.current[c.id] = el; }}
         style={{
-          marginLeft: level > 0 ? `${Math.min(level * 28, 84)}px` : "0px",
-          borderLeft: level > 0 ? `3px solid ${statusStyle.border}` : "none",
-          paddingLeft: level > 0 ? "14px" : "0px",
-          marginTop: level > 0 ? "14px" : "0px",
+          marginLeft: level > 0 ? `${Math.min(level * 24, 72)}px` : "0px",
+          marginTop: level > 0 ? "12px" : "16px",
+          position: "relative",
         }}
       >
-        <div className="conversation-card">
-          <div className="conversation-top">
-            <span className="conversation-author">{c.author || "Unknown"}</span>
-            <span style={{ color: "#9ca3af" }}>•</span>
-            <span className="conversation-time">{formatDateTime(c.createdAt)}</span>
+        {level > 0 && (
+          <div style={{
+            position: "absolute",
+            left: "-12px",
+            top: "-12px",
+            width: "2px",
+            height: "24px",
+            background: "linear-gradient(to bottom, #e2e8f0, #cbd5e1)",
+            borderRadius: "1px"
+          }} />
+        )}
+        
+        <div style={{
+          background: isEditing ? "#f8fafc" : "#ffffff",
+          border: `1px solid ${isEditing ? "#bfdbfe" : "#e2e8f0"}`,
+          borderRadius: "16px",
+          padding: "16px",
+          boxShadow: isEditing ? "0 4px 6px -1px rgba(59, 130, 246, 0.1)" : "0 1px 3px rgba(0,0,0,0.05)",
+          transition: "all 0.2s ease"
+        }}>
+          {/* Comment Header */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            marginBottom: "12px"
+          }}>
+            <div style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "10px",
+              background: c.authorRole === "ADMIN" 
+                ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)" 
+                : "linear-gradient(135deg, #64748b 0%, #475569 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "700"
+            }}>
+              {c.author?.charAt(0)?.toUpperCase() || "?"}
+            </div>
+            
+            <div style={{ flex: 1 }}>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                flexWrap: "wrap"
+              }}>
+                <span style={{
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  color: COLORS.text.primary,
+                  fontFamily: "Inter, system-ui, -apple-system, sans-serif"
+                }}>
+                  {c.author || "Unknown"}
+                </span>
+                
+                {c.authorRole && (
+                  <span style={{
+                    fontSize: "11px",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    padding: "4px 10px",
+                    borderRadius: "999px",
+                    background: c.authorRole === "ADMIN" ? "#dbeafe" : "#f1f5f9",
+                    color: c.authorRole === "ADMIN" ? "#1d4ed8" : "#64748b"
+                  }}>
+                    {c.authorRole}
+                  </span>
+                )}
+                
+                <span style={{ color: "#cbd5e1", fontSize: "12px" }}>•</span>
+                
+                <span style={{
+                  fontSize: "13px",
+                  color: COLORS.text.muted,
+                  fontFamily: "Inter, system-ui, sans-serif"
+                }}>
+                  {formatDateTime(c.createdAt)}
+                </span>
+                
+                {c.updatedAt && c.updatedAt !== c.createdAt && (
+                  <span style={{
+                    fontSize: "11px",
+                    color: "#f59e0b",
+                    fontStyle: "italic"
+                  }}>
+                    (edited)
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          {editingId === c.id ? (
-            <div style={{ marginTop: "10px" }}>
+          {/* Edit Mode */}
+          {isEditing ? (
+            <div>
               <textarea
                 value={editText}
                 onChange={(e) => setEditText(e.target.value)}
-                style={{ width: "100%", minHeight: "80px", padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db" }}
+                placeholder="Edit your comment..."
+                style={{
+                  width: "100%",
+                  minHeight: "100px",
+                  padding: "12px 16px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  fontSize: "14px",
+                  lineHeight: "1.6",
+                  color: COLORS.text.primary,
+                  background: "#ffffff",
+                  resize: "vertical",
+                  fontFamily: "Inter, system-ui, sans-serif",
+                  marginBottom: "12px"
+                }}
               />
-              <div style={{ marginTop: "10px", display: "flex", gap: "8px" }}>
-                <button 
-                  onClick={saveEdit}
-                  style={{ padding: "8px 16px", borderRadius: "999px", border: "none", background: "#2563eb", color: "white", fontWeight: "700", cursor: "pointer" }}
+              
+              {editExistingImages.length > 0 && (
+                <div style={{ marginBottom: "12px" }}>
+                  <p style={{
+                    fontSize: "12px",
+                    color: COLORS.text.secondary,
+                    marginBottom: "8px",
+                    fontWeight: "600"
+                  }}>
+                    Current images:
+                  </p>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {editExistingImages.map((url, i) => (
+                      <div key={`existing-${i}`} style={{
+                        position: "relative",
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "8px",
+                        overflow: "hidden",
+                        border: "1px solid #e2e8f0"
+                      }}>
+                        <img 
+                          src={`${BACKEND_URL}${url}`} 
+                          alt="" 
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                        <button
+                          onClick={() => removeExistingEditImage(i)}
+                          style={{
+                            position: "absolute",
+                            top: "4px",
+                            right: "4px",
+                            width: "20px",
+                            height: "20px",
+                            borderRadius: "50%",
+                            background: "rgba(0,0,0,0.6)",
+                            color: "white",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "12px"
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {editImages.length > 0 && (
+                <div style={{ marginBottom: "12px" }}>
+                  <p style={{
+                    fontSize: "12px",
+                    color: COLORS.text.secondary,
+                    marginBottom: "8px",
+                    fontWeight: "600"
+                  }}>
+                    New images:
+                  </p>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {editImages.map((file, i) => (
+                      <div key={`new-${i}`} style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "8px 12px",
+                        background: "#f1f5f9",
+                        borderRadius: "8px",
+                        border: "1px solid #e2e8f0"
+                      }}>
+                        <ImageIcon size={16} color={COLORS.primary} />
+                        <span style={{ fontSize: "13px", color: COLORS.text.primary }}>{file.name}</span>
+                        <button
+                          onClick={() => removeImage(i, true)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: COLORS.danger
+                          }}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div style={{ marginBottom: "12px" }}>
+                <input
+                  ref={editFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => handleImageSelect(e, true)}
+                  style={{ display: "none" }}
+                />
+                <button
+                  onClick={() => editFileInputRef.current?.click()}
+                  disabled={editExistingImages.length + editImages.length >= 3}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 14px",
+                    background: "#f1f5f9",
+                    border: "1px dashed #cbd5e1",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    color: COLORS.text.secondary,
+                    cursor: "pointer",
+                    fontWeight: "500"
+                  }}
                 >
-                  Save
+                  <Upload size={14} />
+                  Add Image ({editExistingImages.length + editImages.length}/3)
                 </button>
-                <button 
-                  onClick={() => { setEditingId(null); setEditText(""); }}
-                  style={{ padding: "8px 16px", borderRadius: "999px", border: "1px solid #d1d5db", background: "#f3f4f6", color: "#374151", fontWeight: "700", cursor: "pointer" }}
+              </div>
+              
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  onClick={saveEdit}
+                  style={{
+                    padding: "10px 20px",
+                    background: COLORS.primary,
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <CheckCircle size={16} />
+                  Save Changes
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingId(null);
+                    setEditText("");
+                    setEditImages([]);
+                    setEditExistingImages([]);
+                  }}
+                  style={{
+                    padding: "10px 20px",
+                    background: "#f1f5f9",
+                    color: COLORS.text.secondary,
+                    border: "none",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
                 >
                   Cancel
                 </button>
@@ -378,28 +886,143 @@ export default function AdminTicketsPage() {
             </div>
           ) : (
             <>
-              <div style={{ fontSize: "15px", lineHeight: "1.7", color: "#1f2937", whiteSpace: "pre-line" }}>
+              <div style={{
+                fontSize: "14px",
+                lineHeight: "1.7",
+                color: COLORS.text.primary,
+                marginBottom: "12px",
+                whiteSpace: "pre-wrap",
+                fontFamily: "Inter, system-ui, sans-serif"
+              }}>
                 {c.message || ""}
               </div>
-              <div style={{ display: "flex", gap: "12px", marginTop: "10px" }}>
+              
+              {c.imageUrls?.length > 0 && (
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
+                  {c.imageUrls.map((url, i) => (
+                    <div 
+                      key={i} 
+                      onClick={() => setPreviewImage(`${BACKEND_URL}${url}`)}
+                      style={{
+                        width: "120px",
+                        height: "120px",
+                        borderRadius: "10px",
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        border: "1px solid #e2e8f0",
+                        position: "relative"
+                      }}
+                    >
+                      <img
+                        src={`${BACKEND_URL}${url}`}
+                        alt=""
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                      <div style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        padding: "4px 8px",
+                        background: "rgba(0,0,0,0.5)",
+                        color: "white",
+                        fontSize: "11px",
+                        textAlign: "center"
+                      }}>
+                        Click to view
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
                 <button
                   onClick={() => setReplyTo(c)}
-                  style={{ border: "none", background: "transparent", color: "#6b7280", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    background: "none",
+                    border: "none",
+                    color: COLORS.text.muted,
+                    fontSize: "13px",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.color = COLORS.primary;
+                    e.target.style.background = "#eff6ff";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.color = COLORS.text.muted;
+                    e.target.style.background = "transparent";
+                  }}
                 >
+                  <Reply size={14} />
                   Reply
                 </button>
+                
                 {c.author === "Admin" && (
                   <>
                     <button
-                      onClick={() => { setEditingId(c.id); setEditText(c.message || ""); }}
-                      style={{ border: "none", background: "transparent", color: "#6b7280", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}
+                      onClick={() => startEdit(c)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "none",
+                        border: "none",
+                        color: COLORS.text.muted,
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.color = COLORS.warning;
+                        e.target.style.background = "#fffbeb";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.color = COLORS.text.muted;
+                        e.target.style.background = "transparent";
+                      }}
                     >
+                      <Edit3 size={14} />
                       Edit
                     </button>
+                    
                     <button
                       onClick={() => handleDeleteComment(c.id)}
-                      style={{ border: "none", background: "transparent", color: "#6b7280", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "none",
+                        border: "none",
+                        color: COLORS.text.muted,
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        cursor: "pointer",
+                        padding: "4px 8px",
+                        borderRadius: "6px",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.color = COLORS.danger;
+                        e.target.style.background = "#fef2f2";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.color = COLORS.text.muted;
+                        e.target.style.background = "transparent";
+                      }}
                     >
+                      <Trash2 size={14} />
                       Delete
                     </button>
                   </>
@@ -408,6 +1031,7 @@ export default function AdminTicketsPage() {
             </>
           )}
         </div>
+        
         {c.replies?.map((reply) => renderComment(reply, level + 1))}
       </div>
     );
@@ -417,163 +1041,722 @@ export default function AdminTicketsPage() {
   const currentStatusStyle = getStatusStyle(selectedTicket?.status);
   const availableTransitions = selectedTicket ? getAvailableTransitions(selectedTicket.status) : [];
   const assignedTechName = selectedTicket?.assignedTechnician?.name || selectedTicket?.assignedTechnician || "—";
-
-  // ✅ ADDED: Check if technician is already assigned
   const isTechnicianAssigned = selectedTicket?.assignedTechnician?.name || selectedTicket?.assignedTechnician;
 
-  console.log("Rendering with tickets:", tickets.length, "selected:", selectedTicketId);
-
   if (loading && tickets.length === 0) {
-    return <div style={{ padding: "40px", textAlign: "center" }}>Loading admin panel...</div>;
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: COLORS.background,
+        fontFamily: "Inter, system-ui, -apple-system, sans-serif"
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            width: "48px",
+            height: "48px",
+            border: "3px solid #e2e8f0",
+            borderTopColor: COLORS.primary,
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+            margin: "0 auto 16px"
+          }} />
+          <p style={{ color: COLORS.text.secondary, fontSize: "16px", fontWeight: "500" }}>
+            Loading admin panel...
+          </p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
   }
 
   return (
-    <div style={{ maxWidth: "1480px", margin: "0 auto", padding: "24px 22px 50px", background: "#f5f7fb", minHeight: "100vh" }}>
-      {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px", marginBottom: "22px" }}>
-        {[
-          { key: "all", label: "Total", color: "#0f172a" },
-          { key: "OPEN", label: "Open", color: "#dc2626" },
-          { key: "IN PROGRESS", label: "In Progress", color: "#d97706" },
-          { key: "RESOLVED", label: "Resolved", color: "#16a34a" },
-          { key: "CLOSED", label: "Closed", color: "#2563eb" },
-        ].map((item) => (
-          <div
-            key={item.key}
-            onClick={() => setStatusFilter(item.key)}
-            style={{
-              background: "linear-gradient(145deg, #ffffff 0%, #f8fbff 100%)",
-              border: `1px solid ${statusFilter === item.key ? "#2563eb" : "#e5edf8"}`,
-              borderRadius: "22px",
-              padding: "18px",
-              boxShadow: statusFilter === item.key ? "0 14px 30px rgba(37, 99, 235, 0.12)" : "0 14px 28px rgba(15, 23, 42, 0.05)",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-          >
-            <div style={{ fontSize: "12px", fontWeight: "800", textTransform: "uppercase", letterSpacing: "0.08em", color: "#64748b", marginBottom: "8px" }}>
-              {item.label}
-            </div>
-            <div style={{ fontSize: "30px", fontWeight: "800", color: item.color }}>
-              {item.key === "all" 
-                ? tickets.length 
-                : tickets.filter((t) => {
-                    // ✅ FIXED: Normalize ticket status for comparison
-                    const normalizedTicketStatus = t.status?.replace("_", " ") || t.status;
-                    const normalizedFilterKey = item.key.replace("_", " ");
-                    return normalizedTicketStatus === normalizedFilterKey;
-                  }).length}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ✅ ADDED: Manage Technicians Button */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "16px" }}>
+    <div style={{
+      maxWidth: "1600px",
+      margin: "0 auto",
+      padding: "24px 32px 40px",
+      background: COLORS.background,
+      minHeight: "100vh",
+      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      color: COLORS.text.primary
+    }}>
+      {/* Header */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "24px"
+      }}>
+        <div>
+          <h1 style={{
+            fontSize: "28px",
+            fontWeight: "800",
+            color: COLORS.text.primary,
+            margin: "0 0 4px 0",
+            letterSpacing: "-0.02em"
+          }}>
+            Ticket Management
+          </h1>
+          <p style={{
+            fontSize: "14px",
+            color: COLORS.text.secondary,
+            margin: 0
+          }}>
+            Manage and resolve support tickets efficiently
+          </p>
+        </div>
+        
         <button
           onClick={() => window.location.href = "/admin/technicians"}
           style={{
-            background: "linear-gradient(145deg, #7c3aed 0%, #6d28d9 100%)",
-            color: "white",
-            border: "none",
-            borderRadius: "999px",
-            padding: "12px 20px",
-            fontSize: "13px",
-            fontWeight: "800",
-            cursor: "pointer",
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            boxShadow: "0 4px 6px -1px rgba(124, 58, 237, 0.2)"
+            padding: "12px 20px",
+            background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            fontSize: "14px",
+            fontWeight: "600",
+            cursor: "pointer",
+            boxShadow: "0 4px 6px -1px rgba(124, 58, 237, 0.2)",
+            transition: "all 0.2s"
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = "translateY(-1px)";
+            e.target.style.boxShadow = "0 6px 8px -1px rgba(124, 58, 237, 0.3)";
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = "translateY(0)";
+            e.target.style.boxShadow = "0 4px 6px -1px rgba(124, 58, 237, 0.2)";
           }}
         >
-          🔧 Manage Technicians
+          <Wrench size={18} />
+          Manage Technicians
         </button>
       </div>
 
-      {/* Toolbar */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", marginBottom: "18px" }}>
-        <input
-          type="text"
-          placeholder="Search tickets..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ flex: 1, minWidth: "280px", border: "1px solid #d7deea", borderRadius: "999px", padding: "14px 18px", fontSize: "15px", outline: "none" }}
-        />
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+      {/* ==================== ANALYTICS DASHBOARD ==================== */}
+      <div style={{ marginBottom: "32px" }}>
+        {/* Analytics Header */}
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px"
+        }}>
+          <h2 style={{
+            fontSize: "20px",
+            fontWeight: "700",
+            color: COLORS.text.primary,
+            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: "10px"
+          }}>
+            <BarChart3 size={24} color={COLORS.primary} />
+            Analytics Overview
+          </h2>
+          
+          <div style={{ display: "flex", gap: "8px" }}>
+            {[
+              { key: "7d", label: "7 Days" },
+              { key: "30d", label: "30 Days" },
+              { key: "90d", label: "90 Days" }
+            ].map((range) => (
+              <button
+                key={range.key}
+                onClick={() => setTimeRange(range.key)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "none",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  background: timeRange === range.key ? COLORS.primary : "#f1f5f9",
+                  color: timeRange === range.key ? "#ffffff" : COLORS.text.secondary,
+                  transition: "all 0.2s"
+                }}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* KPI Cards */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: "16px",
+          marginBottom: "24px"
+        }}>
+          {[
+            { 
+              label: "Total Tickets", 
+              value: analytics.total, 
+              icon: BarChart3, 
+              color: COLORS.primary,
+              trend: "+12%",
+              trendUp: true
+            },
+            { 
+              label: "Resolution Rate", 
+              value: `${analytics.resolutionRate}%`, 
+              icon: CheckCircle, 
+              color: COLORS.success,
+              trend: "+5%",
+              trendUp: true
+            },
+            { 
+              label: "Avg Resolution Time", 
+              value: analytics.avgResolutionTime, 
+              icon: Clock, 
+              color: COLORS.warning,
+              trend: "-15min",
+              trendUp: true
+            },
+            { 
+              label: "Open Tickets", 
+              value: analytics.open, 
+              icon: AlertCircle, 
+              color: COLORS.danger,
+              trend: analytics.open > 10 ? "+3" : "-2",
+              trendUp: analytics.open > 10
+            },
+          ].map((kpi, index) => (
+            <div key={index} style={{
+              background: COLORS.surface,
+              border: "1px solid #e2e8f0",
+              borderRadius: "16px",
+              padding: "20px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+              transition: "all 0.2s",
+              cursor: "pointer"
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.05)";
+            }}
+            >
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: "12px"
+              }}>
+                <div style={{
+                  width: "48px",
+                  height: "48px",
+                  borderRadius: "12px",
+                  background: `${kpi.color}15`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <kpi.icon size={24} color={kpi.color} />
+                </div>
+                
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                  background: kpi.trendUp ? "#ecfdf5" : "#fef2f2",
+                  color: kpi.trendUp ? "#059669" : "#dc2626",
+                  fontSize: "12px",
+                  fontWeight: "700"
+                }}>
+                  {kpi.trendUp ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  {kpi.trend}
+                </div>
+              </div>
+              
+              <div style={{
+                fontSize: "32px",
+                fontWeight: "800",
+                color: COLORS.text.primary,
+                marginBottom: "4px",
+                letterSpacing: "-0.02em"
+              }}>
+                {kpi.value}
+              </div>
+              
+              <div style={{
+                fontSize: "14px",
+                color: COLORS.text.secondary,
+                fontWeight: "500"
+              }}>
+                {kpi.label}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Charts Grid */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "2fr 1fr",
+          gap: "24px",
+          marginBottom: "24px"
+        }}>
+          {/* Ticket Trend Chart */}
+          <div style={{
+            background: COLORS.surface,
+            border: "1px solid #e2e8f0",
+            borderRadius: "16px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+          }}>
+            <h3 style={{
+              fontSize: "16px",
+              fontWeight: "700",
+              color: COLORS.text.primary,
+              margin: "0 0 20px 0",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}>
+              <Activity size={20} color={COLORS.primary} />
+              Ticket Activity Trend
+            </h3>
+            
+            <div style={{ height: "280px" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={analytics.trendData}>
+                  <defs>
+                    <linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={CHART_COLORS.blue} stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={CHART_COLORS.green} stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor={CHART_COLORS.green} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: COLORS.text.muted, fontSize: 12 }}
+                  />
+                  <YAxis 
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: COLORS.text.muted, fontSize: 12 }}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      background: COLORS.surface,
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
+                    }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="tickets" 
+                    stroke={CHART_COLORS.blue} 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorTickets)" 
+                    name="New Tickets"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="resolved" 
+                    stroke={CHART_COLORS.green} 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorResolved)" 
+                    name="Resolved"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Status Distribution */}
+          <div style={{
+            background: COLORS.surface,
+            border: "1px solid #e2e8f0",
+            borderRadius: "16px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+          }}>
+            <h3 style={{
+              fontSize: "16px",
+              fontWeight: "700",
+              color: COLORS.text.primary,
+              margin: "0 0 20px 0",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px"
+            }}>
+              <PieChart size={20} color={COLORS.primary} />
+              Status Distribution
+            </h3>
+            
+            <div style={{ height: "280px" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RePieChart>
+                  <Pie
+                    data={analytics.statusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {analytics.statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{
+                      background: COLORS.surface,
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
+                    }}
+                  />
+                </RePieChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* Legend */}
+            <div style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "12px",
+              justifyContent: "center",
+              marginTop: "16px"
+            }}>
+              {analytics.statusData.map((item, index) => (
+                <div key={index} style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "12px",
+                  color: COLORS.text.secondary
+                }}>
+                  <div style={{
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    background: item.color
+                  }} />
+                  {item.name} ({item.value})
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Priority Chart */}
+        <div style={{
+          background: COLORS.surface,
+          border: "1px solid #e2e8f0",
+          borderRadius: "16px",
+          padding: "24px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+        }}>
+          <h3 style={{
+            fontSize: "16px",
+            fontWeight: "700",
+            color: COLORS.text.primary,
+            margin: "0 0 20px 0",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}>
+            <BarChart3 size={20} color={COLORS.primary} />
+            Tickets by Priority
+          </h3>
+          
+          <div style={{ height: "200px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analytics.priorityData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={true} vertical={false} />
+                <XAxis 
+                  type="number" 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: COLORS.text.muted, fontSize: 12 }}
+                />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: COLORS.text.primary, fontSize: 13, fontWeight: 600 }}
+                  width={80}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    background: COLORS.surface,
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
+                  }}
+                />
+                <Bar 
+                  dataKey="count" 
+                  fill={CHART_COLORS.blue}
+                  radius={[0, 8, 8, 0]}
+                  barSize={32}
+                >
+                  {analytics.priorityData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={
+                      index === 0 ? CHART_COLORS.slate :
+                      index === 1 ? CHART_COLORS.blue :
+                      index === 2 ? CHART_COLORS.amber :
+                      CHART_COLORS.red
+                    } />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filter */}
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+        marginBottom: "24px"
+      }}>
+        <div style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: "600px"
+        }}>
+          <Search size={18} style={{
+            position: "absolute",
+            left: "14px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: COLORS.text.muted
+          }} />
+          <input
+            type="text"
+            placeholder="Search tickets by title, description, reporter..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "12px 16px 12px 44px",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontFamily: "inherit",
+              outline: "none",
+              transition: "all 0.2s",
+              background: "#ffffff"
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = COLORS.primary;
+              e.target.style.boxShadow = "0 0 0 3px rgba(37, 99, 235, 0.1)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "#e2e8f0";
+              e.target.style.boxShadow = "none";
+            }}
+          />
+        </div>
+        
+        <div style={{ 
+          display: "flex", 
+          gap: "8px",
+          flexWrap: "wrap",
+          alignItems: "center"
+        }}>
+          <span style={{
+            fontSize: "13px",
+            fontWeight: "600",
+            color: COLORS.text.muted,
+            marginRight: "8px"
+          }}>
+            Filter:
+          </span>
           {["all", "OPEN", "IN PROGRESS", "RESOLVED", "CLOSED", "REJECTED"].map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
               style={{
-                border: "1px solid #d7deea",
+                padding: "8px 16px",
                 borderRadius: "999px",
-                padding: "12px 18px",
-                fontSize: "13px",
-                fontWeight: "800",
-                background: statusFilter === status ? "#2563eb" : "#ffffff",
-                color: statusFilter === status ? "#ffffff" : "#334155",
+                border: "none",
+                fontSize: "12px",
+                fontWeight: "600",
                 cursor: "pointer",
-                borderColor: statusFilter === status ? "#2563eb" : "#d7deea",
+                background: statusFilter === status ? COLORS.primary : "#f1f5f9",
+                color: statusFilter === status ? "#ffffff" : COLORS.text.secondary,
+                transition: "all 0.2s",
+                whiteSpace: "nowrap"
               }}
             >
-              {status === "all" ? "All" : status}
+              {status === "all" ? "All" : status.replace("_", " ")}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "22px", alignItems: "start" }}>
-        
+      {/* Main Content Grid */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "380px 1fr",
+        gap: "24px",
+        alignItems: "start"
+      }}>
         {/* Left Panel - Ticket List */}
-        <div style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "26px", boxShadow: "0 14px 28px rgba(15, 23, 42, 0.05)", overflow: "hidden" }}>
-          <div style={{ padding: "22px 22px 14px", borderBottom: "1px solid #edf2f7" }}>
-            <div style={{ fontSize: "28px", fontWeight: "900", color: "#0f172a" }}>
-              {statusFilter === "all" ? "All Tickets" : statusFilter}
-            </div>
+        <div style={{
+          background: COLORS.surface,
+          border: "1px solid #e2e8f0",
+          borderRadius: "16px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+          overflow: "hidden",
+          maxHeight: "calc(100vh - 300px)",
+          overflowY: "auto"
+        }}>
+          <div style={{
+            padding: "20px",
+            borderBottom: "1px solid #e2e8f0",
+            background: "#f8fafc"
+          }}>
+            <h2 style={{
+              fontSize: "16px",
+              fontWeight: "700",
+              color: COLORS.text.primary,
+              margin: 0
+            }}>
+              Tickets ({filteredTickets.length})
+            </h2>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "16px", maxHeight: "840px", overflowY: "auto" }}>
+          
+          <div style={{ padding: "12px" }}>
             {filteredTickets.length === 0 ? (
-              <div style={{ color: "#6b7280", textAlign: "center", padding: "40px" }}>No tickets found</div>
+              <div style={{
+                textAlign: "center",
+                padding: "40px 20px",
+                color: COLORS.text.muted
+              }}>
+                <Filter size={32} style={{ marginBottom: "12px", opacity: 0.5 }} />
+                <p>No tickets found</p>
+              </div>
             ) : (
               filteredTickets.map((ticket) => {
                 const style = getStatusStyle(ticket.status);
+                const StatusIcon = style.icon;
+                
                 return (
                   <div
                     key={ticket.id}
                     onClick={() => setSelectedTicketId(ticket.id)}
                     style={{
-                      border: `1px solid ${selectedTicketId === ticket.id ? "#2563eb" : "#e6ebf2"}`,
-                      borderRadius: "22px",
-                      background: selectedTicketId === ticket.id ? "linear-gradient(145deg, #eff6ff 0%, #ffffff 100%)" : "linear-gradient(145deg, #ffffff 0%, #fbfdff 100%)",
                       padding: "16px",
+                      borderRadius: "12px",
                       cursor: "pointer",
-                      boxShadow: selectedTicketId === ticket.id ? "0 14px 30px rgba(37, 99, 235, 0.12)" : "none",
+                      background: selectedTicketId === ticket.id ? "#eff6ff" : "#ffffff",
+                      border: `1px solid ${selectedTicketId === ticket.id ? "#bfdbfe" : "transparent"}`,
+                      marginBottom: "8px",
+                      transition: "all 0.2s"
                     }}
                   >
-                    <div style={{ display: "grid", gridTemplateColumns: "80px 1fr auto", gap: "14px", alignItems: "start", marginBottom: "12px" }}>
-                      <div style={{ width: "80px", height: "80px", borderRadius: "16px", overflow: "hidden", background: "#eef2f7", border: "1px solid #e5e7eb" }}>
+                    <div style={{
+                      display: "flex",
+                      gap: "12px",
+                      marginBottom: "12px"
+                    }}>
+                      <div style={{
+                        width: "48px",
+                        height: "48px",
+                        borderRadius: "10px",
+                        overflow: "hidden",
+                        background: "#f1f5f9",
+                        flexShrink: 0
+                      }}>
                         {ticket.imageUrls?.length > 0 ? (
-                          <img src={`${BACKEND_URL}${ticket.imageUrls[0]}`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <img 
+                            src={`${BACKEND_URL}${ticket.imageUrls[0]}`} 
+                            alt="" 
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />
                         ) : (
-                          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>🎫</div>
+                          <div style={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "20px"
+                          }}>
+                            🎫
+                          </div>
                         )}
                       </div>
-                      <div>
-                        <div style={{ fontSize: "17px", fontWeight: "900", color: "#111827", marginBottom: "6px" }}>{ticket.title}</div>
-                        <div style={{ fontSize: "13px", color: "#64748b" }}>
-                          by <strong>{ticket.reporterName}</strong><br />
-                          {formatDateTime(ticket.createdAt)}
-                        </div>
-                      </div>
-                      <div style={{ background: style.bg, color: style.color, border: `1px solid ${style.border}`, padding: "6px 12px", borderRadius: "999px", fontSize: "11px", fontWeight: "800" }}>
-                        {style.icon} {style.label}
+                      
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h3 style={{
+                          fontSize: "14px",
+                          fontWeight: "700",
+                          color: COLORS.text.primary,
+                          margin: "0 0 4px 0",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}>
+                          {ticket.title}
+                        </h3>
+                        <p style={{
+                          fontSize: "12px",
+                          color: COLORS.text.muted,
+                          margin: 0
+                        }}>
+                          by {ticket.reporterName}
+                        </p>
                       </div>
                     </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                      <span style={{ background: "#f1f5f9", border: "1px solid #e2e8f0", color: "#475569", padding: "5px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: "700" }}>{ticket.category}</span>
-                      <span style={{ background: "#f1f5f9", border: "1px solid #e2e8f0", color: "#475569", padding: "5px 10px", borderRadius: "999px", fontSize: "11px", fontWeight: "700" }}>{ticket.priority}</span>
+                    
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between"
+                    }}>
+                      <span style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "6px 12px",
+                        borderRadius: "999px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        background: style.bg,
+                        color: style.color
+                      }}>
+                        <StatusIcon size={12} />
+                        {style.label}
+                      </span>
+                      
+                      <span style={{
+                        fontSize: "12px",
+                        color: COLORS.text.muted
+                      }}>
+                        {formatDateTime(ticket.createdAt)}
+                      </span>
                     </div>
                   </div>
                 );
@@ -583,272 +1766,638 @@ export default function AdminTicketsPage() {
         </div>
 
         {/* Right Panel - Details */}
-        <div style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "26px", boxShadow: "0 14px 28px rgba(15, 23, 42, 0.05)", padding: "24px" }}>
+        <div>
           {selectedTicket ? (
-            <>
-              {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "18px", marginBottom: "18px", paddingBottom: "18px", borderBottom: "1px solid #e5e7eb" }}>
-                <div>
-                  <div style={{ fontSize: "32px", fontWeight: "900", color: "#0f172a", marginBottom: "8px" }}>{selectedTicket.title}</div>
-                  <div style={{ fontSize: "14px", color: "#64748b" }}>
-                    Reported by <strong>{selectedTicket.reporterName}</strong> • {formatDateTime(selectedTicket.createdAt)}
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              {/* Ticket Header Card */}
+              <div style={{
+                background: COLORS.surface,
+                border: "1px solid #e2e8f0",
+                borderRadius: "16px",
+                padding: "24px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+              }}>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: "20px"
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      marginBottom: "12px",
+                      flexWrap: "wrap"
+                    }}>
+                      <span style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "8px 16px",
+                        borderRadius: "999px",
+                        fontSize: "13px",
+                        fontWeight: "700",
+                        background: currentStatusStyle.gradient,
+                        color: currentStatusStyle.color,
+                        border: `1px solid ${currentStatusStyle.border}`
+                      }}>
+                        {React.createElement(currentStatusStyle.icon, { size: 14 })}
+                        {currentStatusStyle.label}
+                      </span>
+                      
+                      <span style={{
+                        padding: "6px 12px",
+                        borderRadius: "999px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        background: "#f1f5f9",
+                        color: COLORS.text.secondary
+                      }}>
+                        {selectedTicket.category || "General"}
+                      </span>
+                      
+                      <span style={{
+                        padding: "6px 12px",
+                        borderRadius: "999px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        background: selectedTicket.priority === "HIGH" ? "#fef2f2" : 
+                                   selectedTicket.priority === "MEDIUM" ? "#fffbeb" : "#f1f5f9",
+                        color: selectedTicket.priority === "HIGH" ? "#dc2626" : 
+                               selectedTicket.priority === "MEDIUM" ? "#d97706" : COLORS.text.secondary
+                      }}>
+                        {selectedTicket.priority || "Low"} Priority
+                      </span>
+                    </div>
+                    
+                    <h2 style={{
+                      fontSize: "24px",
+                      fontWeight: "800",
+                      color: COLORS.text.primary,
+                      margin: "0 0 8px 0",
+                      lineHeight: "1.3"
+                    }}>
+                      {selectedTicket.title}
+                    </h2>
+                    
+                    <p style={{
+                      fontSize: "14px",
+                      color: COLORS.text.secondary,
+                      margin: 0
+                    }}>
+                      Reported by <strong>{selectedTicket.reporterName}</strong> • {formatDateTime(selectedTicket.createdAt)}
+                    </p>
                   </div>
                 </div>
-                <div style={{ background: currentStatusStyle.bg, color: currentStatusStyle.color, border: `1px solid ${currentStatusStyle.border}`, padding: "8px 16px", borderRadius: "999px", fontSize: "12px", fontWeight: "800" }}>
-                  {currentStatusStyle.icon} {currentStatusStyle.label}
-                </div>
-              </div>
 
-              {/* Status Progress */}
-              {selectedTicket.status !== "REJECTED" && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px", padding: "20px", background: "linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%)", borderRadius: "18px", border: "1px solid #e2e8f0" }}>
-                  {[
-                    { key: "OPEN", label: "Open", step: 1 },
-                    { key: "IN PROGRESS", label: "In Progress", step: 2 },
-                    { key: "RESOLVED", label: "Resolved", step: 3 },
-                    { key: "CLOSED", label: "Closed", step: 4 },
-                  ].map((step, index, array) => {
-                    const isCompleted = isStatusCompleted(selectedTicket.status, step.key);
-                    const isActive = selectedTicket.status === step.key || selectedTicket.status === step.key.replace(" ", "_");
-                    const isLast = index === array.length - 1;
-                    return (
-                      <React.Fragment key={step.key}>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", flex: 1 }}>
+                {/* Progress Steps */}
+                {selectedTicket.status !== "REJECTED" && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "20px",
+                    background: "#f8fafc",
+                    borderRadius: "12px",
+                    marginBottom: "20px"
+                  }}>
+                    {[
+                      { key: "OPEN", label: "Open", step: 1 },
+                      { key: "IN PROGRESS", label: "In Progress", step: 2 },
+                      { key: "RESOLVED", label: "Resolved", step: 3 },
+                      { key: "CLOSED", label: "Closed", step: 4 },
+                    ].map((step, index, array) => {
+                      const isCompleted = isStatusCompleted(selectedTicket.status, step.key);
+                      const isActive = selectedTicket.status === step.key || selectedTicket.status === step.key.replace(" ", "_");
+                      const isLast = index === array.length - 1;
+                      
+                      return (
+                        <React.Fragment key={step.key}>
                           <div style={{
-                            width: "36px",
-                            height: "36px",
-                            borderRadius: "50%",
                             display: "flex",
+                            flexDirection: "column",
                             alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "14px",
-                            fontWeight: "800",
-                            background: isCompleted ? "#10b981" : isActive ? "#2563eb" : "#ffffff",
-                            color: isCompleted || isActive ? "white" : "#94a3b8",
-                            border: `2px solid ${isCompleted ? "#10b981" : isActive ? "#2563eb" : "#cbd5e1"}`,
-                            boxShadow: isActive ? "0 0 0 4px rgba(37, 99, 235, 0.2)" : "none",
+                            gap: "6px",
+                            flex: 1
                           }}>
-                            {isCompleted ? "✓" : step.step}
+                            <div style={{
+                              width: "36px",
+                              height: "36px",
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "14px",
+                              fontWeight: "700",
+                              background: isCompleted ? "#10b981" : isActive ? COLORS.primary : "#ffffff",
+                              color: isCompleted || isActive ? "white" : "#94a3b8",
+                              border: `2px solid ${isCompleted ? "#10b981" : isActive ? COLORS.primary : "#e2e8f0"}`,
+                              boxShadow: isActive ? `0 0 0 4px ${COLORS.primary}20` : "none"
+                            }}>
+                              {isCompleted ? "✓" : step.step}
+                            </div>
+                            <span style={{
+                              fontSize: "11px",
+                              fontWeight: "700",
+                              textTransform: "uppercase",
+                              color: isCompleted ? "#10b981" : isActive ? COLORS.primary : "#94a3b8"
+                            }}>
+                              {step.label}
+                            </span>
                           </div>
-                          <div style={{ fontSize: "11px", fontWeight: "700", color: isCompleted ? "#10b981" : isActive ? "#2563eb" : "#64748b", textTransform: "uppercase" }}>
-                            {step.label}
-                          </div>
+                          
+                          {!isLast && (
+                            <div style={{
+                              flex: 1,
+                              height: "2px",
+                              background: isStatusCompleted(selectedTicket.status, array[index + 1].key) ? "#10b981" : "#e2e8f0",
+                              borderRadius: "1px",
+                              position: "relative",
+                              top: "-14px"
+                            }} />
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Ticket Images */}
+                {ticketImages.length > 0 && (
+                  <div style={{ marginBottom: "20px" }}>
+                    <h4 style={{
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      color: COLORS.text.muted,
+                      marginBottom: "12px"
+                    }}>
+                      Attachments
+                    </h4>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+                      gap: "12px"
+                    }}>
+                      {ticketImages.map((img, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => setPreviewImage(`${BACKEND_URL}${img}`)}
+                          style={{
+                            aspectRatio: "4/3",
+                            borderRadius: "10px",
+                            overflow: "hidden",
+                            cursor: "pointer",
+                            border: "1px solid #e2e8f0"
+                          }}
+                        >
+                          <img
+                            src={`${BACKEND_URL}${img}`}
+                            alt=""
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />
                         </div>
-                        {!isLast && (
-                          <div style={{ flex: 1, height: "2px", background: isStatusCompleted(selectedTicket.status, array[index + 1].key) ? "#10b981" : "#e2e8f0", borderRadius: "1px", position: "relative", top: "-14px" }} />
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Images */}
-              {ticketImages.length > 0 && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
-                  {ticketImages.map((img, idx) => (
-                    <img
-                      key={idx}
-                      src={`${BACKEND_URL}${img}`}
-                      alt=""
-                      onClick={() => setPreviewImage(`${BACKEND_URL}${img}`)}
-                      style={{ width: "100%", height: "180px", objectFit: "cover", borderRadius: "18px", cursor: "zoom-in" }}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Description */}
-              <div style={{ marginTop: "24px" }}>
-                <div style={{ fontSize: "20px", fontWeight: "900", color: "#111827", marginBottom: "14px" }}>📝 Description</div>
-                <div style={{ fontSize: "16px", lineHeight: "1.85", color: "#374151", whiteSpace: "pre-line", background: "#f9fafb", padding: "20px", borderRadius: "16px", border: "1px solid #e5e7eb" }}>
-                  {selectedTicket.description}
-                </div>
-              </div>
-
-              {/* Info Grid */}
-              <div style={{ marginTop: "24px" }}>
-                <div style={{ fontSize: "20px", fontWeight: "900", color: "#111827", marginBottom: "14px" }}>📋 Ticket Details</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "14px" }}>
-                  {[
-                    { label: "Category", value: selectedTicket.category },
-                    { label: "Priority", value: selectedTicket.priority },
-                    { label: "Location", value: selectedTicket.location },
-                    { label: "Reporter Email", value: selectedTicket.reporterEmail },
-                    { label: "Assigned Technician", value: assignedTechName },
-                  ].map((item) => (
-                    <div key={item.label} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "16px", padding: "16px" }}>
-                      <div style={{ fontSize: "11px", fontWeight: "800", color: "#6b7280", textTransform: "uppercase", marginBottom: "6px" }}>{item.label}</div>
-                      <div style={{ fontSize: "15px", color: "#111827", fontWeight: "600" }}>{item.value || "—"}</div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                {/* Description */}
+                <div style={{
+                  padding: "20px",
+                  background: "#f8fafc",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0"
+                }}>
+                  <h4 style={{
+                    fontSize: "12px",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    color: COLORS.text.muted,
+                    margin: "0 0 12px 0"
+                  }}>
+                    Description
+                  </h4>
+                  <p style={{
+                    fontSize: "15px",
+                    lineHeight: "1.7",
+                    color: COLORS.text.primary,
+                    margin: 0,
+                    whiteSpace: "pre-wrap"
+                  }}>
+                    {selectedTicket.description}
+                  </p>
                 </div>
               </div>
 
               {/* Status Actions */}
-              <div style={{ marginTop: "24px" }}>
-                <div style={{ fontSize: "20px", fontWeight: "900", color: "#111827", marginBottom: "14px" }}>⚡ Status Actions</div>
+              <div style={{
+                background: COLORS.surface,
+                border: "1px solid #e2e8f0",
+                borderRadius: "16px",
+                padding: "20px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+              }}>
+                <h3 style={{
+                  fontSize: "14px",
+                  fontWeight: "700",
+                  color: COLORS.text.primary,
+                  margin: "0 0 16px 0",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}>
+                  <MoreVertical size={16} />
+                  Status Actions
+                </h3>
+                
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-                  {availableTransitions.map((t) => (
-                    <button
-                      key={t.status}
-                      onClick={() => changeStatus(t.status)}
-                      style={{
-                        border: "none",
-                        borderRadius: "999px",
-                        padding: "12px 20px",
-                        fontSize: "14px",
-                        fontWeight: "800",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        background: t.color === "btn-amber" ? "#f59e0b" : t.color === "btn-green" ? "#16a34a" : t.color === "btn-blue" ? "#2563eb" : t.color === "btn-purple" ? "#2d0c65" : "#f3f4f6",
-                        color: t.color === "btn-secondary" ? "#374151" : "#ffffff",
-                        border: t.color === "btn-secondary" ? "1px solid #d1d5db" : "none",
-                      }}
-                    >
-                      {t.icon} {t.label}
-                    </button>
-                  ))}
+                  {availableTransitions.map((t) => {
+                    const Icon = t.icon;
+                    return (
+                      <button
+                        key={t.status}
+                        onClick={() => changeStatus(t.status)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          padding: "12px 20px",
+                          borderRadius: "10px",
+                          border: "none",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          cursor: "pointer",
+                          background: t.color,
+                          color: "#ffffff",
+                          boxShadow: `0 4px 6px -1px ${t.color}40`,
+                          transition: "all 0.2s"
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = "translateY(-2px)";
+                          e.target.style.boxShadow = `0 6px 8px -1px ${t.color}50`;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                          e.target.style.boxShadow = `0 4px 6px -1px ${t.color}40`;
+                        }}
+                      >
+                        <Icon size={16} />
+                        {t.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Comments */}
-              <div style={{ marginTop: "24px" }}>
-                <div style={{ fontSize: "20px", fontWeight: "900", color: "#111827", marginBottom: "14px" }}>💬 Comments ({comments.length})</div>
-                
+              {/* Comments Section */}
+              <div style={{
+                background: COLORS.surface,
+                border: "1px solid #e2e8f0",
+                borderRadius: "16px",
+                padding: "24px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+              }}>
+                <h3 style={{
+                  fontSize: "18px",
+                  fontWeight: "700",
+                  color: COLORS.text.primary,
+                  margin: "0 0 20px 0",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px"
+                }}>
+                  <MessageSquare size={20} />
+                  Comments ({comments.length})
+                </h3>
+
                 {replyTo && (
-                  <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: "14px", padding: "14px 16px", marginBottom: "14px" }}>
-                    Replying to <strong>{replyTo.author}</strong>: {replyTo.message}
-                    <button onClick={() => setReplyTo(null)} style={{ marginLeft: "12px", padding: "6px 12px", fontSize: "12px", borderRadius: "999px", border: "1px solid #d1d5db", background: "#f3f4f6", cursor: "pointer" }}>Cancel</button>
+                  <div style={{
+                    background: "#eff6ff",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: "12px",
+                    padding: "14px 16px",
+                    marginBottom: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between"
+                  }}>
+                    <div style={{ fontSize: "14px", color: "#1e40af" }}>
+                      Replying to <strong>{replyTo.author}</strong>
+                    </div>
+                    <button
+                      onClick={() => setReplyTo(null)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#3b82f6",
+                        padding: "4px"
+                      }}
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
                 )}
-                
-                <div style={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "20px", overflow: "hidden", marginBottom: "20px" }}>
+
+                {/* Comment Input */}
+                <div style={{
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  marginBottom: "24px",
+                  background: "#ffffff"
+                }}>
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     placeholder="Write your comment..."
-                    style={{ width: "100%", minHeight: "120px", border: "none", padding: "18px", fontSize: "15px", outline: "none", resize: "vertical" }}
+                    style={{
+                      width: "100%",
+                      minHeight: "120px",
+                      padding: "16px",
+                      border: "none",
+                      fontSize: "15px",
+                      lineHeight: "1.6",
+                      fontFamily: "inherit",
+                      resize: "vertical",
+                      outline: "none"
+                    }}
                   />
-                  <div style={{ display: "flex", justifyContent: "flex-end", padding: "14px 18px", borderTop: "1px solid #f3f4f6", background: "#fafafa" }}>
-                    <button onClick={sendComment} style={{ border: "none", borderRadius: "999px", padding: "12px 20px", fontSize: "14px", fontWeight: "800", background: "#2563eb", color: "#ffffff", cursor: "pointer" }}>
+                  
+                  {commentImagePreview.length > 0 && (
+                    <div style={{
+                      display: "flex",
+                      gap: "10px",
+                      padding: "0 16px 16px",
+                      flexWrap: "wrap"
+                    }}>
+                      {commentImagePreview.map((preview, i) => (
+                        <div key={i} style={{
+                          position: "relative",
+                          width: "100px",
+                          height: "100px",
+                          borderRadius: "8px",
+                          overflow: "hidden",
+                          border: "1px solid #e2e8f0"
+                        }}>
+                          <img src={preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          <button
+                            onClick={() => removeImage(i)}
+                            style={{
+                              position: "absolute",
+                              top: "4px",
+                              right: "4px",
+                              width: "24px",
+                              height: "24px",
+                              borderRadius: "50%",
+                              background: "rgba(0,0,0,0.6)",
+                              color: "white",
+                              border: "none",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "12px 16px",
+                    background: "#f8fafc",
+                    borderTop: "1px solid #e2e8f0"
+                  }}>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handleImageSelect(e)}
+                        style={{ display: "none" }}
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={commentImages.length >= 3}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          padding: "8px 14px",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
+                          background: "#ffffff",
+                          color: COLORS.text.secondary,
+                          fontSize: "13px",
+                          fontWeight: "600",
+                          cursor: commentImages.length >= 3 ? "not-allowed" : "pointer",
+                          opacity: commentImages.length >= 3 ? 0.5 : 1
+                        }}
+                      >
+                        <ImageIcon size={16} />
+                        Attach ({commentImages.length}/3)
+                      </button>
+                    </div>
+                    
+                    <button
+                      onClick={sendComment}
+                      disabled={!comment.trim() && commentImages.length === 0}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "10px 20px",
+                        borderRadius: "8px",
+                        border: "none",
+                        background: COLORS.primary,
+                        color: "white",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        cursor: (!comment.trim() && commentImages.length === 0) ? "not-allowed" : "pointer",
+                        opacity: (!comment.trim() && commentImages.length === 0) ? 0.5 : 1,
+                        transition: "all 0.2s"
+                      }}
+                    >
+                      <Send size={16} />
                       {replyTo ? "Send Reply" : "Post Comment"}
                     </button>
                   </div>
                 </div>
 
                 {comments.length === 0 ? (
-                  <div style={{ color: "#6b7280", textAlign: "center", padding: "40px", background: "#f9fafb", borderRadius: "16px", border: "2px dashed #e5e7eb" }}>No comments yet</div>
+                  <div style={{
+                    textAlign: "center",
+                    padding: "48px 20px",
+                    background: "#f8fafc",
+                    borderRadius: "12px",
+                    border: "2px dashed #e2e8f0"
+                  }}>
+                    <MessageSquare size={32} style={{ color: "#cbd5e1", marginBottom: "12px" }} />
+                    <p style={{ color: COLORS.text.muted, margin: 0 }}>
+                      No comments yet. Be the first to comment!
+                    </p>
+                  </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <div>
                     {buildCommentTree(comments).map((c) => renderComment(c))}
                   </div>
                 )}
               </div>
 
-              {/* ✅ ADDED: Technician Assignment Section */}
-              <div style={{ marginTop: "32px", paddingTop: "24px", borderTop: "2px solid #e5e7eb" }}>
-                <div style={{ fontSize: "20px", fontWeight: "900", color: "#111827", marginBottom: "14px" }}>
-                  🔧 {isTechnicianAssigned ? "Assigned Technician" : "Assign Technician"}
-                </div>
+              {/* Technician Assignment */}
+              <div style={{
+                background: COLORS.surface,
+                border: "1px solid #e2e8f0",
+                borderRadius: "16px",
+                padding: "24px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+              }}>
+                <h3 style={{
+                  fontSize: "18px",
+                  fontWeight: "700",
+                  color: COLORS.text.primary,
+                  margin: "0 0 20px 0",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px"
+                }}>
+                  <User size={20} />
+                  {isTechnicianAssigned ? "Assigned Technician" : "Assign Technician"}
+                </h3>
                 
                 {isTechnicianAssigned ? (
-                  <div style={{ 
-                    background: "linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%)", 
-                    border: "11px solid #a7f3d0",
-                    borderRadius: "16px", 
+                  <div style={{
+                    background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
+                    border: "1px solid #a7f3d0",
+                    borderRadius: "12px",
                     padding: "20px",
                     display: "flex",
                     alignItems: "center",
                     gap: "16px"
                   }}>
-                    <div style={{ 
-                      width: "56px", 
-                      height: "56px", 
-                      borderRadius: "50%", 
-                      background: "#10b981", 
-                      display: "flex", 
-                      alignItems: "center", 
+                    <div style={{
+                      width: "56px",
+                      height: "56px",
+                      borderRadius: "50%",
+                      background: "#10b981",
+                      display: "flex",
+                      alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "28px"
+                      fontSize: "24px"
                     }}>
                       👨‍🔧
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "18px", fontWeight: "800", color: "#065f46" }}>
+                      <div style={{
+                        fontSize: "18px",
+                        fontWeight: "700",
+                        color: "#065f46"
+                      }}>
                         {assignedTechName}
                       </div>
-                      <div style={{ fontSize: "13px", color: "#059669", marginTop: "4px" }}>
+                      <div style={{
+                        fontSize: "13px",
+                        color: "#059669",
+                        marginTop: "4px"
+                      }}>
                         Currently assigned to this ticket
                       </div>
                     </div>
-                    <div style={{ 
-                      background: "#10b981", 
-                      color: "white", 
-                      padding: "8px 16px", 
-                      borderRadius: "999px", 
-                      fontSize: "12px", 
-                      fontWeight: "700" 
+                    <div style={{
+                      background: "#10b981",
+                      color: "white",
+                      padding: "8px 16px",
+                      borderRadius: "999px",
+                      fontSize: "12px",
+                      fontWeight: "700"
                     }}>
                       Assigned
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <div style={{ fontSize: "14px", color: "#6b7280", marginBottom: "16px" }}>
+                    <p style={{
+                      fontSize: "14px",
+                      color: COLORS.text.secondary,
+                      marginBottom: "16px"
+                    }}>
                       Select a technician to assign to this ticket:
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                      {technicians.length === 0 ? (
-                        <div style={{ 
-                          color: "#6b7280", 
-                          textAlign: "center", 
-                          padding: "40px", 
-                          background: "#f9fafb", 
-                          borderRadius: "16px", 
-                          border: "2px dashed #e5e7eb" 
-                        }}>
+                    </p>
+                    
+                    {technicians.length === 0 ? (
+                      <div style={{
+                        textAlign: "center",
+                        padding: "40px",
+                        background: "#f8fafc",
+                        borderRadius: "12px",
+                        border: "2px dashed #e2e8f0"
+                      }}>
+                        <p style={{ color: COLORS.text.muted }}>
                           No technicians available. Please add technicians first.
-                        </div>
-                      ) : (
-                        technicians.map((tech) => (
-                          <div 
+                        </p>
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {technicians.map((tech) => (
+                          <div
                             key={tech.id}
                             style={{
                               display: "flex",
                               alignItems: "center",
                               gap: "16px",
                               padding: "16px",
-                              background: "#ffffff",
-                              border: "1px solid #e5e7eb",
-                              borderRadius: "16px",
-                              transition: "all 0.2s ease",
+                              background: "#f8fafc",
+                              border: "1px solid #e2e8f0",
+                              borderRadius: "12px",
+                              transition: "all 0.2s"
                             }}
                           >
-                            <div style={{ 
-                              width: "48px", 
-                              height: "48px", 
-                              borderRadius: "50%", 
-                              background: "linear-gradient(145deg, #3b82f6 0%, #2563eb 100%)",
-                              display: "flex", 
-                              alignItems: "center", 
+                            <div style={{
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "50%",
+                              background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                              display: "flex",
+                              alignItems: "center",
                               justifyContent: "center",
-                              fontSize: "20px",
+                              fontSize: "18px",
                               color: "white",
                               fontWeight: "700"
                             }}>
                               {tech.name?.charAt(0)?.toUpperCase() || "T"}
                             </div>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: "16px", fontWeight: "800", color: "#111827" }}>
+                              <div style={{
+                                fontSize: "16px",
+                                fontWeight: "700",
+                                color: COLORS.text.primary
+                              }}>
                                 {tech.name}
                               </div>
-                              <div style={{ fontSize: "13px", color: "#6b7280", marginTop: "2px" }}>
+                              <div style={{
+                                fontSize: "13px",
+                                color: COLORS.text.secondary,
+                                marginTop: "2px"
+                              }}>
                                 {tech.specialization} • {tech.team}
                               </div>
-                              <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "2px" }}>
+                              <div style={{
+                                fontSize: "12px",
+                                color: COLORS.text.muted,
+                                marginTop: "2px"
+                              }}>
                                 {tech.email}
                               </div>
                             </div>
@@ -856,33 +2405,64 @@ export default function AdminTicketsPage() {
                               onClick={() => assignTechnician(tech.id)}
                               disabled={assigningTechnician}
                               style={{
-                                border: "none",
-                                borderRadius: "999px",
                                 padding: "10px 20px",
+                                borderRadius: "8px",
+                                border: "none",
+                                background: assigningTechnician ? "#9ca3af" : COLORS.primary,
+                                color: "white",
                                 fontSize: "13px",
-                                fontWeight: "800",
+                                fontWeight: "600",
                                 cursor: assigningTechnician ? "not-allowed" : "pointer",
-                                background: assigningTechnician ? "#9ca3af" : "#2563eb",
-                                color: "#ffffff",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
+                                transition: "all 0.2s"
                               }}
                             >
                               {assigningTechnician ? "Assigning..." : "Assign"}
                             </button>
                           </div>
-                        ))
-                      )}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            </>
+            </div>
           ) : (
-            <div style={{ color: "#6b7280", textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ fontSize: "48px", marginBottom: "16px" }}>📋</div>
-              <div>Select a ticket to view details</div>
+            <div style={{
+              background: COLORS.surface,
+              border: "1px solid #e2e8f0",
+              borderRadius: "16px",
+              padding: "80px 40px",
+              textAlign: "center",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                background: "#f1f5f9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 20px",
+                fontSize: "32px"
+              }}>
+                📋
+              </div>
+              <h3 style={{
+                fontSize: "20px",
+                fontWeight: "700",
+                color: COLORS.text.primary,
+                margin: "0 0 8px 0"
+              }}>
+                Select a Ticket
+              </h3>
+              <p style={{
+                fontSize: "14px",
+                color: COLORS.text.secondary,
+                margin: 0
+              }}>
+                Choose a ticket from the list to view details and manage it
+              </p>
             </div>
           )}
         </div>
@@ -890,9 +2470,54 @@ export default function AdminTicketsPage() {
 
       {/* Image Modal */}
       {previewImage && (
-        <div onClick={() => setPreviewImage("")} style={{ display: "flex", position: "fixed", zIndex: 9999, inset: 0, background: "rgba(15, 23, 42, 0.92)", alignItems: "center", justifyContent: "center", padding: "30px" }}>
-          <button onClick={() => setPreviewImage("")} style={{ position: "absolute", top: "18px", right: "26px", fontSize: "48px", color: "#ffffff", border: "none", background: "transparent", cursor: "pointer" }}>&times;</button>
-          <img src={previewImage} alt="" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "92vw", maxHeight: "88vh", borderRadius: "18px" }} />
+        <div
+          onClick={() => setPreviewImage("")}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.95)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "40px"
+          }}
+        >
+          <button
+            onClick={() => setPreviewImage("")}
+            style={{
+              position: "absolute",
+              top: "24px",
+              right: "24px",
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: "rgba(255,255,255,0.1)",
+              border: "none",
+              color: "white",
+              fontSize: "24px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={(e) => e.target.style.background = "rgba(255,255,255,0.2)"}
+            onMouseLeave={(e) => e.target.style.background = "rgba(255,255,255,0.1)"}
+          >
+            <X size={24} />
+          </button>
+          <img
+            src={previewImage}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "90vw",
+              maxHeight: "85vh",
+              borderRadius: "12px",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)"
+            }}
+          />
         </div>
       )}
     </div>
