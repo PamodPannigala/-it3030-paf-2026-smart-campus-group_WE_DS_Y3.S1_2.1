@@ -9,6 +9,14 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
+    // check name when always create a new resource
+    boolean existsByName(String name);
+
+    // When updating a resource, we need to check if the new name already exists for
+    // another resource
+    boolean existsByNameAndIdNot(String name, Long id);
+
     @Query("SELECT r FROM Resource r WHERE (:type IS NULL OR r.type = :type) AND (:location IS NULL OR r.location = :location) AND (:capacity IS NULL OR r.capacity >= :capacity)")
-    List<Resource> findWithFilters(@Param("type") String type, @Param("location") String location, @Param("capacity") Integer capacity);
+    List<Resource> findWithFilters(@Param("type") String type, @Param("location") String location,
+            @Param("capacity") Integer capacity);
 }
