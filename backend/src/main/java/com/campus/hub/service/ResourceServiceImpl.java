@@ -3,6 +3,7 @@ package com.campus.hub.service;
 import com.campus.hub.dto.ResourceRequestDTO;
 import com.campus.hub.dto.ResourceResponseDTO;
 import com.campus.hub.entity.Resource;
+import com.campus.hub.exception.BusinessException;
 import com.campus.hub.exception.ResourceNotFoundException;
 import com.campus.hub.repository.ResourceRepository;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,10 @@ public class ResourceServiceImpl implements ResourceService {
 
     @Override
     public ResourceResponseDTO createResource(ResourceRequestDTO dto) {
+
+        // method call to validate the uniqueness of the resource name during creation
+        validateResourceNameUniqueness(dto.getName(), null);
+
         Resource resource = new Resource();
         mapToEntity(dto, resource);
         Resource saved = resourceRepository.save(resource);
@@ -53,9 +58,14 @@ public class ResourceServiceImpl implements ResourceService {
     public ResourceResponseDTO updateResource(Long id, ResourceRequestDTO dto) {
         return resourceRepository.findById(id)
                 .map(existing -> {
+                    // method call to validate the uniqueness of the resource name during update
+                    // (excluding the current resource)
+                    validateResourceNameUniqueness(dto.getName(), id);
+
                     mapToEntity(dto, existing);
                     return mapToResponseDTO(resourceRepository.save(existing));
                 }).orElseThrow(() -> new ResourceNotFoundException("Resource not found with id: " + id));
+
     }
 
     @Override
@@ -117,4 +127,26 @@ public class ResourceServiceImpl implements ResourceService {
         dto.setImageUrl(resource.getImageUrl());
         return dto;
     }
+
+    // Helper Method: logic for checking name uniqueness during create and update
+    // operations
+    private void validateResourceNameUniqueness(String name, Long id) {
+        boolean exists;
+
+        if (id == null) {
+            // creating a new resource - just check if the name already exists
+            exists = resourceRepository.existsByName(name);
+        } else {
+            // updating an existing resource - check if the name is already taken by another
+            // resource
+            exists = resourceRepository.existsByNameAndIdNot(name, id);
+        }
+
+        if (exists) {
+            // If the name already exists, throw a BusinessException with a clear message
+            throw new BusinessException(
+                    "Resource Name '" + name + "' is already in use. Please select a different name.");
+        }
+    }
+
 }
