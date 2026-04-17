@@ -1,10 +1,52 @@
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import api from "../services/api";
+import { Bell, ShieldCheck, Mail, Calendar, Building2, Ticket, CheckCircle2, Loader2, Save, Smartphone } from "lucide-react";
+import { clsx } from "clsx";
+
+const PreferenceToggle = ({ id, label, icon: Icon, checked, onChange, description }) => (
+  <motion.div 
+    whileHover={{ scale: 1.01 }}
+    className={clsx(
+      "d-flex align-items-center justify-content-between p-4 rounded-xl border mb-3 transition-all",
+      checked ? "bg-white border-primary shadow-sm" : "bg-light border-transparent"
+    )}
+  >
+    <div className="d-flex align-items-start gap-3">
+      <div className={clsx(
+        "p-2 rounded-lg",
+        checked ? "bg-primary text-white" : "bg-white text-muted shadow-xs"
+      )}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <label className="fw-bold mb-0 d-block cursor-pointer" htmlFor={id}>
+          {label}
+        </label>
+        <p className="small text-muted mb-0">{description}</p>
+      </div>
+    </div>
+    <div className="form-check form-switch mb-0">
+      <input
+        className="form-check-input h5 mb-0 cursor-pointer"
+        type="checkbox"
+        id={id}
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </div>
+  </motion.div>
+);
 
 const NotificationPreferencesPage = () => {
   const [form, setForm] = useState({
+    systemEnabled: true,
+    bookingEnabled: true,
+    facilityEnabled: true,
     ticketStatusEnabled: true,
     ticketCommentEnabled: true,
+    emailEnabled: false,
+    pushEnabled: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,7 +77,14 @@ const NotificationPreferencesPage = () => {
       setError("");
       setMessage("");
       await api.patch("/notifications/preferences", form);
-      setMessage("Preferences saved.");
+      setMessage("Preferences saved successfully!");
+      
+      // Handle Browser Notification Permission request if push enabled
+      if (form.pushEnabled && Notification.permission === "default") {
+        await Notification.requestPermission();
+      }
+      
+      setTimeout(() => setMessage(""), 3000);
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to save preferences");
     } finally {
@@ -43,101 +92,164 @@ const NotificationPreferencesPage = () => {
     }
   };
 
+  const updateField = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
   return (
-    <div className="card shadow-sm border-0 campus-card">
-      <div className="card-body p-4">
-        <h2 className="mb-3">Notification Preferences</h2>
-        <p className="text-muted small mb-3">
-          Manage your notification preferences for different categories.
-        </p>
-
-        {loading ? (
-          <p className="text-muted mb-0">Loading preferences...</p>
-        ) : (
-          <form onSubmit={savePreferences}>
-            <div className="form-check form-switch mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="systemEnabled"
-                checked={form.systemEnabled}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, systemEnabled: e.target.checked }))
-                }
-              />
-              <label className="form-check-label" htmlFor="systemEnabled">
-                System notifications
-              </label>
+    <div className="container-fluid py-4 min-vh-100 animate-fade-in">
+      <div className="row justify-content-center">
+        <div className="col-xl-8 col-lg-10">
+          
+          <div className="card m4-glass-card border-0 overflow-hidden shadow-lg">
+            <div className="card-header bg-white p-4 border-0 d-flex align-items-center gap-3">
+              <div className="bg-primary-subtle p-3 rounded-circle">
+                <ShieldCheck className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="fw-bold mb-1">Notification Settings</h3>
+                <p className="text-muted small mb-0">Control how and when you want to be notified</p>
+              </div>
             </div>
 
-            <div className="form-check form-switch mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="bookingEnabled"
-                checked={form.bookingEnabled}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, bookingEnabled: e.target.checked }))
-                }
-              />
-              <label className="form-check-label" htmlFor="bookingEnabled">
-                Booking notifications
-              </label>
+            <div className="card-body p-4 pt-0">
+              <AnimatePresence mode="wait">
+                {loading ? (
+                  <motion.div 
+                    key="loading"
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    className="d-flex flex-column align-items-center justify-content-center py-5"
+                  >
+                    <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
+                    <span className="text-muted fw-medium">Configuring your dashboard...</span>
+                  </motion.div>
+                ) : (
+                  <motion.form 
+                    key="form"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onSubmit={savePreferences}
+                    className="pt-3"
+                  >
+                    <div className="row g-4">
+                       <div className="col-12">
+                         <h5 className="fw-bold text-muted small mb-3 tracking-wider uppercase">Delivery Methods</h5>
+                         <div className="row g-2">
+                           <div className="col-md-6">
+                             <PreferenceToggle 
+                                id="emailEnabled"
+                                label="Email Delivery"
+                                description="Receive a copy of important alerts in your inbox"
+                                icon={Mail}
+                                checked={form.emailEnabled}
+                                onChange={(val) => updateField("emailEnabled", val)}
+                             />
+                           </div>
+                           <div className="col-md-6">
+                             <PreferenceToggle 
+                                id="pushEnabled"
+                                label="Browser (Push)"
+                                description="Real-time alerts directly in your browser"
+                                icon={Smartphone}
+                                checked={form.pushEnabled}
+                                onChange={(val) => updateField("pushEnabled", val)}
+                             />
+                           </div>
+                         </div>
+                       </div>
+
+                       <div className="col-12">
+                         <h5 className="fw-bold text-muted small mb-3 tracking-wider uppercase">Topic Preferences</h5>
+                         <div className="row g-2">
+                           <div className="col-12">
+                             <PreferenceToggle 
+                                id="systemEnabled"
+                                label="System Notifications"
+                                description="Critical alerts, security updates, and account announcements"
+                                icon={Bell}
+                                checked={form.systemEnabled}
+                                onChange={(val) => updateField("systemEnabled", val)}
+                             />
+                           </div>
+                           <div className="col-12">
+                             <PreferenceToggle 
+                                id="bookingEnabled"
+                                label="Bookings & Reservations"
+                                description="Confirmation of space bookings, reminders, and cancellations"
+                                icon={Calendar}
+                                checked={form.bookingEnabled}
+                                onChange={(val) => updateField("bookingEnabled", val)}
+                             />
+                           </div>
+                           <div className="col-12">
+                             <PreferenceToggle 
+                                id="facilityEnabled"
+                                label="Facility & Assets"
+                                description="Updates regarding campus facilities and equipment status"
+                                icon={Building2}
+                                checked={form.facilityEnabled}
+                                onChange={(val) => updateField("facilityEnabled", val)}
+                             />
+                           </div>
+                           <div className="col-md-6">
+                             <PreferenceToggle 
+                                id="ticketStatusEnabled"
+                                label="Ticket Status Updates"
+                                description="When our team updates the status of your request"
+                                icon={Ticket}
+                                checked={form.ticketStatusEnabled}
+                                onChange={(val) => updateField("ticketStatusEnabled", val)}
+                             />
+                           </div>
+                           <div className="col-md-6">
+                             <PreferenceToggle 
+                                id="ticketCommentEnabled"
+                                label="New Support Comments"
+                                description="When a technician replies to your support ticket"
+                                icon={Mail}
+                                checked={form.ticketCommentEnabled}
+                                onChange={(val) => updateField("ticketCommentEnabled", val)}
+                             />
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="d-flex justify-content-end align-items-center gap-3 mt-5 p-3 bg-light rounded-xl">
+                      <AnimatePresence>
+                        {message && (
+                          <motion.div 
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="text-success small fw-bold d-flex align-items-center gap-1"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> {message}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      {error && <span className="text-danger small fw-bold">{error}</span>}
+                      
+                      <button 
+                        className="btn btn-primary px-5 py-2 fw-bold rounded-pill shadow-sm d-flex align-items-center gap-2" 
+                        type="submit" 
+                        disabled={saving}
+                      >
+                        {saving ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                        ) : (
+                          <><Save className="w-4 h-4" /> Save Preferences</>
+                        )}
+                      </button>
+                    </div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
             </div>
-
-            <div className="form-check form-switch mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="facilityEnabled"
-                checked={form.facilityEnabled}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, facilityEnabled: e.target.checked }))
-                }
-              />
-              <label className="form-check-label" htmlFor="facilityEnabled">
-                Facility & Asset notifications
-              </label>
-            </div>
-
-            <div className="form-check form-switch mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="ticketStatusEnabled"
-                checked={form.ticketStatusEnabled}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, ticketStatusEnabled: e.target.checked }))
-                }
-              />
-              <label className="form-check-label" htmlFor="ticketStatusEnabled">
-                Ticket status notifications
-              </label>
-            </div>
-
-            <div className="form-check form-switch mb-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="ticketCommentEnabled"
-                checked={form.ticketCommentEnabled}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, ticketCommentEnabled: e.target.checked }))
-                }
-              />
-              <label className="form-check-label" htmlFor="ticketCommentEnabled">
-                Ticket comment notifications
-              </label>
-            </div>
-
-            <button className="btn btn-primary" type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save Preferences"}
-            </button>
-          </form>
-        )}
-
-        {message && <div className="alert alert-success mt-3 mb-0">{message}</div>}
-        {error && <div className="alert alert-danger mt-3 mb-0">{error}</div>}
+          </div>
+        </div>
       </div>
     </div>
   );

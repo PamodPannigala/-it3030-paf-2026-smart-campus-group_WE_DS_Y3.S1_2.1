@@ -5,6 +5,8 @@ public record NotificationPreferenceUpdateRequest(
         Boolean bookingEnabled,
         Boolean facilityEnabled,
         Boolean ticketStatusEnabled,
-        Boolean ticketCommentEnabled
+        Boolean ticketCommentEnabled,
+        Boolean emailEnabled,
+        Boolean pushEnabled
 ) {
 }

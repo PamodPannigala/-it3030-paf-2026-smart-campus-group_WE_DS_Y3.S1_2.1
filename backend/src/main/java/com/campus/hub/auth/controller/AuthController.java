@@ -34,6 +34,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Controller for handling authentication-related requests including login, signup,
+ * and password recovery.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -45,6 +49,12 @@ public class AuthController {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final AuthenticationManager authenticationManager;
 
+    /**
+     * Retrieves the currently authenticated user's profile information.
+     *
+     * @param authentication the current security context authentication object
+     * @return the profile details of the authenticated user
+     */
     @GetMapping("/me")
     public AuthUserResponse me(Authentication authentication) {
         CampusUser user = authenticatedUserResolver.resolve(authentication);
@@ -59,7 +69,14 @@ public class AuthController {
         );
     }
 
+    /**
+     * Registers a new user account with the provided details.
+     *
+     * @param request the signup request containing name, email, username, and password
+     * @return the details of the created user
+     */
     @PostMapping("/signup")
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     public AuthUserResponse signup(@Valid @RequestBody SignupRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
         String normalizedName = normalizeName(request.fullName());
@@ -94,6 +111,14 @@ public class AuthController {
         );
     }
 
+    /**
+     * Authenticates a user using their credentials and starts a security session.
+     *
+     * @param request the login request containing username/email and password
+     * @param httpServletRequest the current servlet request
+     * @param httpServletResponse the current servlet response
+     * @return the profile details of the logged-in user
+     */
     @PostMapping("/login")
     public AuthUserResponse login(
             @Valid @RequestBody LoginRequest request,
@@ -132,6 +157,12 @@ public class AuthController {
         );
     }
 
+    /**
+     * Initiates a password reset process by generating a temporary token.
+     *
+     * @param request the request containing the user's email
+     * @return a map containing the reset token (for demo purposes)
+     */
     @PostMapping("/forgot-password")
     public Map<String, String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
@@ -151,6 +182,12 @@ public class AuthController {
         return Map.of("token", token);
     }
 
+    /**
+     * Resets the user's password using a valid reset token.
+     *
+     * @param request the request containing the token and new password
+     * @return a status map indicating success or failure
+     */
     @PostMapping("/reset-password")
     public Map<String, String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         PasswordResetToken token = passwordResetTokenRepository.findByToken(request.token())

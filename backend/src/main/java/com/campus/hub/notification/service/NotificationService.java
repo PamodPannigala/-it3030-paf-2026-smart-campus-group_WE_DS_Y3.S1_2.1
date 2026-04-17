@@ -11,7 +11,29 @@ public interface NotificationService {
 
     List<NotificationResponse> getNotificationsForUser(Long userId, boolean unreadOnly);
 
+    /**
+     * Marks a specific notification as read for a given user.
+     *
+     * @param userId the ID of the user owning the notification
+     * @param notificationId the ID of the notification to mark as read
+     * @return the updated notification details
+     */
     NotificationResponse markAsRead(Long userId, Long notificationId);
+
+    /**
+     * Marks all unread notifications as read for a given user.
+     *
+     * @param userId the ID of the user
+     */
+    void markAllAsRead(Long userId);
+
+    /**
+     * Deletes a specific notification for a given user.
+     *
+     * @param userId the ID of the user owning the notification
+     * @param notificationId the ID of the notification to delete
+     */
+    void delete(Long userId, Long notificationId);
 
     long getUnreadCount(Long userId);
 

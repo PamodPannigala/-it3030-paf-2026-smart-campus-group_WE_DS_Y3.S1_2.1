@@ -5,6 +5,8 @@ public record NotificationPreferenceResponse(
         boolean bookingEnabled,
         boolean facilityEnabled,
         boolean ticketStatusEnabled,
-        boolean ticketCommentEnabled
+        boolean ticketCommentEnabled,
+        boolean emailEnabled,
+        boolean pushEnabled
 ) {
 }

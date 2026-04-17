@@ -49,4 +49,12 @@ public class NotificationPreference {
     @Column(nullable = false)
     @Builder.Default
     private boolean ticketCommentEnabled = true;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean emailEnabled = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean pushEnabled = false;
 }

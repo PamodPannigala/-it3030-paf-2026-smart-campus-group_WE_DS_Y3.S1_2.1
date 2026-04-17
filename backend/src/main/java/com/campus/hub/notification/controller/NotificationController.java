@@ -24,6 +24,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST controller for managing notifications.
+ * Provides endpoints for listing, creating, marking as read, and updating preferences.
+ */
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
@@ -32,6 +36,12 @@ public class NotificationController {
     private final NotificationService notificationService;
     private final AuthenticatedUserResolver authenticatedUserResolver;
 
+    /**
+     * Creates a new notification (Admin only).
+     *
+     * @param request the creation details
+     * @return the created notification
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
@@ -62,6 +72,34 @@ public class NotificationController {
     ) {
         CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
         return notificationService.markAsRead(currentUser.getId(), notificationId);
+    }
+
+    /**
+     * Marks all unread notifications as read for the current user.
+     *
+     * @param authentication current security context
+     */
+    @PostMapping("/mark-all-read")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void markAllAsRead(Authentication authentication) {
+        CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+        notificationService.markAllAsRead(currentUser.getId());
+    }
+
+    /**
+     * Deletes a specific notification.
+     *
+     * @param notificationId ID of notification to delete
+     * @param authentication current security context
+     */
+    @org.springframework.web.bind.annotation.DeleteMapping("/{notificationId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+            @PathVariable Long notificationId,
+            Authentication authentication
+    ) {
+        CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+        notificationService.delete(currentUser.getId(), notificationId);
     }
 
     @GetMapping("/preferences")

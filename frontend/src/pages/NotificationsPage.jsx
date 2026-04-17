@@ -1,27 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
-
-function categoryLabel(category) {
-  switch (category) {
-    case "SYSTEM":
-      return "System";
-    case "BOOKING":
-      return "Booking";
-    case "FACILITY":
-      return "Facility";
-    case "TICKET_STATUS":
-      return "Ticket (status)";
-    case "TICKET_COMMENT":
-      return "Ticket (comment)";
-    default:
-      return category;
-  }
-}
+import NotificationItem from "../components/NotificationItem";
+import NotificationFilter from "../components/NotificationFilter";
+import { Bell, Send, Inbox, ShieldAlert } from "lucide-react";
+import usePushNotifications from "../hooks/usePushNotifications";
 
 const NotificationsPage = () => {
   const { user, isAdmin, isStaff } = useAuth();
+  const { showNotification } = usePushNotifications();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -29,7 +17,7 @@ const NotificationsPage = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
-  const [targetGroup, setTargetGroup] = useState("SPECIFIC"); // SPECIFIC, ALL_USERS, ALL_ADMINS
+  const [targetGroup, setTargetGroup] = useState("SPECIFIC");
   const [form, setForm] = useState({
     userId: "",
     category: "SYSTEM",
@@ -69,21 +57,33 @@ const NotificationsPage = () => {
   const markAsRead = async (notificationId) => {
     try {
       await api.patch(`/notifications/${notificationId}/read`);
-      await loadNotifications();
+      setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to mark notification as read");
+      setError("Failed to mark notification as read");
     }
   };
 
   const markAllAsRead = async () => {
     try {
       setError("");
-      // Simple loop for now, or add backend endpoint if many
-      const unread = notifications.filter(n => !(n.read ?? n.isRead));
-      await Promise.all(unread.map(n => api.patch(`/notifications/${n.id}/read`)));
-      await loadNotifications();
+      await api.post("/api/notifications/mark-all-read");
+      setNotifications(prev => prev.map(n => ({ ...n, read: true, isRead: true })));
+      setUnreadCount(0);
     } catch (err) {
       setError("Failed to mark all as read");
+    }
+  };
+
+  const deleteNotification = async (notificationId) => {
+    try {
+      await api.delete(`/api/notifications/${notificationId}`);
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      // Reload count just in case
+      const countResponse = await api.get("/notifications/unread-count");
+      setUnreadCount(countResponse.data.unreadCount);
+    } catch (err) {
+      setError("Failed to delete notification");
     }
   };
 
@@ -97,8 +97,10 @@ const NotificationsPage = () => {
         userId: targetGroup === "SPECIFIC" ? Number(form.userId) : null,
         referenceId: form.referenceId || null,
       });
+      showNotification(`Notification Sent: ${form.title}`, { body: form.message });
       setForm((prev) => ({ ...prev, title: "", message: "", referenceId: "" }));
       await loadNotifications();
+      // Optional: Add a success toast here
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to create notification");
     }
@@ -107,243 +109,200 @@ const NotificationsPage = () => {
   const filteredNotifications = useMemo(() => {
     return notifications.filter((n) => {
       const matchFilter = filter === "ALL" || 
-                         (filter === "TICKETS" ? (n.category === "TICKET_STATUS" || n.category === "TICKET_COMMENT") : n.category === filter);
-      const matchSearch = n.title.toLowerCase().includes(search.toLowerCase()) || 
+                         (filter === "TICKETS" ? (n.category === "TICKET_STATUS" || n.category === "TICKET_COMMENT") : n.category === f);
+      const categoryMatch = filter === "ALL" || 
+                           (filter === "TICKETS" ? (n.category === "TICKET_STATUS" || n.category === "TICKET_COMMENT") : n.category === filter);
+      const searchMatch = n.title.toLowerCase().includes(search.toLowerCase()) || 
                          n.message.toLowerCase().includes(search.toLowerCase());
-      return matchFilter && matchSearch;
+      return categoryMatch && searchMatch;
     });
   }, [notifications, filter, search]);
 
   return (
-    <div className="d-grid gap-3">
-      {isStaff && (
-        <header className="m4-staff-header">
-          <div>
-            <div className="kicker">Messaging</div>
-            <h1>Notifications</h1>
-            <p className="sub">
-              {isAdmin
-                ? "Your inbox plus optional targeted sends to a user by ID."
-                : "Operational inbox — compose is limited to administrators."}
-            </p>
-          </div>
-        </header>
-      )}
-      <div className="card shadow-sm border-0 campus-card m4-glass-card">
-        <div className="card-body p-4">
-          <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-            <div className="d-flex flex-wrap gap-2">
-              {["ALL", "SYSTEM", "BOOKING", "FACILITY", "TICKETS"].map((f) => (
-                <button
-                  key={f}
-                  className={`btn btn-sm ${filter === f ? "btn-primary" : "btn-outline-primary"}`}
-                  onClick={() => setFilter(f)}
-                >
-                  {f === "TICKETS" ? "Tickets" : f.charAt(0) + f.slice(1).toLowerCase()}
-                </button>
-              ))}
-            </div>
-            <div className="d-flex gap-2">
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                placeholder="Search notifications..."
-                style={{ maxWidth: "200px" }}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              <button className="btn btn-sm btn-outline-secondary" onClick={markAllAsRead}>
-                Mark All Read
-              </button>
-            </div>
-          </div>
-          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <div>
-              <h2 className="mb-1">{isStaff ? "Operations notifications" : "Notifications"}</h2>
-              <p className="text-muted mb-0">
-                {isAdmin
-                  ? `Unread: ${unreadCount}. Use the form below to send targeted or broadcast messages.`
-                  : isStaff
-                    ? `Unread: ${unreadCount}. Operational messages for your role.`
-                    : `Unread: ${unreadCount}. Updates from support and the campus hub appear here.`}
+    <div className="container-fluid py-4 min-vh-100 animate-fade-in">
+      <div className="row justify-content-center">
+        <div className="col-xl-10">
+          
+          {/* Header Section */}
+          <header className="d-flex justify-content-between align-items-end mb-5">
+            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+              <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill mb-3 fw-bold tracking-wider fs-xs">
+                {isStaff ? "ADMINISTRATION PANEL" : "MESSAGING HUB"}
+              </span>
+              <h1 className="display-5 fw-bold mb-2">Notifications</h1>
+              <p className="text-muted lead fs-6">
+                {isAdmin 
+                  ? "Manage system-wide broadcasts and targeted user alerts." 
+                  : "Stay updated with campus events, bookings, and support."}
               </p>
-            </div>
-            <div className="form-check form-switch">
+            </motion.div>
+
+            <motion.div 
+               whileHover={{ scale: 1.05 }}
+               whileTap={{ scale: 0.95 }}
+               className="form-check form-switch bg-white p-3 rounded-pill shadow-sm border px-4 d-flex align-items-center gap-2 cursor-pointer"
+            >
               <input
                 id="unreadOnly"
-                className="form-check-input"
+                className="form-check-input ms-0"
                 type="checkbox"
                 checked={unreadOnly}
                 onChange={(e) => setUnreadOnly(e.target.checked)}
               />
-              <label htmlFor="unreadOnly" className="form-check-label">
-                Show unread only
+              <label htmlFor="unreadOnly" className="form-check-label text-muted fw-medium small mb-0">
+                Unread only
               </label>
-            </div>
-          </div>
-        </div>
-      </div>
+            </motion.div>
+          </header>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      {isAdmin && (
-        <div className="card shadow-sm border-0 campus-card m4-glass-card">
-          <div className="card-body p-4">
-            <h5 className="mb-3">Create Notification (Admin)</h5>
-            <form className="row g-3" onSubmit={createNotification}>
-              <div className="col-md-4">
-                <label className="form-label">Target Group</label>
-                <select 
-                  className="form-select"
-                  value={targetGroup}
-                  onChange={(e) => setTargetGroup(e.target.value)}
-                >
-                  <option value="SPECIFIC">Specific User ID</option>
-                  <option value="ALL_USERS">All Users</option>
-                  <option value="ALL_ADMINS">All Admins</option>
-                </select>
-              </div>
-              {targetGroup === "SPECIFIC" && (
-                <div className="col-md-4">
-                  <label className="form-label">User ID</label>
-                  <input
-                    className="form-control"
-                    value={form.userId}
-                    onChange={(e) => setForm({ ...form, userId: e.target.value })}
-                    required
-                  />
-                </div>
-              )}
-              <div className="col-md-4">
-                <label className="form-label">Category</label>
-                <select
-                  className="form-select"
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                >
-                  <option value="SYSTEM">SYSTEM</option>
-                  <option value="BOOKING">BOOKING</option>
-                  <option value="FACILITY">FACILITY</option>
-                  <option value="TICKET_STATUS">TICKET_STATUS</option>
-                  <option value="TICKET_COMMENT">TICKET_COMMENT</option>
-                </select>
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">Reference Type</label>
-                <input
-                  className="form-control"
-                  value={form.referenceType}
-                  onChange={(e) => setForm({ ...form, referenceType: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Title</label>
-                <input
-                  className="form-control"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">Reference ID (optional)</label>
-                <input
-                  className="form-control"
-                  value={form.referenceId}
-                  onChange={(e) => setForm({ ...form, referenceId: e.target.value })}
-                />
-              </div>
-              <div className="col-12">
-                <label className="form-label">Message</label>
-                <textarea
-                  className="form-control"
-                  rows={3}
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="col-12">
-                <button className="btn btn-primary" type="submit">
-                  Send Notification
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <div className="card shadow-sm border-0 campus-card m4-glass-card">
-        <div className="card-body p-4">
-          {loading ? (
-            <p className="text-muted mb-0">Loading notifications...</p>
-          ) : filteredNotifications.length === 0 ? (
-            <p className="text-muted mb-0">No notifications found.</p>
-          ) : (
-            <div className="d-grid gap-2">
-              {filteredNotifications.map((item) => {
-                const isRead = item.read ?? item.isRead ?? false;
-                return (
-                  <div key={item.id} className="border rounded p-3 m4-notif-item">
-                  <div className="d-flex justify-content-between align-items-start gap-2">
-                    <div className="flex-grow-1">
-                      <div className="d-flex align-items-center gap-2 mb-1">
-                        <strong>{item.title}</strong>
-                        <span className="badge text-bg-secondary">{categoryLabel(item.category)}</span>
-                        {!isRead && <span className="badge rounded-pill bg-primary" style={{ fontSize: "0.6rem" }}>New</span>}
-                      </div>
-                      <p className="mb-2 text-dark">{item.message}</p>
-                      <div className="d-flex flex-wrap align-items-center gap-3">
-                        <small className="text-muted">
-                          {item.referenceType}
-                          {item.referenceId ? ` #${item.referenceId}` : ""} |{" "}
-                          {new Date(item.createdAt).toLocaleString()}
-                        </small>
-                        {(() => {
-                           if (!item.referenceId) return null;
-                           let targetUrl = null;
-                           if (item.category.startsWith("TICKET")) {
-                             targetUrl = isStaff ? "/admin/support" : "/support";
-                           } else if (item.category === "BOOKING") {
-                             targetUrl = isStaff ? "/admin" : "/booking"; // Staff might manage bookings in dashboard
-                           } else if (item.category === "FACILITY") {
-                             targetUrl = isStaff ? "/admin" : "/facilities";
-                           } else if (item.category === "SYSTEM") {
-                             targetUrl = isStaff ? (item.referenceType?.toUpperCase() === "USER" ? "/users" : "/admin") : "/settings";
-                           }
-                           
-                           if (!targetUrl) return null;
-                           
-                           return (
-                             <Link 
-                               to={targetUrl}
-                               className="btn btn-sm btn-link p-0 text-decoration-none"
-                             >
-                               View details →
-                             </Link>
-                           );
-                        })()}
-                      </div>
-                    </div>
-                    {!isRead && (
-                      <button
-                        className="btn btn-sm btn-outline-success"
-                        onClick={() => markAsRead(item.id)}
-                      >
-                        Mark Read
-                      </button>
-                    )}
-                  </div>
-                  </div>
-                );
-              })}
-            </div>
+          {error && (
+            <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-2 mb-4">
+              <ShieldAlert className="w-5 h-5" />
+              {error}
+            </motion.div>
           )}
+
+          <div className="row g-4">
+            
+            {/* Main Notifications List */}
+            <div className={isAdmin ? "col-lg-8" : "col-12"}>
+              <div className="card m4-glass-card border-0 overflow-hidden h-100">
+                
+                <NotificationFilter 
+                  filter={filter}
+                  setFilter={setFilter}
+                  search={search}
+                  setSearch={setSearch}
+                  onMarkAllRead={markAllAsRead}
+                  unreadCount={unreadCount}
+                />
+
+                <div className="card-body p-4 bg-transparent" style={{ minHeight: "400px" }}>
+                  {loading ? (
+                    <div className="d-flex flex-column align-items-center justify-content-center py-5">
+                      <div className="spinner-border text-primary mb-3" role="status"></div>
+                      <span className="text-muted">Fetching your messages...</span>
+                    </div>
+                  ) : filteredNotifications.length === 0 ? (
+                    <div className="d-flex flex-column align-items-center justify-content-center py-5 opacity-50">
+                      <Inbox className="w-16 h-16 mb-3 text-muted" />
+                      <h5>No notifications found</h5>
+                      <p className="text-muted small">Try adjusting your filters or search terms</p>
+                    </div>
+                  ) : (
+                    <AnimatePresence mode="popLayout">
+                      {filteredNotifications.map((item) => (
+                        <NotificationItem 
+                          key={item.id}
+                          item={item}
+                          onMarkRead={markAsRead}
+                          onDelete={deleteNotification}
+                          isStaff={isStaff}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Admin Compose Sidebar */}
+            {isAdmin && (
+              <div className="col-lg-4">
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="card m4-glass-card border-0 h-100"
+                >
+                  <div className="card-body p-4">
+                    <div className="d-flex align-items-center gap-2 mb-4">
+                      <div className="bg-primary text-white p-2 rounded-lg shadow-sm">
+                        <Bell className="w-5 h-5" />
+                      </div>
+                      <h5 className="mb-0 fw-bold">Compose</h5>
+                    </div>
+
+                    <form className="d-grid gap-3" onSubmit={createNotification}>
+                      <div>
+                        <label className="form-label small fw-bold text-muted">Target Group</label>
+                        <select 
+                          className="form-select border-0 bg-light rounded-3"
+                          value={targetGroup}
+                          onChange={(e) => setTargetGroup(e.target.value)}
+                        >
+                          <option value="SPECIFIC">Specific User ID</option>
+                          <option value="ALL_USERS">All Users</option>
+                          <option value="ALL_ADMINS">All Admins</option>
+                        </select>
+                      </div>
+
+                      {targetGroup === "SPECIFIC" && (
+                        <div>
+                          <label className="form-label small fw-bold text-muted">User ID</label>
+                          <input
+                            className="form-control border-0 bg-light rounded-3"
+                            placeholder="e.g. 101"
+                            value={form.userId}
+                            onChange={(e) => setForm({ ...form, userId: e.target.value })}
+                            required
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="form-label small fw-bold text-muted">Category</label>
+                        <select
+                          className="form-select border-0 bg-light rounded-3"
+                          value={form.category}
+                          onChange={(e) => setForm({ ...form, category: e.target.value })}
+                        >
+                          <option value="SYSTEM">System Update</option>
+                          <option value="BOOKING">Booking Status</option>
+                          <option value="FACILITY">Facility Alerts</option>
+                          <option value="TICKET_STATUS">Support Tickets</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="form-label small fw-bold text-muted">Title</label>
+                        <input
+                          className="form-control border-0 bg-light rounded-3"
+                          placeholder="Brief summary..."
+                          value={form.title}
+                          onChange={(e) => setForm({ ...form, title: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="form-label small fw-bold text-muted">Message</label>
+                        <textarea
+                          className="form-control border-0 bg-light rounded-3"
+                          rows={4}
+                          placeholder="Write your message here..."
+                          value={form.message}
+                          onChange={(e) => setForm({ ...form, message: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <button className="btn btn-primary py-3 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 mt-2" type="submit">
+                        <Send className="w-4 h-4" />
+                        Push Notification
+                      </button>
+                    </form>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+            
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+export default NotificationsPage;
 
 export default NotificationsPage;
