@@ -1,5 +1,6 @@
 package com.campus.hub.user.service;
 
+import com.campus.hub.exception.EntityNotFoundException;
 import com.campus.hub.notification.dto.NotificationCreateRequest;
 import com.campus.hub.notification.entity.NotificationCategory;
 import com.campus.hub.notification.service.NotificationService;
