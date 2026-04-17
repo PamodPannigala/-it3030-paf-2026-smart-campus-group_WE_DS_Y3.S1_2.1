@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -22,6 +23,10 @@ function categoryLabel(category) {
 const NotificationsPage = () => {
   const { user, isAdmin, isStaff } = useAuth();
   const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [targetGroup, setTargetGroup] = useState("SPECIFIC"); // SPECIFIC, ALL_USERS, ALL_ADMINS
