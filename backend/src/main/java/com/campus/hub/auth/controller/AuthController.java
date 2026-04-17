@@ -115,6 +115,10 @@ public class AuthController {
         SecurityContextRepository repo = new HttpSessionSecurityContextRepository();
         repo.saveContext(context, httpServletRequest, httpServletResponse);
 
+        // Security Update for Member 4
+        existingUser.setLastLoginAt(LocalDateTime.now());
+        campusUserRepository.save(existingUser);
+
         return new AuthUserResponse(
                 existingUser.getId(),
                 existingUser.getFullName(),

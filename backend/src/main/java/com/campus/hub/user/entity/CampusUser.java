@@ -63,4 +63,7 @@ public class CampusUser {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column
+    private LocalDateTime lastLoginAt;
 }

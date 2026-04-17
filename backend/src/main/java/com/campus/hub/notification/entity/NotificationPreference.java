@@ -31,8 +31,22 @@ public class NotificationPreference {
     private CampusUser user;
 
     @Column(nullable = false)
-    private boolean ticketStatusEnabled;
+    @Builder.Default
+    private boolean systemEnabled = true;
 
     @Column(nullable = false)
-    private boolean ticketCommentEnabled;
+    @Builder.Default
+    private boolean bookingEnabled = true;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean facilityEnabled = true;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean ticketStatusEnabled = true;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean ticketCommentEnabled = true;
 }

@@ -105,6 +105,10 @@ const ProfileSettingsPage = () => {
                     <strong>{profile?.username || "—"}</strong>
                   </div>
                 )}
+                <div className="col-md-6">
+                  <small className="text-muted d-block">Last Login</small>
+                  <strong>{profile?.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString() : "Never"}</strong>
+                </div>
               </div>
             </div>
 

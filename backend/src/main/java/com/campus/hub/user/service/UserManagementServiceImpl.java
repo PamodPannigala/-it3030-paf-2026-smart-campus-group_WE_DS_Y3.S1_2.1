@@ -1,6 +1,8 @@
 package com.campus.hub.user.service;
 
-import com.campus.hub.exception.EntityNotFoundException;
+import com.campus.hub.notification.dto.NotificationCreateRequest;
+import com.campus.hub.notification.entity.NotificationCategory;
+import com.campus.hub.notification.service.NotificationService;
 import com.campus.hub.user.dto.AdminCreateUserRequest;
 import com.campus.hub.user.dto.UserSummaryResponse;
 import com.campus.hub.user.entity.CampusUser;
@@ -19,6 +21,7 @@ public class UserManagementServiceImpl implements UserManagementService {
 
     private final CampusUserRepository campusUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -67,8 +70,21 @@ public class UserManagementServiceImpl implements UserManagementService {
     public UserSummaryResponse updateRole(Long userId, Role role) {
         CampusUser user = campusUserRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+        Role oldRole = user.getRole();
         user.setRole(role);
         CampusUser updated = campusUserRepository.save(user);
+
+        // Security Alert for Member 4
+        notificationService.create(new NotificationCreateRequest(
+                user.getId(),
+                "SPECIFIC",
+                NotificationCategory.SYSTEM,
+                "Security Update: Role Changed",
+                String.format("Your account role has been updated from %s to %s by an administrator.", oldRole, role),
+                "SECURITY",
+                null
+        ));
+
         return toSummary(updated);
     }
 

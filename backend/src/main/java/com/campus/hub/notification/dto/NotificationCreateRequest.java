@@ -5,8 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record NotificationCreateRequest(
-        @NotNull(message = "userId is required")
         Long userId,
+
+        @NotBlank(message = "targetGroup is required")
+        String targetGroup, // "SPECIFIC", "ALL_USERS", "ALL_ADMINS"
 
         @NotNull(message = "category is required")
         NotificationCategory category,

@@ -48,14 +48,58 @@ const NotificationPreferencesPage = () => {
       <div className="card-body p-4">
         <h2 className="mb-3">Notification Preferences</h2>
         <p className="text-muted small mb-3">
-          These switches apply to <strong>ticket-related</strong> categories only. <strong>System</strong> notifications
-          (support updates, admin messages, and similar) are always delivered.
+          Manage your notification preferences for different categories.
         </p>
 
         {loading ? (
           <p className="text-muted mb-0">Loading preferences...</p>
         ) : (
           <form onSubmit={savePreferences}>
+            <div className="form-check form-switch mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="systemEnabled"
+                checked={form.systemEnabled}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, systemEnabled: e.target.checked }))
+                }
+              />
+              <label className="form-check-label" htmlFor="systemEnabled">
+                System notifications
+              </label>
+            </div>
+
+            <div className="form-check form-switch mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="bookingEnabled"
+                checked={form.bookingEnabled}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, bookingEnabled: e.target.checked }))
+                }
+              />
+              <label className="form-check-label" htmlFor="bookingEnabled">
+                Booking notifications
+              </label>
+            </div>
+
+            <div className="form-check form-switch mb-3">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="facilityEnabled"
+                checked={form.facilityEnabled}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, facilityEnabled: e.target.checked }))
+                }
+              />
+              <label className="form-check-label" htmlFor="facilityEnabled">
+                Facility & Asset notifications
+              </label>
+            </div>
+
             <div className="form-check form-switch mb-3">
               <input
                 className="form-check-input"

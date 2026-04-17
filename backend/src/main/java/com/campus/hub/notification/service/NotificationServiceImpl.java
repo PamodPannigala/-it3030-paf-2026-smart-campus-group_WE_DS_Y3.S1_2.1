@@ -12,10 +12,12 @@ import com.campus.hub.notification.repository.NotificationPreferenceRepository;
 import com.campus.hub.notification.repository.NotificationRepository;
 import com.campus.hub.user.entity.CampusUser;
 import com.campus.hub.user.repository.CampusUserRepository;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.campus.hub.user.entity.Role;
 
 @Service
 @RequiredArgsConstructor
@@ -28,14 +30,51 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public NotificationResponse create(NotificationCreateRequest request) {
+        if ("SPECIFIC".equalsIgnoreCase(request.targetGroup())) {
+            return createSpecific(request);
+        } else if ("ALL_USERS".equalsIgnoreCase(request.targetGroup())) {
+            broadcast(request, null);
+            return null; // Controller might need a different return for bulk
+        } else if ("ALL_ADMINS".equalsIgnoreCase(request.targetGroup())) {
+            broadcast(request, Role.ADMIN);
+            return null;
+        }
+        throw new IllegalArgumentException("Invalid target group: " + request.targetGroup());
+    }
+
+    private NotificationResponse createSpecific(NotificationCreateRequest request) {
+        if (request.userId() == null) {
+            throw new IllegalArgumentException("userId is required for SPECIFIC target group");
+        }
         CampusUser user = campusUserRepository.findById(request.userId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + request.userId()));
 
         if (!isNotificationCategoryEnabled(user, request.category())) {
+            // Log or ignore instead of throwing if broadcasting, but for specific throw is okay
             throw new IllegalArgumentException("Notification category is disabled by user preferences");
         }
 
-        Notification notification = Notification.builder()
+        Notification notification = buildNotification(user, request);
+        Notification saved = notificationRepository.save(notification);
+        return toResponse(saved);
+    }
+
+    private void broadcast(NotificationCreateRequest request, Role targetRole) {
+        List<CampusUser> targets = targetRole == null 
+                ? campusUserRepository.findAll() 
+                : campusUserRepository.findByRole(targetRole);
+
+        List<Notification> batch = new ArrayList<>();
+        for (CampusUser user : targets) {
+            if (isNotificationCategoryEnabled(user, request.category())) {
+                batch.add(buildNotification(user, request));
+            }
+        }
+        notificationRepository.saveAll(batch);
+    }
+
+    private Notification buildNotification(CampusUser user, NotificationCreateRequest request) {
+        return Notification.builder()
                 .user(user)
                 .category(request.category())
                 .title(request.title().trim())
@@ -44,9 +83,6 @@ public class NotificationServiceImpl implements NotificationService {
                 .referenceType(request.referenceType().trim())
                 .referenceId(request.referenceId())
                 .build();
-
-        Notification saved = notificationRepository.save(notification);
-        return toResponse(saved);
     }
 
     @Override
@@ -91,12 +127,11 @@ public class NotificationServiceImpl implements NotificationService {
         validateUserExists(userId);
         NotificationPreference preference = getOrCreatePreference(userId);
 
-        if (request.ticketStatusEnabled() != null) {
-            preference.setTicketStatusEnabled(request.ticketStatusEnabled());
-        }
-        if (request.ticketCommentEnabled() != null) {
-            preference.setTicketCommentEnabled(request.ticketCommentEnabled());
-        }
+        if (request.systemEnabled() != null) preference.setSystemEnabled(request.systemEnabled());
+        if (request.bookingEnabled() != null) preference.setBookingEnabled(request.bookingEnabled());
+        if (request.facilityEnabled() != null) preference.setFacilityEnabled(request.facilityEnabled());
+        if (request.ticketStatusEnabled() != null) preference.setTicketStatusEnabled(request.ticketStatusEnabled());
+        if (request.ticketCommentEnabled() != null) preference.setTicketCommentEnabled(request.ticketCommentEnabled());
 
         NotificationPreference saved = preferenceRepository.save(preference);
         return toPreferenceResponse(saved);
@@ -117,6 +152,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     private NotificationPreferenceResponse toPreferenceResponse(NotificationPreference preference) {
         return new NotificationPreferenceResponse(
+                preference.isSystemEnabled(),
+                preference.isBookingEnabled(),
+                preference.isFacilityEnabled(),
                 preference.isTicketStatusEnabled(),
                 preference.isTicketCommentEnabled()
         );
@@ -135,6 +173,9 @@ public class NotificationServiceImpl implements NotificationService {
                             .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
                     NotificationPreference defaults = NotificationPreference.builder()
                             .user(user)
+                            .systemEnabled(true)
+                            .bookingEnabled(true)
+                            .facilityEnabled(true)
                             .ticketStatusEnabled(true)
                             .ticketCommentEnabled(true)
                             .build();
@@ -151,7 +192,9 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         return switch (category) {
-            case SYSTEM, BOOKING, FACILITY -> true;
+            case SYSTEM -> preference.isSystemEnabled();
+            case BOOKING -> preference.isBookingEnabled();
+            case FACILITY -> preference.isFacilityEnabled();
             case TICKET_STATUS -> preference.isTicketStatusEnabled();
             case TICKET_COMMENT -> preference.isTicketCommentEnabled();
         };

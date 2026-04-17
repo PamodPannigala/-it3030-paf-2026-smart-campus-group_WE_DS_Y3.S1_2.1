@@ -41,7 +41,8 @@ public class ProfileController {
                 "email", user.getEmail(),
                 "username", user.getUsername() != null ? user.getUsername() : "",
                 "role", user.getRole(),
-                "authProvider", user.getAuthProvider()
+                "authProvider", user.getAuthProvider(),
+                "lastLoginAt", user.getLastLoginAt()
         );
     }
 
@@ -74,7 +75,8 @@ public class ProfileController {
                 "email", saved.getEmail(),
                 "username", saved.getUsername() != null ? saved.getUsername() : "",
                 "role", saved.getRole(),
-                "authProvider", saved.getAuthProvider()
+                "authProvider", saved.getAuthProvider(),
+                "lastLoginAt", saved.getLastLoginAt()
         );
     }
 

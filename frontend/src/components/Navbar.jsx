@@ -2,7 +2,7 @@ import { NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
-  const { user, loading, loginWithGoogle, logout, isStaff, isAdmin } = useAuth();
+  const { user, unreadCount, loading, loginWithGoogle, logout, isStaff, isAdmin } = useAuth();
   const linkClass = ({ isActive }) =>
     `nav-link ${isActive ? "active fw-semibold" : ""}`;
 
@@ -43,7 +43,10 @@ const Navbar = () => {
               <NavLink to="/admin" className={linkClass} end>Dashboard</NavLink>
               {isAdmin && <NavLink to="/users" className={linkClass}>Users</NavLink>}
               {isAdmin && <NavLink to="/admin/support" className={linkClass}>Support queue</NavLink>}
-              <NavLink to="/notifications" className={linkClass}>Notifications</NavLink>
+              <NavLink to="/notifications" className={linkClass}>
+                Notifications
+                {unreadCount > 0 && <span className="ms-1 badge rounded-pill bg-danger shadow-sm" style={{ fontSize: '0.7rem' }}>{unreadCount}</span>}
+              </NavLink>
             </div>
           )}
 
@@ -54,7 +57,10 @@ const Navbar = () => {
               <NavLink to="/booking" className={linkClass}>Booking</NavLink>
               <NavLink to="/facilities" className={linkClass}>Facilities</NavLink>
               <NavLink to="/tickets" className={linkClass}>Tickets</NavLink>
-              <NavLink to="/notifications" className={linkClass}>Notifications</NavLink>
+              <NavLink to="/notifications" className={linkClass}>
+                Notifications
+                {unreadCount > 0 && <span className="ms-1 badge rounded-pill bg-danger shadow-sm" style={{ fontSize: '0.7rem' }}>{unreadCount}</span>}
+              </NavLink>
               <NavLink to="/settings" className={linkClass}>Settings</NavLink>
             </div>
           )}

@@ -6,7 +6,18 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const refreshUnreadCount = async () => {
+    if (!user) return;
+    try {
+      const res = await api.get("/notifications/unread-count");
+      setUnreadCount(res.data.unreadCount);
+    } catch (err) {
+      console.error("Failed to fetch unread count", err);
+    }
+  };
 
   const refreshUser = async () => {
     try {
@@ -30,6 +41,14 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      refreshUnreadCount();
+      const interval = setInterval(refreshUnreadCount, 30000); // 30s refresh
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   const loginWithGoogle = () => {
     window.location.href = OAUTH_LOGIN_URL;
@@ -69,8 +88,10 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    unreadCount,
     loading,
     refreshUser,
+    refreshUnreadCount,
     loginWithGoogle,
     loginWithPassword,
     signup,
