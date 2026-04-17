@@ -63,5 +63,6 @@ public class GlobalExceptionHandler {
                 org.springframework.http.HttpStatus.BAD_REQUEST.value());
         return new ResponseEntity<>(errorDetails, org.springframework.http.HttpStatus.BAD_REQUEST);
     }
+    
 
 }
