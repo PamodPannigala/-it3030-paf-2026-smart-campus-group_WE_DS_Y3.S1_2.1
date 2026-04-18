@@ -1,7 +1,7 @@
 // src/pages/tickets/MyReports.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getMyTickets } from "../../services/ticketApi";
+import { getMyTickets, deleteTicket } from "../../services/ticketApi";
 import {
   Search,
   ChevronLeft,
@@ -19,6 +19,9 @@ import {
   Inbox,
   Loader2,
   TrendingUp,
+  Trash2,
+  X,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function MyReports() {
@@ -29,6 +32,8 @@ export default function MyReports() {
   const [sortDirection, setSortDirection] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, ticket: null });
+  const [deleting, setDeleting] = useState(false);
   const itemsPerPage = 6;
 
   const navigate = useNavigate();
@@ -57,6 +62,32 @@ export default function MyReports() {
 
   const handleRowClick = (ticketId) => {
     navigate(`/my-reports/${ticketId}`);
+  };
+
+  const handleDeleteClick = (e, ticket) => {
+    e.stopPropagation(); // Prevent row click
+    setDeleteModal({ isOpen: true, ticket });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal.ticket) return;
+    
+    try {
+      setDeleting(true);
+      await deleteTicket(deleteModal.ticket.id);
+      // Remove from local state
+      setTickets(prev => prev.filter(t => t.id !== deleteModal.ticket.id));
+      setDeleteModal({ isOpen: false, ticket: null });
+    } catch (error) {
+      console.error("Error deleting ticket", error);
+      alert("Failed to delete ticket. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModal({ isOpen: false, ticket: null });
   };
 
   const handleSort = (field) => {
@@ -392,12 +423,32 @@ export default function MyReports() {
       userSelect: "none",
       whiteSpace: "nowrap",
     },
+    thActions: {
+      padding: "16px 20px",
+      textAlign: "center",
+      fontSize: "12px",
+      fontWeight: "700",
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+      background: "#f8fafc",
+      borderBottom: "1px solid #e2e8f0",
+      whiteSpace: "nowrap",
+      width: "80px",
+    },
     td: {
       padding: "20px",
       borderBottom: "1px solid #f1f5f9",
       fontSize: "14px",
       color: "#334155",
       verticalAlign: "middle",
+    },
+    tdActions: {
+      padding: "20px",
+      borderBottom: "1px solid #f1f5f9",
+      textAlign: "center",
+      verticalAlign: "middle",
+      width: "80px",
     },
     row: {
       cursor: "pointer",
@@ -461,6 +512,23 @@ export default function MyReports() {
       gap: "6px",
       color: "#64748b",
       fontSize: "13px",
+    },
+    deleteBtn: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: "32px",
+      height: "32px",
+      borderRadius: "8px",
+      border: "none",
+      background: "transparent",
+      color: "#94a3b8",
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+    },
+    deleteBtnHover: {
+      background: "#fee2e2",
+      color: "#dc2626",
     },
     footer: {
       display: "flex",
@@ -543,6 +611,99 @@ export default function MyReports() {
       maxWidth: "400px",
       marginBottom: "24px",
     },
+    // Modal styles
+    modalOverlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(15, 23, 42, 0.6)",
+      backdropFilter: "blur(4px)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1000,
+      padding: "20px",
+    },
+    modal: {
+      background: "#fff",
+      borderRadius: "20px",
+      padding: "32px",
+      maxWidth: "420px",
+      width: "100%",
+      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+      animation: "modalSlideIn 0.2s ease",
+    },
+    modalIcon: {
+      width: "64px",
+      height: "64px",
+      background: "#fee2e2",
+      borderRadius: "16px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      margin: "0 auto 20px",
+      color: "#dc2626",
+    },
+    modalTitle: {
+      fontSize: "22px",
+      fontWeight: "800",
+      color: "#0f172a",
+      textAlign: "center",
+      marginBottom: "12px",
+    },
+    modalText: {
+      fontSize: "15px",
+      color: "#64748b",
+      textAlign: "center",
+      lineHeight: "1.6",
+      marginBottom: "24px",
+    },
+    modalTicketId: {
+      fontFamily: "monospace",
+      fontWeight: "700",
+      color: "#0f172a",
+      background: "#f1f5f9",
+      padding: "2px 8px",
+      borderRadius: "6px",
+    },
+    modalButtons: {
+      display: "flex",
+      gap: "12px",
+    },
+    modalBtnSecondary: {
+      flex: 1,
+      padding: "12px 20px",
+      borderRadius: "12px",
+      border: "1px solid #e2e8f0",
+      background: "#fff",
+      color: "#475569",
+      fontSize: "14px",
+      fontWeight: "700",
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+    },
+    modalBtnDanger: {
+      flex: 1,
+      padding: "12px 20px",
+      borderRadius: "12px",
+      border: "none",
+      background: "#dc2626",
+      color: "#fff",
+      fontSize: "14px",
+      fontWeight: "700",
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "8px",
+    },
+    modalBtnDangerDisabled: {
+      opacity: 0.7,
+      cursor: "not-allowed",
+    },
   };
 
   const sortableHeader = (label, field) => (
@@ -582,8 +743,75 @@ export default function MyReports() {
     <div style={styles.page}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes modalSlideIn { 
+          from { opacity: 0; transform: translateY(-10px) scale(0.98); } 
+          to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
       `}</style>
       
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div style={styles.modalOverlay} onClick={cancelDelete}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.modalIcon}>
+              <AlertTriangle size={32} />
+            </div>
+            <h3 style={styles.modalTitle}>Delete Ticket?</h3>
+            <p style={styles.modalText}>
+              Are you sure you want to delete ticket{" "}
+              <span style={styles.modalTicketId}>#{deleteModal.ticket?.id}</span>? 
+              This action cannot be undone and all associated data will be permanently removed.
+            </p>
+            <div style={styles.modalButtons}>
+              <button
+                style={styles.modalBtnSecondary}
+                onClick={cancelDelete}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f8fafc";
+                  e.currentTarget.style.borderColor = "#cbd5e1";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#fff";
+                  e.currentTarget.style.borderColor = "#e2e8f0";
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                style={{
+                  ...styles.modalBtnDanger,
+                  ...(deleting ? styles.modalBtnDangerDisabled : {}),
+                }}
+                onClick={confirmDelete}
+                disabled={deleting}
+                onMouseEnter={(e) => {
+                  if (!deleting) {
+                    e.currentTarget.style.background = "#b91c1c";
+                    e.currentTarget.style.transform = "translateY(-1px)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#dc2626";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
@@ -785,6 +1013,7 @@ export default function MyReports() {
                       {sortableHeader("Priority", "priority")}
                       {sortableHeader("Status", "status")}
                       {sortableHeader("Created", "createdAt")}
+                      <th style={styles.thActions}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -848,6 +1077,23 @@ export default function MyReports() {
                               <Calendar size={14} />
                               {formatDate(ticket.createdAt)}
                             </div>
+                          </td>
+                          <td style={styles.tdActions}>
+                            <button
+                              style={styles.deleteBtn}
+                              onClick={(e) => handleDeleteClick(e, ticket)}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "#fee2e2";
+                                e.currentTarget.style.color = "#dc2626";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "transparent";
+                                e.currentTarget.style.color = "#94a3b8";
+                              }}
+                              title="Delete ticket"
+                            >
+                              <Trash2 size={18} />
+                            </button>
                           </td>
                         </tr>
                       );
