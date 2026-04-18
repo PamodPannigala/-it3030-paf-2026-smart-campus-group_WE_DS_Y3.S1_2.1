@@ -102,7 +102,7 @@ const LoginPage = () => {
             className="branding-content text-white"
           >
             <div className="d-flex align-items-center gap-2 mb-4">
-              <div className="bg-white text-primary p-2 rounded-xl">
+              <div className="bg-white text-primary p-2 rounded-xl shadow-lg">
                 <Globe className="w-8 h-8" />
               </div>
               <h2 className="fw-bold mb-0 text-white" style={{ letterSpacing: "-1px" }}>Smart Campus</h2>
@@ -139,7 +139,7 @@ const LoginPage = () => {
               className="w-100"
               style={{ maxWidth: "400px", margin: "0 auto" }}
             >
-              <div className="auth-header mb-5">
+              <div className="auth-header mb-5 text-center text-lg-start">
                 <h2 className="fw-bold mb-2">
                   {mode === "login" && "Welcome back"}
                   {mode === "signup" && "Create account"}
@@ -159,35 +159,48 @@ const LoginPage = () => {
 
               {mode === "login" && (
                 <form onSubmit={onLogin} className="d-grid gap-3">
-                  <div className="form-group">
-                    <label className="small fw-bold text-muted mb-1">Username or Email</label>
-                    <div className="position-relative">
-                      <LogIn className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted w-4 h-4" />
-                      <input className="form-control form-control-lg ps-5 border-0 bg-light" placeholder="name@example.com" value={loginForm.usernameOrEmail} onChange={(e) => setLoginForm({ ...loginForm, usernameOrEmail: e.target.value })} required />
+                  <div className="form-group mb-2">
+                    <label className="small fw-bold text-muted mb-2 d-block">Username or Email</label>
+                    <div className="premium-input-wrapper">
+                      <LogIn className="input-icon" />
+                      <input 
+                        className="form-control premium-input ps-5" 
+                        placeholder="Username or email" 
+                        value={loginForm.usernameOrEmail} 
+                        onChange={(e) => setLoginForm({ ...loginForm, usernameOrEmail: e.target.value })} 
+                        required 
+                      />
                     </div>
                   </div>
                   
-                  <div className="form-group">
+                  <div className="form-group mb-2">
                     <div className="d-flex justify-content-between">
-                      <label className="small fw-bold text-muted mb-1">Password</label>
-                      <button type="button" className="btn btn-link p-0 small text-decoration-none" onClick={() => setMode("forgot")}>Forgot?</button>
+                      <label className="small fw-bold text-muted mb-2">Password</label>
+                      <button type="button" className="btn btn-link p-0 small text-decoration-none fw-semibold" onClick={() => setMode("forgot")}>Forgot password?</button>
                     </div>
-                    <div className="position-relative">
-                      <Key className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted w-4 h-4" />
-                      <input type={showPassword ? "text" : "password"} className="form-control form-control-lg ps-5 pe-5 border-0 bg-light" placeholder="••••••••" value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} required />
-                      <button type="button" className="btn position-absolute top-50 end-0 translate-middle-y me-2 border-0 p-1" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <EyeOff className="w-4 h-4 text-muted" /> : <Eye className="w-4 h-4 text-muted" />}
+                    <div className="premium-input-wrapper">
+                      <Key className="input-icon" />
+                      <input 
+                        type={showPassword ? "text" : "password"} 
+                        className="form-control premium-input ps-5 pe-5" 
+                        placeholder="Enter password" 
+                        value={loginForm.password} 
+                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} 
+                        required 
+                      />
+                      <button type="button" className="btn input-action-btn" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                   </div>
 
-                  <button className="btn btn-primary btn-lg py-3 fw-bold rounded-pill shadow-lg mt-3" type="submit">Sign In</button>
+                  <button className="btn btn-primary btn-lg py-3 fw-bold rounded-xl shadow-lg mt-3" type="submit">Sign In</button>
                   
                   <div className="d-flex align-items-center gap-3 my-4">
-                    <hr className="flex-grow-1" /> <span className="text-muted small">OR</span> <hr className="flex-grow-1" />
+                    <hr className="flex-grow-1 opacity-25" /> <span className="text-muted small fw-medium">OR</span> <hr className="flex-grow-1 opacity-25" />
                   </div>
 
-                  <button className="btn btn-outline-secondary btn-lg py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 border-2" type="button" onClick={loginWithGoogle}>
+                  <button className="btn btn-outline-secondary btn-lg py-3 fw-bold rounded-xl d-flex align-items-center justify-content-center gap-3 border-2 transition-all hover:bg-light" type="button" onClick={loginWithGoogle}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -197,67 +210,67 @@ const LoginPage = () => {
                     Continue with Google
                   </button>
                   
-                  <p className="text-center small mt-4 text-muted">
-                    New here? <button type="button" className="btn btn-link p-0 text-decoration-none fw-bold" onClick={() => setMode("signup")}>Create account</button>
+                  <p className="text-center small mt-5 text-muted">
+                    New to campus? <button type="button" className="btn btn-link p-0 text-decoration-none fw-bold" onClick={() => setMode("signup")}>Create an account</button>
                   </p>
                 </form>
               )}
 
               {mode === "signup" && (
                 <form onSubmit={onSignup} className="d-grid gap-3">
-                  <div>
-                    <label className="small fw-bold text-muted mb-1">Full Name</label>
-                    <input className="form-control form-control-lg border-0 bg-light" placeholder="John Doe" value={signupForm.fullName} onChange={(e) => setSignupForm({ ...signupForm, fullName: e.target.value })} required />
+                  <div className="form-group">
+                    <label className="small fw-bold text-muted mb-2">Full Name</label>
+                    <input className="form-control premium-input" placeholder="John Doe" value={signupForm.fullName} onChange={(e) => setSignupForm({ ...signupForm, fullName: e.target.value })} required />
                   </div>
-                  <div>
-                    <label className="small fw-bold text-muted mb-1">Username</label>
-                    <input className="form-control form-control-lg border-0 bg-light" placeholder="johndoe" value={signupForm.username} onChange={(e) => setSignupForm({ ...signupForm, username: e.target.value })} required />
+                  <div className="form-group">
+                    <label className="small fw-bold text-muted mb-2">Username</label>
+                    <input className="form-control premium-input" placeholder="johndoe" value={signupForm.username} onChange={(e) => setSignupForm({ ...signupForm, username: e.target.value })} required />
                   </div>
-                  <div>
-                    <label className="small fw-bold text-muted mb-1">Email Address</label>
-                    <input type="email" className="form-control form-control-lg border-0 bg-light" placeholder="john@university.edu" value={signupForm.email} onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })} required />
+                  <div className="form-group">
+                    <label className="small fw-bold text-muted mb-2">Email Address</label>
+                    <input type="email" className="form-control premium-input" placeholder="john@university.edu" value={signupForm.email} onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })} required />
                   </div>
-                  <div>
-                    <label className="small fw-bold text-muted mb-1">Password</label>
-                    <input type="password" className="form-control form-control-lg border-0 bg-light" placeholder="Min 6 characters" value={signupForm.password} onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })} required />
+                  <div className="form-group">
+                    <label className="small fw-bold text-muted mb-2">Password</label>
+                    <input type="password" className="form-control premium-input" placeholder="Min 6 characters" value={signupForm.password} onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })} required />
                   </div>
-                  <button className="btn btn-primary btn-lg py-3 fw-bold rounded-pill shadow-lg mt-3" type="submit">Get Started</button>
-                  <p className="text-center small text-muted">
-                    Already have an account? <button type="button" className="btn btn-link p-0 text-decoration-none fw-bold" onClick={() => setMode("login")}>Sign in</button>
+                  <button className="btn btn-primary btn-lg py-3 fw-bold rounded-xl shadow-lg mt-3" type="submit">Get Started</button>
+                  <p className="text-center small text-muted mt-3">
+                    Already have an account? <button type="button" className="btn btn-link p-0 text-decoration-none fw-bold" onClick={() => setMode("login")}>Sign in here</button>
                   </p>
                 </form>
               )}
 
               {mode === "forgot" && (
                 <form onSubmit={onForgot} className="d-grid gap-3">
-                  <div className="mb-2">
-                    <label className="small fw-bold text-muted mb-1">Email Address</label>
-                    <input type="email" className="form-control form-control-lg border-0 bg-light" placeholder="name@example.com" value={forgotForm.email} onChange={(e) => setForgotForm({ ...forgotForm, email: e.target.value })} required />
+                  <div className="form-group">
+                    <label className="small fw-bold text-muted mb-2">Email Address</label>
+                    <input type="email" className="form-control premium-input" placeholder="name@example.com" value={forgotForm.email} onChange={(e) => setForgotForm({ ...forgotForm, email: e.target.value })} required />
                   </div>
-                  <button className="btn btn-primary btn-lg py-3 fw-bold rounded-pill shadow-lg" type="submit">Send Reset Token</button>
+                  <button className="btn btn-primary btn-lg py-3 fw-bold rounded-xl shadow-lg mt-2" type="submit">Send Reset Token</button>
                   {resetToken && (
-                    <div className="alert alert-warning border-0 py-3 small text-center mt-3">
-                      <span className="d-block mb-1 text-muted">Demo Access Token:</span>
-                      <code className="fs-5 fw-bold text-dark">{resetToken}</code>
+                    <div className="premium-alert mt-4">
+                      <span className="d-block mb-2 text-muted small fw-bold uppercase">Demo Access Token:</span>
+                      <code className="fs-5 fw-bold text-primary">{resetToken}</code>
                     </div>
                   )}
-                  <p className="text-center small text-muted mt-3">
-                    Back to <button type="button" className="btn btn-link p-0 text-decoration-none fw-bold" onClick={() => setMode("login")}>Secure Login</button>
+                  <p className="text-center small text-muted mt-4">
+                    Take me back to <button type="button" className="btn btn-link p-0 text-decoration-none fw-bold" onClick={() => setMode("login")}>Login</button>
                   </p>
                 </form>
               )}
 
               {mode === "reset" && (
                 <form onSubmit={onReset} className="d-grid gap-3">
-                  <div>
-                    <label className="small fw-bold text-muted mb-1">Reset Token</label>
-                    <input className="form-control form-control-lg border-0 bg-light" placeholder="Paste token here" value={resetForm.token} onChange={(e) => setResetForm({ ...resetForm, token: e.target.value })} required />
+                  <div className="form-group">
+                    <label className="small fw-bold text-muted mb-2">Reset Token</label>
+                    <input className="form-control premium-input text-center fs-5 fw-bold tracking-widest" placeholder="••••••••" value={resetForm.token} onChange={(e) => setResetForm({ ...resetForm, token: e.target.value })} required />
                   </div>
-                  <div>
-                    <label className="small fw-bold text-muted mb-1">New Password</label>
-                    <input type="password" className="form-control form-control-lg border-0 bg-light" placeholder="New secure password" value={resetForm.newPassword} onChange={(e) => setResetForm({ ...resetForm, newPassword: e.target.value })} required />
+                  <div className="form-group">
+                    <label className="small fw-bold text-muted mb-2">New Password</label>
+                    <input type="password" className="form-control premium-input" placeholder="Enter new password" value={resetForm.newPassword} onChange={(e) => setResetForm({ ...resetForm, newPassword: e.target.value })} required />
                   </div>
-                  <button className="btn btn-primary btn-lg py-3 fw-bold rounded-pill shadow-lg mt-2" type="submit">Update Password</button>
+                  <button className="btn btn-primary btn-lg py-3 fw-bold rounded-xl shadow-lg mt-2" type="submit">Update Password</button>
                   <button type="button" className="btn btn-link w-100 p-0 text-decoration-none small text-muted" onClick={() => setMode("login")}>Cancel</button>
                 </form>
               )}

@@ -18,6 +18,7 @@ const NotificationsPage = () => {
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [targetGroup, setTargetGroup] = useState("SPECIFIC");
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const [form, setForm] = useState({
     userId: "",
     category: "SYSTEM",
@@ -67,7 +68,7 @@ const NotificationsPage = () => {
   const markAllAsRead = async () => {
     try {
       setError("");
-      await api.post("/api/notifications/mark-all-read");
+      await api.post("/notifications/mark-all-read");
       setNotifications(prev => prev.map(n => ({ ...n, read: true, isRead: true })));
       setUnreadCount(0);
     } catch (err) {
@@ -77,7 +78,7 @@ const NotificationsPage = () => {
 
   const deleteNotification = async (notificationId) => {
     try {
-      await api.delete(`/api/notifications/${notificationId}`);
+      await api.delete(`/notifications/${notificationId}`);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
       // Reload count just in case
       const countResponse = await api.get("/notifications/unread-count");
@@ -108,12 +109,10 @@ const NotificationsPage = () => {
 
   const filteredNotifications = useMemo(() => {
     return notifications.filter((n) => {
-      const matchFilter = filter === "ALL" || 
-                         (filter === "TICKETS" ? (n.category === "TICKET_STATUS" || n.category === "TICKET_COMMENT") : n.category === f);
       const categoryMatch = filter === "ALL" || 
                            (filter === "TICKETS" ? (n.category === "TICKET_STATUS" || n.category === "TICKET_COMMENT") : n.category === filter);
-      const searchMatch = n.title.toLowerCase().includes(search.toLowerCase()) || 
-                         n.message.toLowerCase().includes(search.toLowerCase());
+      const searchMatch = (n.title?.toLowerCase() || "").includes(search.toLowerCase()) || 
+                         (n.message?.toLowerCase() || "").includes(search.toLowerCase());
       return categoryMatch && searchMatch;
     });
   }, [notifications, filter, search]);
@@ -197,6 +196,7 @@ const NotificationsPage = () => {
                           item={item}
                           onMarkRead={markAsRead}
                           onDelete={deleteNotification}
+                          onViewDetails={() => setSelectedNotification(item)}
                           isStaff={isStaff}
                         />
                       ))}
@@ -299,6 +299,54 @@ const NotificationsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Notification Detail Modal */}
+      <AnimatePresence>
+        {selectedNotification && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="modal-overlay"
+            onClick={() => setSelectedNotification(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="modal-content m4-glass-card p-4"
+              onClick={e => e.stopPropagation()}
+              style={{ maxWidth: "500px", width: "90%" }}
+            >
+              <div className="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                  <span className="badge bg-primary-subtle text-primary mb-2">{selectedNotification.category}</span>
+                  <h3 className="fw-bold mb-0">{selectedNotification.title}</h3>
+                </div>
+                <button className="btn-close" onClick={() => setSelectedNotification(null)}></button>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-muted" style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
+                  {selectedNotification.message}
+                </p>
+              </div>
+
+              <div className="d-flex justify-content-between align-items-center border-top pt-3">
+                <span className="text-muted small">
+                  {new Date(selectedNotification.createdAt).toLocaleString()}
+                </span>
+                <button 
+                  className="btn btn-primary px-4 rounded-pill fw-bold" 
+                  onClick={() => setSelectedNotification(null)}
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

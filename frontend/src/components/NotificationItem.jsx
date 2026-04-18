@@ -13,7 +13,7 @@ const categoryIcon = (category) => {
   }
 };
 
-const NotificationItem = ({ item, onMarkRead, onDelete, isStaff }) => {
+const NotificationItem = ({ item, onMarkRead, onDelete, onViewDetails, isStaff }) => {
   const isRead = item.read ?? item.isRead ?? false;
 
   return (
@@ -42,16 +42,18 @@ const NotificationItem = ({ item, onMarkRead, onDelete, isStaff }) => {
                 <span className="badge rounded-pill bg-primary" style={{ fontSize: "0.65rem" }}>NEW</span>
               )}
             </div>
-            <p className="mb-2 text-muted small">{item.message}</p>
+            <p className="mb-2 text-muted small text-truncate" style={{ maxWidth: "400px" }}>{item.message}</p>
             <div className="d-flex flex-wrap align-items-center gap-3">
               <span className="text-muted" style={{ fontSize: "0.75rem" }}>
                 {new Date(item.createdAt).toLocaleString()}
               </span>
-              {item.referenceId && (
-                <button className="btn btn-sm btn-link p-0 text-primary text-decoration-none fw-medium d-flex align-items-center gap-1" style={{ fontSize: "0.75rem" }}>
-                  View Details <ChevronRight className="w-3 h-3" />
-                </button>
-              )}
+              <button 
+                className="btn btn-sm btn-link p-0 text-primary text-decoration-none fw-medium d-flex align-items-center gap-1 transition-all" 
+                style={{ fontSize: "0.75rem" }}
+                onClick={onViewDetails}
+              >
+                View Details <ChevronRight className="w-3 h-3" />
+              </button>
             </div>
           </div>
         </div>
