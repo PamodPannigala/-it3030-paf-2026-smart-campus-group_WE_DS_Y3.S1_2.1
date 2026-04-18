@@ -77,8 +77,8 @@ h1, h2, h3, h4, h5, h6 {
 .auth-split-layout {
   display: flex;
   width: 100%;
-  max-width: 1000px;
-  min-height: 600px;
+  max-width: 850px;
+  min-height: 520px;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
   border-radius: var(--radius-lg);
@@ -89,7 +89,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .auth-branding {
   flex: 1;
-  padding: 4rem;
+  padding: 3rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -99,7 +99,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .auth-form-wrapper {
   flex: 1;
-  padding: 4rem;
+  padding: 3rem;
   background: white;
   display: flex;
   flex-direction: column;
@@ -188,11 +188,11 @@ h1, h2, h3, h4, h5, h6 {
 .input-action-btn {
   position: absolute;
   top: 50%;
-  right: 0.75rem;
+  right: 0.5rem;
   transform: translateY(-50%);
   border: none !important;
   background: transparent !important;
-  padding: 0.5rem !important;
+  padding: 0.4rem !important;
   color: #94a3b8 !important;
   transition: all 0.2s ease !important;
 }

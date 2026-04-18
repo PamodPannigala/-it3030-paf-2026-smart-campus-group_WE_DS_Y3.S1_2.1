@@ -137,7 +137,7 @@ const LoginPage = () => {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
               className="w-100"
-              style={{ maxWidth: "400px", margin: "0 auto" }}
+              style={{ maxWidth: "320px", margin: "0 auto" }}
             >
               <div className="auth-header mb-5 text-center text-lg-start">
                 <h2 className="fw-bold mb-2">
@@ -162,9 +162,8 @@ const LoginPage = () => {
                   <div className="form-group mb-2">
                     <label className="small fw-bold text-muted mb-2 d-block">Username or Email</label>
                     <div className="premium-input-wrapper">
-                      <LogIn className="input-icon" />
                       <input 
-                        className="form-control premium-input ps-5" 
+                        className="form-control premium-input" 
                         placeholder="Username or email" 
                         value={loginForm.usernameOrEmail} 
                         onChange={(e) => setLoginForm({ ...loginForm, usernameOrEmail: e.target.value })} 
@@ -179,10 +178,9 @@ const LoginPage = () => {
                       <button type="button" className="btn btn-link p-0 small text-decoration-none fw-semibold" onClick={() => setMode("forgot")}>Forgot password?</button>
                     </div>
                     <div className="premium-input-wrapper">
-                      <Key className="input-icon" />
                       <input 
                         type={showPassword ? "text" : "password"} 
-                        className="form-control premium-input ps-5 pe-5" 
+                        className="form-control premium-input pe-5" 
                         placeholder="Enter password" 
                         value={loginForm.password} 
                         onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })} 
