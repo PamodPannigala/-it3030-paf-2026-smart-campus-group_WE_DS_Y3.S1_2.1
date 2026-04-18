@@ -2,246 +2,204 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Sparkles, 
-  User, 
-  MapPin, 
-  Briefcase, 
-  Activity, 
+  Star,
   CheckCircle, 
   ChevronDown, 
   ChevronUp,
   Zap,
-  Target,
-  Clock,
-  AlertCircle
+  Briefcase,
+  AlertCircle,
+  Info
 } from 'lucide-react';
 
 const BACKEND_URL = "http://localhost:8080";
 
-// Calculate match score between ticket and technician
-const calculateMatchScore = (ticket, technician, index) => {
-  let score = 0;
-  let reasons = [];
+// CATEGORY TO SPECIALIZATION MAPPING
+const CATEGORY_MAPPING = {
+  'SOFTWARE': ['Software'],
+  'HARDWARE': ['Hardware'],
+  'NETWORK': ['Network'],
+  'ELECTRICAL': ['Electrical'],
+  'CARPENTRY': ['Carpentry'],
+  'PLUMBING': ['Plumbing'],
+  'CLEANING': ['Cleaning'],
+  'SECURITY': ['Security', 'Network'],
+  'GENERAL': ['General'],
+  'TECHNICAL': ['Software', 'Hardware', 'Network', 'Electrical'],
+  'BILLING': ['Software', 'General'],
+  'ACCOUNT': ['Software', 'General'],
+  'FEATURE_REQUEST': ['Software', 'General'],
+  'BUG_REPORT': ['Software', 'Hardware', 'Network'],
+  '': ['General'] // Default
+};
 
-  // 1. Specialization Match (40 points) - HIGHEST PRIORITY
-  const ticketCategory = (ticket.category || '').toLowerCase().trim();
-  const techSpec = (technician.specialization || '').toLowerCase().trim();
+// Get category from ticket
+const extractCategory = (ticket) => {
+  if (!ticket) return '';
   
-  if (ticketCategory && techSpec) {
-    if (techSpec === ticketCategory) {
-      score += 40;
-      reasons.push({ icon: <Target size={12} />, text: `Expert in ${technician.specialization}`, type: 'specialization' });
-    } else if (techSpec === 'general' || techSpec === '') {
-      score += 15;
-      reasons.push({ icon: <Briefcase size={12} />, text: 'Generalist', type: 'general' });
-    } else {
-      // Partial match - same team/category family
-      score += 5;
-      reasons.push({ icon: <Briefcase size={12} />, text: techSpec, type: 'weak' });
-    }
-  } else {
-    // No category specified, give benefit of doubt
-    score += 20;
-  }
-
-  // 2. Availability Status (30 points)
-  const status = (technician.status || 'OFFLINE').toUpperCase();
-  switch (status) {
-    case 'ACTIVE':
-      score += 30;
-      reasons.push({ icon: <CheckCircle size={12} />, text: 'Available now', type: 'availability' });
-      break;
-    case 'BUSY':
-      score += 15;
-      reasons.push({ icon: <Clock size={12} />, text: 'Currently busy', type: 'busy' });
-      break;
-    case 'ON_LEAVE':
-      score += 0;
-      reasons.push({ icon: <AlertCircle size={12} />, text: 'On leave', type: 'unavailable' });
-      break;
-    default:
-      score += 10;
-      reasons.push({ icon: <Activity size={12} />, text: 'Status: ' + status, type: 'limited' });
-  }
-
-  // 3. Workload Factor (20 points) - SIMULATED based on list order for now
-  // In real implementation, this would be actual ticket count
-  // For now, we use index to create variation (first technicians assumed less busy)
-  const simulatedWorkload = index * 0.5; // 0, 0.5, 1.0 for first 3
-  const workloadScore = Math.max(0, 20 - (simulatedWorkload * 10));
-  score += workloadScore;
+  // Check if category exists and is not empty
+  const cat = ticket.category?.toString().toUpperCase().trim();
+  if (cat) return cat;
   
-  if (simulatedWorkload < 1) {
-    reasons.push({ icon: <Zap size={12} />, text: 'Light workload', type: 'workload' });
+  // Try other fields
+  const altFields = ['issueType', 'ticketType', 'type'];
+  for (const field of altFields) {
+    const val = ticket[field]?.toString().toUpperCase().trim();
+    if (val) return val;
   }
+  
+  return '';
+};
 
-  // 4. Team Match (10 points) - Bonus for matching team context
-  const ticketDesc = (ticket.description || '').toLowerCase();
-  const team = (technician.team || '').toLowerCase();
-  if (ticketDesc.includes(team) || ticketCategory.includes(team.replace(' ', ''))) {
-    score += 10;
-    reasons.push({ icon: <MapPin size={12} />, text: 'Team context match', type: 'team' });
-  }
-
-  // Add small random factor (-2 to +2) to break ties when everything else is equal
-  // This ensures different scores even with similar profiles
-  const tieBreaker = (index % 3) - 1; // -1, 0, or 1
-  score += tieBreaker;
-
-  // Ensure score is 0-100
-  score = Math.max(0, Math.min(100, score));
-
-  return {
-    score: Math.round(score),
-    reasons: reasons.slice(0, 3),
-    technician,
-    rawData: {
-      specialization: techSpec,
-      category: ticketCategory,
-      status: status,
-      match: techSpec === ticketCategory
-    }
-  };
+// Get compatible specializations
+const getCompatibleSpecs = (category) => {
+  return CATEGORY_MAPPING[category] || CATEGORY_MAPPING[''];
 };
 
 const SmartAssignmentPanel = ({ ticket, technicians, onAssign, assigning }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [error, setError] = useState(null);
-  const [usingRealData, setUsingRealData] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+  const [detectedCategory, setDetectedCategory] = useState('');
 
-  // Calculate suggestions when ticket or technicians change
   useEffect(() => {
     if (!ticket || !technicians?.length) return;
-    calculateSuggestions();
-  }, [ticket, technicians]);
-
-  const calculateSuggestions = async () => {
-    setLoading(true);
-    setError(null);
     
-    try {
-      // Try to fetch from backend first
-      let scoredTechnicians = [];
+    const cat = extractCategory(ticket);
+    setDetectedCategory(cat);
+    calculateSuggestions(cat);
+  }, [ticket?.id, technicians.length]);
+
+  const calculateSuggestions = (ticketCategory) => {
+    setLoading(true);
+    
+    const compatibleSpecs = getCompatibleSpecs(ticketCategory);
+    
+    // Filter active techs
+    const activeTechs = technicians.filter(tech => {
+      const status = (tech.status || 'ACTIVE').toString().toUpperCase();
+      return status !== 'ON_LEAVE';
+    });
+
+    // Calculate scores
+    let scored = activeTechs.map((tech, index) => {
+      const techSpec = (tech.specialization || 'General').toString().trim();
+      const techSpecLower = techSpec.toLowerCase();
+      const techTeam = (tech.team || '').toString().toLowerCase();
+      const techStatus = (tech.status || 'ACTIVE').toString().toUpperCase();
       
-      try {
-        const response = await axios.get(
-          `${BACKEND_URL}/api/tickets/smart-suggestions`, {
-            params: {
-              ticketId: ticket.id,
-              category: ticket.category,
-              location: ticket.location,
-              priority: ticket.priority
-            },
-            timeout: 2000
-          }
-        );
+      let score = 30;
+      let reasons = [];
+      let isPrimaryMatch = false;
+      let isCompatible = false;
+
+      // If we have a category, score based on specialization match
+      if (ticketCategory) {
+        const specIndex = compatibleSpecs.findIndex(s => s.toLowerCase() === techSpecLower);
         
-        if (response.data?.suggestions?.length > 0) {
-          scoredTechnicians = response.data.suggestions;
-          setUsingRealData(true);
+        if (specIndex === 0) {
+          // Perfect primary match
+          score = 95;
+          isPrimaryMatch = true;
+          isCompatible = true;
+          reasons.push({ text: `${techSpec} specialist`, type: 'expert', icon: 'star' });
+        } else if (specIndex > 0) {
+          // Secondary match
+          score = 85;
+          isCompatible = true;
+          reasons.push({ text: `Skilled in ${techSpec}`, type: 'skilled', icon: 'check' });
+        } else if (techSpecLower === 'general') {
+          // Generalist
+          score = 60;
+          isCompatible = true;
+          reasons.push({ text: 'General support', type: 'general', icon: 'briefcase' });
+        } else {
+          // Wrong specialization
+          score = 40;
+          isCompatible = false;
+          reasons.push({ text: `Not ideal for this issue`, type: 'weak', icon: 'alert' });
         }
-      } catch (apiErr) {
-        // Expected - backend endpoint not implemented yet
-        console.log('Backend smart-suggestions not available, using client-side calculation');
+
+        // IT Support team bonus for technical issues
+        const isTechnical = ['SOFTWARE', 'HARDWARE', 'NETWORK', 'TECHNICAL', 'BUG_REPORT', 'SECURITY'].includes(ticketCategory);
+        if (isTechnical && (techTeam.includes('it') || techTeam.includes('support'))) {
+          score += 5;
+          if (score > 100) score = 100;
+        }
+      } else {
+        // No category - general scoring
+        score = 70 + (index % 3) * 5; // 70, 75, 80...
+        isCompatible = true;
+        reasons.push({ text: 'General support', type: 'general', icon: 'briefcase' });
       }
 
-      // Fallback to client-side calculation
-      if (scoredTechnicians.length === 0) {
-        scoredTechnicians = technicians
-          .filter(tech => tech.status !== 'ON_LEAVE') // Filter out on-leave techs
-          .map((tech, index) => calculateMatchScore(ticket, tech, index));
-        setUsingRealData(false);
+      // Status bonus
+      if (techStatus === 'ACTIVE') {
+        score += 5;
+        reasons.push({ text: 'Available', type: 'available', icon: 'check' });
       }
 
-      // Sort by score (highest first), then by specialization match
-      const topMatches = scoredTechnicians
-        .sort((a, b) => {
-          if (b.score !== a.score) return b.score - a.score;
-          // Tie-breaker: specialization match priority
-          const aMatch = a.rawData?.specialization === a.rawData?.category;
-          const bMatch = b.rawData?.specialization === b.rawData?.category;
-          if (aMatch && !bMatch) return -1;
-          if (!aMatch && bMatch) return 1;
-          return 0;
-        })
-        .slice(0, 3)
-        .map((match, index) => ({
-          ...match,
-          rank: index + 1,
-          rankColor: index === 0 ? '#fbbf24' : index === 1 ? '#9ca3af' : '#cd7f32'
-        }));
+      return {
+        score: Math.min(100, score),
+        reasons: reasons.slice(0, 2),
+        technician: tech,
+        isPrimaryMatch,
+        isCompatible,
+        spec: techSpec
+      };
+    });
 
-      setSuggestions(topMatches);
-      
-      // Auto-expand if we have good matches
-      if (topMatches[0]?.score >= 50) {
-        setExpanded(true);
-      }
-    } catch (err) {
-      console.error('Smart assignment error:', err);
-      setError('Failed to calculate suggestions');
-    } finally {
-      setLoading(false);
+    // Sort
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (a.isPrimaryMatch && !b.isPrimaryMatch) return -1;
+      if (!a.isPrimaryMatch && b.isPrimaryMatch) return 1;
+      return a.technician.name.localeCompare(b.technician.name);
+    });
+
+    const topMatches = scored.slice(0, 4).map((match, index) => ({
+      ...match,
+      rank: index + 1,
+      isBest: index === 0
+    }));
+
+    setSuggestions(topMatches);
+    setLoading(false);
+  };
+
+  const getScoreColor = (score, isCompatible) => {
+    if (!isCompatible) return '#ef4444';
+    if (score >= 90) return '#10b981';
+    if (score >= 75) return '#3b82f6';
+    if (score >= 60) return '#f59e0b';
+    return '#6b7280';
+  };
+
+  const renderIcon = (iconType) => {
+    const props = { size: 12 };
+    switch(iconType) {
+      case 'star': return <Star {...props} fill="currentColor" />;
+      case 'check': return <CheckCircle {...props} />;
+      case 'briefcase': return <Briefcase {...props} />;
+      case 'alert': return <AlertCircle {...props} />;
+      default: return <span>•</span>;
     }
-  };
-
-  const getScoreColor = (score) => {
-    if (score >= 80) return '#10b981'; // Green - Excellent
-    if (score >= 60) return '#3b82f6'; // Blue - Good
-    if (score >= 40) return '#f59e0b'; // Orange - Fair
-    return '#ef4444'; // Red - Poor
-  };
-
-  const getScoreLabel = (score) => {
-    if (score >= 80) return 'Excellent';
-    if (score >= 60) return 'Good';
-    if (score >= 40) return 'Fair';
-    return 'Poor';
-  };
-
-  // Debug info for development
-  const showDebugInfo = () => {
-    if (!ticket) return null;
-    return (
-      <div style={{
-        marginBottom: '12px',
-        padding: '8px 12px',
-        background: '#f1f5f9',
-        borderRadius: '6px',
-        fontSize: '11px',
-        color: '#64748b'
-      }}>
-        <strong>Ticket:</strong> {ticket.category || 'No category'} | 
-        <strong> Matching against:</strong> {technicians.length} technicians
-        {!usingRealData && ' (Client-side calc)'}
-      </div>
-    );
   };
 
   if (!ticket) return null;
 
+  const hasCategory = !!detectedCategory;
+  const categoryLabel = detectedCategory.replace(/_/g, ' ') || 'Not set';
+
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-      border: '1px solid #bae6fd',
-      borderRadius: '16px',
-      padding: '20px',
-      marginBottom: '20px',
-      position: 'relative',
-      overflow: 'hidden'
+      background: '#f8fafc',
+      border: '1px solid #e2e8f0',
+      borderRadius: '12px',
+      padding: '16px',
+      marginBottom: '16px',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
-      {/* Decorative background element */}
-      <div style={{
-        position: 'absolute',
-        top: '-20px',
-        right: '-20px',
-        width: '100px',
-        height: '100px',
-        background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
-        borderRadius: '50%'
-      }} />
-
       {/* Header */}
       <div 
         onClick={() => setExpanded(!expanded)}
@@ -249,294 +207,220 @@ const SmartAssignmentPanel = ({ ticket, technicians, onAssign, assigning }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          cursor: 'pointer',
-          position: 'relative',
-          zIndex: 1
+          cursor: 'pointer'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            width: '36px',
+            height: '36px',
+            borderRadius: '8px',
+            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white',
-            boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.3)'
+            color: 'white'
           }}>
-            <Sparkles size={20} />
+            <Sparkles size={18} />
           </div>
           <div>
-            <h4 style={{
-              margin: 0,
-              fontSize: '16px',
-              fontWeight: '700',
-              color: '#0f172a',
+            <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>
+              Smart Assignment
+            </div>
+            <div style={{ fontSize: '12px', color: hasCategory ? '#059669' : '#dc2626' }}>
+              {hasCategory ? (
+                <span>Category: <strong>{categoryLabel}</strong></span>
+              ) : (
+                <span>⚠️ No category - Edit ticket to add one</span>
+              )}
+            </div>
+          </div>
+        </div>
+        {expanded ? <ChevronUp size={20} color="#64748b" /> : <ChevronDown size={20} color="#64748b" />}
+      </div>
+
+      {expanded && (
+        <div style={{ marginTop: '12px' }}>
+          {!hasCategory && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              padding: '10px 12px',
+              marginBottom: '12px',
+              fontSize: '12px',
+              color: '#991b1b',
               display: 'flex',
               alignItems: 'center',
               gap: '8px'
             }}>
-              Smart Assignment
-              <span style={{
-                fontSize: '11px',
-                padding: '2px 8px',
-                background: '#dbeafe',
-                color: '#1d4ed8',
-                borderRadius: '999px',
-                fontWeight: '600'
-              }}>
-                AI
-              </span>
-              {!usingRealData && (
-                <span style={{
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                  background: '#fef3c7',
-                  color: '#92400e',
-                  borderRadius: '999px',
-                  fontWeight: '600'
-                }}>
-                  BETA
-                </span>
-              )}
-            </h4>
-            <p style={{
-              margin: '4px 0 0 0',
-              fontSize: '13px',
-              color: '#64748b'
-            }}>
-              {suggestions.length > 0 
-                ? `Top ${suggestions.length} matches found` 
-                : 'Click to find best technicians'}
-            </p>
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {!expanded && suggestions[0] && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 12px',
-              background: 'white',
-              borderRadius: '999px',
-              border: '1px solid #e2e8f0'
-            }}>
-              <User size={14} color="#3b82f6" />
-              <span style={{ fontSize: '13px', fontWeight: '600', color: '#0f172a' }}>
-                {suggestions[0].technician.name}
-              </span>
-              <span style={{
-                fontSize: '11px',
-                fontWeight: '700',
-                color: getScoreColor(suggestions[0].score)
-              }}>
-                {suggestions[0].score}%
-              </span>
+              <Info size={14} />
+              <span>This ticket has no category. Smart matching works best when tickets are categorized.</span>
             </div>
           )}
-          {expanded ? <ChevronUp size={20} color="#64748b" /> : <ChevronDown size={20} color="#64748b" />}
-        </div>
-      </div>
 
-      {/* Expanded Content */}
-      {expanded && (
-        <div style={{ marginTop: '16px', position: 'relative', zIndex: 1 }}>
-          {showDebugInfo()}
-          
           {loading ? (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '40px',
-              gap: '12px',
-              color: '#64748b'
-            }}>
-              <div style={{
-                width: '20px',
-                height: '20px',
-                border: '2px solid #e2e8f0',
-                borderTopColor: '#3b82f6',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }} />
-              <span>Analyzing best matches...</span>
-            </div>
-          ) : error ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '20px',
-              color: '#ef4444',
-              fontSize: '14px'
-            }}>
-              {error}
-            </div>
-          ) : suggestions.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '20px',
-              color: '#64748b',
-              fontSize: '14px'
-            }}>
-              No matching technicians found
+            <div style={{ textAlign: 'center', padding: '30px', color: '#64748b' }}>
+              Calculating...
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {suggestions.map((match) => (
                 <div
                   key={match.technician.id}
                   style={{
                     background: 'white',
-                    border: `2px solid ${match.rank === 1 ? '#3b82f6' : '#e2e8f0'}`,
-                    borderRadius: '12px',
-                    padding: '16px',
-                    position: 'relative',
-                    transition: 'all 0.2s',
-                    boxShadow: match.rank === 1 ? '0 4px 6px -1px rgba(59, 130, 246, 0.1)' : 'none'
+                    borderRadius: '10px',
+                    border: `2px solid ${match.isBest ? '#3b82f6' : match.isCompatible ? '#e2e8f0' : '#fecaca'}`,
+                    padding: '14px',
+                    position: 'relative'
                   }}
                 >
-                  {/* Rank Badge */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '-10px',
-                    left: '16px',
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    background: match.rankColor,
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    border: '2px solid white'
-                  }}>
-                    {match.rank}
-                  </div>
+                  {/* BEST Badge */}
+                  {match.isBest && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-8px',
+                      left: '10px',
+                      background: '#f59e0b',
+                      color: 'white',
+                      fontSize: '10px',
+                      fontWeight: '700',
+                      padding: '2px 10px',
+                      borderRadius: '999px',
+                      textTransform: 'uppercase'
+                    }}>
+                      Best Match
+                    </div>
+                  )}
 
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  {/* Main Row */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '12px', 
+                    alignItems: 'center',
+                    marginTop: match.isBest ? '2px' : 0
+                  }}>
                     {/* Score Circle */}
                     <div style={{
-                      position: 'relative',
-                      width: '56px',
-                      height: '56px',
+                      width: '50px',
+                      height: '50px',
+                      borderRadius: '50%',
+                      background: `${getScoreColor(match.score, match.isCompatible)}15`,
+                      border: `3px solid ${getScoreColor(match.score, match.isCompatible)}`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       flexShrink: 0
                     }}>
-                      <svg style={{ transform: 'rotate(-90deg)' }} width="56" height="56">
-                        <circle
-                          cx="28"
-                          cy="28"
-                          r="24"
-                          fill="none"
-                          stroke="#e2e8f0"
-                          strokeWidth="4"
-                        />
-                        <circle
-                          cx="28"
-                          cy="28"
-                          r="24"
-                          fill="none"
-                          stroke={getScoreColor(match.score)}
-                          strokeWidth="4"
-                          strokeDasharray={`${(match.score / 100) * 150.8} 150.8`}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                      <span style={{
+                        fontSize: '14px',
+                        fontWeight: '800',
+                        color: getScoreColor(match.score, match.isCompatible)
                       }}>
-                        <span style={{
-                          fontSize: '14px',
-                          fontWeight: '800',
-                          color: getScoreColor(match.score)
-                        }}>
-                          {match.score}
-                        </span>
-                        <span style={{
-                          fontSize: '9px',
-                          color: '#64748b',
-                          textTransform: 'uppercase'
-                        }}>
-                          {getScoreLabel(match.score)}
-                        </span>
-                      </div>
+                        {match.score}
+                      </span>
                     </div>
 
-                    {/* Technician Info */}
+                    {/* Middle Content */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        marginBottom: '4px'
+                      {/* Name & Badge */}
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '6px',
+                        marginBottom: '4px',
+                        flexWrap: 'wrap'
                       }}>
-                        <span style={{
-                          fontSize: '16px',
-                          fontWeight: '700',
-                          color: '#0f172a'
+                        <span style={{ 
+                          fontSize: '15px', 
+                          fontWeight: '700', 
+                          color: '#0f172a' 
                         }}>
                           {match.technician.name}
                         </span>
-                        {match.rawData?.match && (
+                        
+                        {match.isPrimaryMatch && (
                           <span style={{
                             fontSize: '10px',
-                            padding: '2px 6px',
+                            padding: '2px 8px',
                             background: '#dbeafe',
                             color: '#1d4ed8',
                             borderRadius: '999px',
                             fontWeight: '700'
                           }}>
-                            EXPERT
+                            ★ TOP EXPERT
+                          </span>
+                        )}
+                        
+                        {!match.isPrimaryMatch && match.isCompatible && (
+                          <span style={{
+                            fontSize: '10px',
+                            padding: '2px 8px',
+                            background: '#d1fae5',
+                            color: '#059669',
+                            borderRadius: '999px',
+                            fontWeight: '700'
+                          }}>
+                            ✓ MATCH
+                          </span>
+                        )}
+                        
+                        {!match.isCompatible && (
+                          <span style={{
+                            fontSize: '10px',
+                            padding: '2px 8px',
+                            background: '#fee2f2',
+                            color: '#dc2626',
+                            borderRadius: '999px',
+                            fontWeight: '700'
+                          }}>
+                            ✗ MISMATCH
                           </span>
                         )}
                       </div>
-                      
-                      <div style={{
-                        fontSize: '13px',
+
+                      {/* Spec & Team */}
+                      <div style={{ 
+                        fontSize: '12px', 
                         color: '#64748b',
-                        marginBottom: '8px'
+                        marginBottom: '6px'
                       }}>
-                        {match.technician.specialization || 'General'} • {match.technician.team || 'No team'} • {match.technician.email}
+                        {match.spec}
+                        {match.technician.team && ` • ${match.technician.team}`}
                       </div>
 
-                      {/* Match Reasons */}
-                      <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
+                      {/* Tags */}
+                      <div style={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
                         gap: '6px'
                       }}>
                         {match.reasons.map((reason, idx) => (
                           <span
                             key={idx}
                             style={{
-                              display: 'flex',
+                              display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
                               fontSize: '11px',
-                              padding: '4px 8px',
-                              background: reason.type === 'specialization' ? '#dbeafe' :
-                                        reason.type === 'availability' ? '#d1fae5' :
-                                        reason.type === 'workload' ? '#fef3c7' : '#f1f5f9',
-                              color: reason.type === 'specialization' ? '#1d4ed8' :
-                                     reason.type === 'availability' ? '#059669' :
-                                     reason.type === 'workload' ? '#d97706' : '#64748b',
-                              borderRadius: '6px',
-                              fontWeight: '500'
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              fontWeight: '500',
+                              background: reason.type === 'expert' ? '#dbeafe' :
+                                        reason.type === 'skilled' ? '#e0e7ff' :
+                                        reason.type === 'available' ? '#d1fae5' :
+                                        reason.type === 'general' ? '#f1f5f9' : '#fef2f2',
+                              color: reason.type === 'expert' ? '#1d4ed8' :
+                                     reason.type === 'skilled' ? '#3730a3' :
+                                     reason.type === 'available' ? '#059669' :
+                                     reason.type === 'general' ? '#64748b' : '#dc2626',
+                              whiteSpace: 'nowrap'
                             }}
                           >
-                            {reason.icon}
-                            {reason.text}
+                            {renderIcon(reason.icon)}
+                            <span>{reason.text}</span>
                           </span>
                         ))}
                       </div>
@@ -547,40 +431,20 @@ const SmartAssignmentPanel = ({ ticket, technicians, onAssign, assigning }) => {
                       onClick={() => onAssign(match.technician.id)}
                       disabled={assigning}
                       style={{
-                        padding: '10px 20px',
-                        background: match.rank === 1 ? '#2563eb' : '#f8fafc',
-                        color: match.rank === 1 ? 'white' : '#0f172a',
-                        border: match.rank === 1 ? 'none' : '1px solid #e2e8f0',
+                        padding: '10px 18px',
+                        background: match.isBest ? '#2563eb' : match.isCompatible ? '#f8fafc' : '#fef2f2',
+                        color: match.isBest ? 'white' : match.isCompatible ? '#374151' : '#dc2626',
+                        border: match.isBest ? 'none' : `1px solid ${match.isCompatible ? '#e2e8f0' : '#fecaca'}`,
                         borderRadius: '8px',
                         fontSize: '13px',
                         fontWeight: '600',
                         cursor: assigning ? 'not-allowed' : 'pointer',
                         opacity: assigning ? 0.6 : 1,
-                        transition: 'all 0.2s',
-                        whiteSpace: 'nowrap',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
+                        flexShrink: 0,
+                        whiteSpace: 'nowrap'
                       }}
                     >
-                      {assigning ? (
-                        <>
-                          <div style={{
-                            width: '14px',
-                            height: '14px',
-                            border: '2px solid currentColor',
-                            borderTopColor: 'transparent',
-                            borderRadius: '50%',
-                            animation: 'spin 1s linear infinite'
-                          }} />
-                          ...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle size={16} />
-                          {match.rank === 1 ? 'Best Match' : 'Assign'}
-                        </>
-                      )}
+                      {assigning ? '...' : 'Assign'}
                     </button>
                   </div>
                 </div>
@@ -588,12 +452,11 @@ const SmartAssignmentPanel = ({ ticket, technicians, onAssign, assigning }) => {
             </div>
           )}
 
-          {/* Refresh Button */}
           <button
-            onClick={calculateSuggestions}
+            onClick={() => calculateSuggestions(detectedCategory)}
             disabled={loading}
             style={{
-              marginTop: '16px',
+              marginTop: '12px',
               width: '100%',
               padding: '10px',
               background: 'transparent',
@@ -610,16 +473,10 @@ const SmartAssignmentPanel = ({ ticket, technicians, onAssign, assigning }) => {
             }}
           >
             <Zap size={14} />
-            {loading ? 'Calculating...' : 'Recalculate Matches'}
+            {loading ? 'Refreshing...' : 'Refresh Matches'}
           </button>
         </div>
       )}
-
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };
