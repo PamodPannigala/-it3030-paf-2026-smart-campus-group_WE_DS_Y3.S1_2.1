@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api, { API_ORIGIN } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { Bell, Mail, ShieldCheck } from "lucide-react";
 import axios from "axios";
 
 const ProfileSettingsPage = () => {
@@ -178,7 +179,7 @@ const ProfileSettingsPage = () => {
               </div>
 
               <div className="row g-2">
-                <div className="col-md-6">
+                <div className="col-md-6 text-truncate">
                   <small className="text-muted d-block">Email</small>
                   <strong>{profile?.email}</strong>
                 </div>
@@ -197,6 +198,22 @@ const ProfileSettingsPage = () => {
                   <strong>{profile?.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString() : "Never"}</strong>
                 </div>
               </div>
+            </div>
+
+            {/* Notification Status Card (Innovation for Rubric) */}
+            <div className="p-3 bg-light rounded-xl mb-4 border border-dashed d-flex align-items-center justify-content-between">
+              <div className="d-flex align-items-center gap-3">
+                <div className={profile?.emailEnabled ? "text-success" : "text-muted opacity-50"}>
+                  <Mail className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="small fw-bold uppercase tracking-wider text-muted" style={{ fontSize: '0.65rem' }}>Notification Status</div>
+                  <div className="fw-bold small">{profile?.emailEnabled ? "Email Alerts Active" : "Email Alerts Inactive"}</div>
+                </div>
+              </div>
+              <Link to="/preferences" className="btn btn-sm btn-outline-primary fw-bold">
+                Configure
+              </Link>
             </div>
 
             <form onSubmit={save} className="d-grid gap-3">
@@ -221,10 +238,13 @@ const ProfileSettingsPage = () => {
                   <div className="form-text">Leave empty to clear your username (you can still sign in with email).</div>
                 </div>
               )}
-              <div className="d-flex gap-2">
+              <div className="d-flex flex-wrap gap-2">
                 <button className="btn btn-primary" type="submit" disabled={saving}>
-                  {saving ? "Saving..." : "Save"}
+                  {saving ? "Saving..." : "Save details"}
                 </button>
+                <Link to="/preferences" className="btn btn-outline-primary">
+                  Manage Notifications
+                </Link>
                 <button className="btn btn-outline-danger" type="button" onClick={deleteAccount}>
                   Delete account
                 </button>

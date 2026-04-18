@@ -90,9 +90,7 @@ function AppContent() {
             path="/preferences"
             element={
               <ProtectedRoute>
-                <EndUserOnlyRoute>
-                  <NotificationPreferencesPage />
-                </EndUserOnlyRoute>
+                <NotificationPreferencesPage />
               </ProtectedRoute>
             }
           />

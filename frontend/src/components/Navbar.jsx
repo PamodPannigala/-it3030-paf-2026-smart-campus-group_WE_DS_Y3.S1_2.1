@@ -47,6 +47,7 @@ const Navbar = () => {
                 Notifications
                 {unreadCount > 0 && <span className="ms-1 badge rounded-pill bg-danger shadow-sm" style={{ fontSize: '0.7rem' }}>{unreadCount}</span>}
               </NavLink>
+              <NavLink to="/settings" className={linkClass}>Settings</NavLink>
             </div>
           )}
 

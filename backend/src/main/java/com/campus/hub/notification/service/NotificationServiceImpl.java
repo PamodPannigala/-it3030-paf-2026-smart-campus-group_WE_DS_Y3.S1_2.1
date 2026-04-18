@@ -60,11 +60,6 @@ public class NotificationServiceImpl implements NotificationService {
         CampusUser user = campusUserRepository.findById(request.userId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + request.userId()));
 
-        if (!isNotificationCategoryEnabled(user, request.category())) {
-            // Log or ignore instead of throwing if broadcasting, but for specific throw is okay
-            throw new IllegalArgumentException("Notification category is disabled by user preferences");
-        }
-
         Notification notification = buildNotification(user, request);
         Notification saved = notificationRepository.save(notification);
         
@@ -81,11 +76,8 @@ public class NotificationServiceImpl implements NotificationService {
 
         List<Notification> batch = new ArrayList<>();
         for (CampusUser user : targets) {
-            if (isNotificationCategoryEnabled(user, request.category())) {
-                Notification n = buildNotification(user, request);
-                batch.add(n);
-                // External trigger happens later or in separate thread safely
-            }
+            Notification n = buildNotification(user, request);
+            batch.add(n);
         }
         List<Notification> savedBatch = notificationRepository.saveAll(batch);
         
@@ -209,7 +201,7 @@ public class NotificationServiceImpl implements NotificationService {
         NotificationPreference preference = preferenceRepository.findByUserId(user.getId()).orElse(null);
         if (preference == null) return;
 
-        if (preference.isEmailEnabled()) {
+        if (preference.isEmailEnabled() && isNotificationCategoryEnabled(user, notification.getCategory())) {
             String body = String.format("Hello %s,\n\nYou have a new notification: %s\n\n%s\n\nBest regards,\nSmart Campus Team", 
                 user.getFullName(), notification.getTitle(), notification.getMessage());
             emailService.sendEmail(user.getEmail(), "Smart Campus Notification: " + notification.getTitle(), body);
