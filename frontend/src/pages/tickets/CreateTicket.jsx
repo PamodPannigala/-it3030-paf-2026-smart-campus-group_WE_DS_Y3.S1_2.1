@@ -20,19 +20,20 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
   );
 
   const CATEGORY_OPTIONS = useMemo(
-    () => [
-      { value: "", label: "Select a category" },
-      { value: "TECHNICAL", label: "Technical Issue" },
-      { value: "BILLING", label: "Billing & Payments" },
-      { value: "ACCOUNT", label: "Account Access" },
-      { value: "FEATURE_REQUEST", label: "Feature Request" },
-      { value: "BUG_REPORT", label: "Bug Report" },
-      { value: "GENERAL", label: "General Inquiry" },
-      { value: "SECURITY", label: "Security Concern" },
-    ],
-    []
-  );
-
+  () => [
+    { value: "", label: "Select a category" },
+    { value: "SOFTWARE", label: " Software Issue" },
+    { value: "HARDWARE", label: " Hardware Problem" },
+    { value: "NETWORK", label: " Network/Connectivity" },
+    { value: "ELECTRICAL", label: " Electrical Issue" },
+    { value: "CARPENTRY", label: " Carpentry/Woodwork" },
+    { value: "PLUMBING", label: " Plumbing" },
+    { value: "CLEANING", label: " Cleaning/Maintenance" },
+    { value: "SECURITY", label: " Security Concern" },
+    { value: "GENERAL", label: " General Support" },
+  ],
+  []
+);
   const LOCATION_OPTIONS = useMemo(
     () => [
       { value: "", label: "Select location" },
