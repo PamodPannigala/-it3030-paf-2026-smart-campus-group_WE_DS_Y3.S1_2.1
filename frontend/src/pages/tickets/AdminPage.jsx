@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
+import SmartAssignmentPanel from './SmartAssignmentPanel';
 import {
   getAllTickets,
   updateTicketStatus,
@@ -2257,6 +2258,7 @@ export default function AdminTicketsPage() {
               </div>
 
               {/* Technician Assignment */}
+              {/* Technician Assignment */}
               <div style={{
                 background: COLORS.surface,
                 border: "1px solid #e2e8f0",
@@ -2328,12 +2330,38 @@ export default function AdminTicketsPage() {
                   </div>
                 ) : (
                   <div>
+                    {/* SMART ASSIGNMENT PANEL - NEW */}
+                    {!isTechnicianAssigned && technicians.length > 0 && selectedTicket && (
+                      <SmartAssignmentPanel 
+                        ticket={selectedTicket}
+                        technicians={technicians}
+                        onAssign={assignTechnician}
+                        assigning={assigningTechnician}
+                      />
+                    )}
+
+                    {/* Divider */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      margin: '24px 0',
+                      color: '#94a3b8',
+                      fontSize: '13px',
+                      fontWeight: '500'
+                    }}>
+                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                      <span>OR MANUAL SELECTION</span>
+                      <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                    </div>
+
+                    {/* EXISTING MANUAL ASSIGNMENT - UNCHANGED */}
                     <p style={{
                       fontSize: "14px",
                       color: COLORS.text.secondary,
                       marginBottom: "16px"
                     }}>
-                      Select a technician to assign to this ticket:
+                      Select a technician manually:
                     </p>
                     
                     {technicians.length === 0 ? (
