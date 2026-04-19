@@ -48,6 +48,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final AuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContextRepository;
 
     /**
      * Retrieves the currently authenticated user's profile information.
@@ -139,8 +140,7 @@ public class AuthController {
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
 
-        SecurityContextRepository repo = new HttpSessionSecurityContextRepository();
-        repo.saveContext(context, httpServletRequest, httpServletResponse);
+        securityContextRepository.saveContext(context, httpServletRequest, httpServletResponse);
 
         // Security Update for Member 4
         existingUser.setLastLoginAt(LocalDateTime.now());
