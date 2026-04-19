@@ -1,8 +1,8 @@
 package com.campus.hub.security;
 
 import com.campus.hub.exception.EntityNotFoundException;
-import com.campus.hub.user.entity.CampusUser;
-import com.campus.hub.user.repository.CampusUserRepository;
+import com.campus.hub.entity.CampusUser;
+import com.campus.hub.repository.CampusUserRepository;
 import java.util.Locale;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;

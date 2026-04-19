@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final AuthenticatedUserResolver userResolver;
-    private final com.campus.hub.user.repository.CampusUserRepository userRepository;
+    private final com.campus.hub.repository.CampusUserRepository userRepository;
 
     @Value("${app.oauth2.success-redirect:http://localhost:5173/oauth-success}")
     private String successRedirectUrl;
@@ -27,7 +27,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             Authentication authentication
     ) throws IOException, ServletException {
         try {
-            com.campus.hub.user.entity.CampusUser user = userResolver.resolve(authentication);
+            com.campus.hub.entity.CampusUser user = userResolver.resolve(authentication);
             user.setLastLoginAt(java.time.LocalDateTime.now());
             userRepository.save(user);
         } catch (Exception e) {

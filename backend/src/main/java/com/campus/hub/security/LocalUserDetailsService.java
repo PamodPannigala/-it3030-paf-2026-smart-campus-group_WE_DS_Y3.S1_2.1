@@ -1,7 +1,7 @@
 package com.campus.hub.security;
 
-import com.campus.hub.user.entity.CampusUser;
-import com.campus.hub.user.repository.CampusUserRepository;
+import com.campus.hub.entity.CampusUser;
+import com.campus.hub.repository.CampusUserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

@@ -1,8 +1,8 @@
 package com.campus.hub.security;
 
-import com.campus.hub.user.entity.CampusUser;
-import com.campus.hub.user.entity.Role;
-import com.campus.hub.user.repository.CampusUserRepository;
+import com.campus.hub.entity.CampusUser;
+import com.campus.hub.entity.Role;
+import com.campus.hub.repository.CampusUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
