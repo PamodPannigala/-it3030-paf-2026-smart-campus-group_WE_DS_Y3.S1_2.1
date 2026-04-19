@@ -5,11 +5,14 @@ import com.campus.hub.dto.TicketRequestDTO;
 import com.campus.hub.dto.TicketResponseDTO;
 import com.campus.hub.entity.Technician;
 import com.campus.hub.entity.Ticket;
+import com.campus.hub.entity.Comment;
 import com.campus.hub.entity.TicketStatus;
+import com.campus.hub.repository.CommentRepository;
 import com.campus.hub.repository.TechnicianRepository;
 import com.campus.hub.repository.TicketRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,11 +29,14 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final TechnicianRepository technicianRepository;
+    private final CommentRepository commentRepository;
 
     public TicketService(TicketRepository ticketRepository,
-                         TechnicianRepository technicianRepository) {
+                         TechnicianRepository technicianRepository,
+                         CommentRepository commentRepository) {
         this.ticketRepository = ticketRepository;
         this.technicianRepository = technicianRepository;
+        this.commentRepository = commentRepository;
     }
 
     // =========================
@@ -77,7 +83,6 @@ public class TicketService {
         dto.setReporterName(ticket.getReporterName());
         dto.setReporterEmail(ticket.getReporterEmail());
 
-        // IMPORTANT: STRING ONLY
         if (ticket.getAssignedTechnician() != null) {
             TechnicianResponse tech = new TechnicianResponse();
             tech.setName(ticket.getAssignedTechnician());
@@ -140,17 +145,15 @@ public class TicketService {
         return convertToDTO(ticketRepository.save(ticket));
     }
 
-    // ✅ ADDED: GET TICKETS BY TECHNICIAN EMAIL
+    // =========================
+    // GET TICKETS BY TECHNICIAN EMAIL
     // =========================
     public List<TicketResponseDTO> getTicketsByTechnician(String email) {
-        // Find technician by email to get their name
         Technician technician = technicianRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Technician not found with email: " + email));
         
-        // Get all tickets assigned to this technician (by name - String)
         List<Ticket> tickets = ticketRepository.findByAssignedTechnician(technician.getName());
         
-        // Convert to DTOs and return
         return tickets.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -332,4 +335,30 @@ public class TicketService {
 
         return convertToDTO(ticketRepository.save(ticket));
     }
+
+    // =========================
+    // DELETE TICKET
+    // =========================
+    @Transactional
+public void deleteTicket(Long id, String reporterEmail) {
+    if (reporterEmail == null || reporterEmail.trim().isEmpty()) {
+        throw new RuntimeException("Reporter email is required");
+    }
+    
+    Ticket ticket = ticketRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Ticket not found"));
+    
+    String normalizedEmail = reporterEmail.trim();
+    String ticketEmail = ticket.getReporterEmail() != null ? ticket.getReporterEmail().trim() : "";
+    
+    if (!ticketEmail.equalsIgnoreCase(normalizedEmail)) {
+        throw new RuntimeException("You can only delete your own tickets");
+    }
+    
+    // Delete comments first (works whether 0 or many comments)
+    commentRepository.deleteByTicketId(id);
+    
+    // Delete the ticket
+    ticketRepository.delete(ticket);
+}
 }

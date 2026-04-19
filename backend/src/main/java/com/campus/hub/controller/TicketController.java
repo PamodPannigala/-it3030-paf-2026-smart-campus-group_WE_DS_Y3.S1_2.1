@@ -153,6 +153,32 @@ public class TicketController {
     }
 
     // =========================
+    // DELETE TICKET (ADD THIS)
+    // =========================
+    
+    
+    // =========================
+    // DELETE TICKET
+    // =========================
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTicket(
+            @PathVariable Long id, 
+            @RequestParam String reporterEmail
+    ) {
+        try {
+            ticketService.deleteTicket(id, reporterEmail);
+            return ResponseEntity.ok(Map.of("message", "Ticket deleted successfully"));
+        } catch (RuntimeException e) {
+            // Return 400 for business logic errors (wrong owner, wrong status, etc.)
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            // Return 500 for unexpected server errors
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", "Internal server error: " + e.getMessage()));
+        }
+    }
+
+    // =========================
     // REPORTER TICKETS
     // =========================
     @GetMapping("/reporter")
