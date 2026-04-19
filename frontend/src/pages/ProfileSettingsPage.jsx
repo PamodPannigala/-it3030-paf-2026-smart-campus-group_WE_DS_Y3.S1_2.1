@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api, { API_ORIGIN } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import { Bell, Mail, ShieldCheck } from "lucide-react";
+import { Mail } from "lucide-react";
 import axios from "axios";
 
 const ProfileSettingsPage = () => {
@@ -143,7 +143,7 @@ const ProfileSettingsPage = () => {
                           await refreshUser();
                           setMessage("Profile picture updated.");
                           await load();
-                        } catch (err) {
+                        } catch {
                           setError("Failed to upload image to Cloudinary.");
                         } finally {
                           setSaving(false);
@@ -165,7 +165,7 @@ const ProfileSettingsPage = () => {
                           await refreshUser();
                           await load();
                           setMessage("Profile picture removed.");
-                        } catch (err) {
+                        } catch {
                           setError("Failed to remove picture.");
                         } finally {
                           setSaving(false);

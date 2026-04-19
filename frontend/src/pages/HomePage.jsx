@@ -120,11 +120,11 @@ const Home = () => {
     }
   }, [isStaff, navigate]);
 
-  if (isStaff) return null;
-
   useEffect(() => {
     document.title = "Campus Hub | Home";
   }, []);
+
+  if (isStaff) return null;
 
   return (
     <div className="home-container">

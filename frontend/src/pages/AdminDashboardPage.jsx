@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 
 const AdminDashboardPage = () => {
-  const { isAdmin, isStaff, user } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [stats, setStats] = useState({
     unread: 0,
     users: null,

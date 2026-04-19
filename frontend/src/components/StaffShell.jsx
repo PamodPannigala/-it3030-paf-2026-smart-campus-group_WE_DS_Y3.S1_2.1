@@ -10,7 +10,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 
 const StaffShell = ({ children }) => {
-  const { user, logout, isAdmin } = useAuth();
+  const { logout, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const linkClass = ({ isActive }) => (isActive ? "active" : "");

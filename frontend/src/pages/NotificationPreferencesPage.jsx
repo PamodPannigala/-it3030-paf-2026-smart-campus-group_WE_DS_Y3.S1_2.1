@@ -4,8 +4,10 @@ import api from "../services/api";
 import { Bell, ShieldCheck, Mail, Calendar, Building2, Ticket, CheckCircle2, Loader2, Save, Smartphone } from "lucide-react";
 import { clsx } from "clsx";
 
-const PreferenceToggle = ({ id, label, icon: Icon, checked, onChange, description }) => (
-  <motion.div 
+const PreferenceToggle = ({ id, label, icon: Icon, checked, onChange, description }) => {
+  const ToggleIcon = Icon;
+  return (
+    <motion.div
     whileHover={{ scale: 1.01 }}
     className={clsx(
       "d-flex align-items-center justify-content-between p-4 rounded-xl border mb-3 transition-all",
@@ -17,7 +19,7 @@ const PreferenceToggle = ({ id, label, icon: Icon, checked, onChange, descriptio
         "p-2 rounded-lg",
         checked ? "bg-primary text-white" : "bg-white text-muted shadow-xs"
       )}>
-        <Icon className="w-5 h-5" />
+        <ToggleIcon className="w-5 h-5" />
       </div>
       <div>
         <label className="fw-bold mb-0 d-block cursor-pointer" htmlFor={id}>
@@ -35,10 +37,13 @@ const PreferenceToggle = ({ id, label, icon: Icon, checked, onChange, descriptio
         onChange={(e) => onChange(e.target.checked)}
       />
     </div>
-  </motion.div>
-);
+    </motion.div>
+  );
+};
 
 const NotificationPreferencesPage = () => {
+  const MotionDiv = motion.div;
+  const MotionForm = motion.form;
   const [form, setForm] = useState({
     systemEnabled: true,
     bookingEnabled: true,
@@ -115,7 +120,7 @@ const NotificationPreferencesPage = () => {
             <div className="card-body p-4 pt-0">
               <AnimatePresence mode="wait">
                 {loading ? (
-                  <motion.div 
+                  <MotionDiv
                     key="loading"
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
@@ -124,9 +129,9 @@ const NotificationPreferencesPage = () => {
                   >
                     <Loader2 className="w-10 h-10 text-primary animate-spin mb-3" />
                     <span className="text-muted fw-medium">Configuring your dashboard...</span>
-                  </motion.div>
+                  </MotionDiv>
                 ) : (
-                  <motion.form 
+                  <MotionForm
                     key="form"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -220,14 +225,14 @@ const NotificationPreferencesPage = () => {
                     <div className="d-flex justify-content-end align-items-center gap-3 mt-5 p-3 bg-light rounded-xl">
                       <AnimatePresence>
                         {message && (
-                          <motion.div 
+                          <MotionDiv
                             initial={{ opacity: 0, x: 10 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             className="text-success small fw-bold d-flex align-items-center gap-1"
                           >
                             <CheckCircle2 className="w-4 h-4" /> {message}
-                          </motion.div>
+                          </MotionDiv>
                         )}
                       </AnimatePresence>
                       {error && <span className="text-danger small fw-bold">{error}</span>}
@@ -244,7 +249,7 @@ const NotificationPreferencesPage = () => {
                         )}
                       </button>
                     </div>
-                  </motion.form>
+                  </MotionForm>
                 )}
               </AnimatePresence>
             </div>

@@ -13,11 +13,12 @@ const categoryIcon = (category) => {
   }
 };
 
-const NotificationItem = ({ item, onMarkRead, onDelete, onViewDetails, isStaff }) => {
+const NotificationItem = ({ item, onMarkRead, onDelete, onViewDetails }) => {
+  const MotionDiv = motion.div;
   const isRead = item.read ?? item.isRead ?? false;
 
   return (
-    <motion.div
+    <MotionDiv
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -77,7 +78,7 @@ const NotificationItem = ({ item, onMarkRead, onDelete, onViewDetails, isStaff }
           </button>
         </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 

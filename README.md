@@ -44,9 +44,9 @@ Older databases may have `notifications.category` as a MySQL `ENUM` that does no
 2. **Authorized JavaScript origins**: your Vite app, e.g. `http://localhost:5173`
 3. **Authorized redirect URI**: must match Spring Security’s callback on the **same host and port as the backend**, for example:
 
-`http://localhost:8080/login/oauth2/code/google`
+`http://localhost:8082/login/oauth2/code/google`
 
-The backend default port is **`8080`** (`server.port`, overridable with `SERVER_PORT`). It **must** match the redirect URI you register in Google.
+The backend default port is **`8082`** (`server.port`, overridable with `SERVER_PORT`). It **must** match the redirect URI you register in Google.
 
 4. Provide credentials via environment variables (recommended — **do not commit secrets**):
 
@@ -60,7 +60,7 @@ $env:GOOGLE_CLIENT_SECRET = "your-client-secret"
 ### If Google sign-in still fails
 
 - Confirm **redirect URI** port = backend `server.port`.
-- Confirm `VITE_API_ORIGIN` in `frontend/.env` points to that same backend origin (e.g. `http://localhost:8080`).
+- Confirm `VITE_API_ORIGIN` in `frontend/.env` points to that same backend origin (e.g. `http://localhost:8082`).
 - If you ever pasted a **client secret** in chat or committed it to git, **rotate the secret** in Google Cloud and update your local env only.
 
 ## Run the backend
@@ -70,7 +70,7 @@ cd backend
 .\mvnw.cmd spring-boot:run
 ```
 
-API origin example: `http://localhost:8080` (see `server.port`).
+API origin example: `http://localhost:8082` (see `server.port`).
 
 ## Run the frontend
 

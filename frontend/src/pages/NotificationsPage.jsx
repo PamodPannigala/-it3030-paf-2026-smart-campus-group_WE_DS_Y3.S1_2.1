@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -8,6 +8,7 @@ import { Bell, Send, Inbox, ShieldAlert } from "lucide-react";
 import usePushNotifications from "../hooks/usePushNotifications";
 
 const NotificationsPage = () => {
+  const MotionDiv = motion.div;
   const { user, isAdmin, isStaff } = useAuth();
   const { showNotification } = usePushNotifications();
   const [notifications, setNotifications] = useState([]);
@@ -34,7 +35,7 @@ const NotificationsPage = () => {
     setForm((prev) => ({ ...prev, userId: defaultTargetUserId }));
   }, [defaultTargetUserId]);
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -49,18 +50,18 @@ const NotificationsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [unreadOnly]);
 
   useEffect(() => {
     loadNotifications();
-  }, [unreadOnly]);
+  }, [loadNotifications]);
 
   const markAsRead = async (notificationId) => {
     try {
       await api.patch(`/notifications/${notificationId}/read`);
       setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, read: true, isRead: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (err) {
+    } catch {
       setError("Failed to mark notification as read");
     }
   };
@@ -71,7 +72,7 @@ const NotificationsPage = () => {
       await api.post("/notifications/mark-all-read");
       setNotifications(prev => prev.map(n => ({ ...n, read: true, isRead: true })));
       setUnreadCount(0);
-    } catch (err) {
+    } catch {
       setError("Failed to mark all as read");
     }
   };
@@ -83,7 +84,7 @@ const NotificationsPage = () => {
       // Reload count just in case
       const countResponse = await api.get("/notifications/unread-count");
       setUnreadCount(countResponse.data.unreadCount);
-    } catch (err) {
+    } catch {
       setError("Failed to delete notification");
     }
   };
@@ -124,7 +125,7 @@ const NotificationsPage = () => {
           
           {/* Header Section */}
           <header className="d-flex justify-content-between align-items-end mb-5">
-            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+            <MotionDiv initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
               <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill mb-3 fw-bold tracking-wider fs-xs">
                 {isStaff ? "ADMINISTRATION PANEL" : "MESSAGING HUB"}
               </span>
@@ -134,9 +135,9 @@ const NotificationsPage = () => {
                   ? "Manage system-wide broadcasts and targeted user alerts." 
                   : "Stay updated with campus events, bookings, and support."}
               </p>
-            </motion.div>
+            </MotionDiv>
 
-            <motion.div 
+            <MotionDiv
                whileHover={{ scale: 1.05 }}
                whileTap={{ scale: 0.95 }}
                className="form-check form-switch bg-white p-3 rounded-pill shadow-sm border px-4 d-flex align-items-center gap-2 cursor-pointer"
@@ -151,14 +152,14 @@ const NotificationsPage = () => {
               <label htmlFor="unreadOnly" className="form-check-label text-muted fw-medium small mb-0">
                 Unread only
               </label>
-            </motion.div>
+            </MotionDiv>
           </header>
 
           {error && (
-            <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-2 mb-4">
+            <MotionDiv initial={{ height: 0 }} animate={{ height: "auto" }} className="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-2 mb-4">
               <ShieldAlert className="w-5 h-5" />
               {error}
-            </motion.div>
+            </MotionDiv>
           )}
 
           <div className="row g-4">
@@ -197,7 +198,6 @@ const NotificationsPage = () => {
                           onMarkRead={markAsRead}
                           onDelete={deleteNotification}
                           onViewDetails={() => setSelectedNotification(item)}
-                          isStaff={isStaff}
                         />
                       ))}
                     </AnimatePresence>
@@ -209,7 +209,7 @@ const NotificationsPage = () => {
             {/* Admin Compose Sidebar */}
             {isAdmin && (
               <div className="col-lg-4">
-                <motion.div 
+                <MotionDiv
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   className="card m4-glass-card border-0 h-100"
@@ -292,7 +292,7 @@ const NotificationsPage = () => {
                       </button>
                     </form>
                   </div>
-                </motion.div>
+                </MotionDiv>
               </div>
             )}
             
@@ -303,14 +303,14 @@ const NotificationsPage = () => {
       {/* Notification Detail Modal */}
       <AnimatePresence>
         {selectedNotification && (
-          <motion.div 
+          <MotionDiv
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="modal-overlay"
             onClick={() => setSelectedNotification(null)}
           >
-            <motion.div 
+            <MotionDiv
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -343,8 +343,8 @@ const NotificationsPage = () => {
                   Done
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
+            </MotionDiv>
+          </MotionDiv>
         )}
       </AnimatePresence>
     </div>

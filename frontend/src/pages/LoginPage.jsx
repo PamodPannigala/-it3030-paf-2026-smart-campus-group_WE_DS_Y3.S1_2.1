@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogIn, UserPlus, Key, Eye, EyeOff, Github, Globe, Sparkles, Rocket, ShieldCheck } from "lucide-react";
-import { clsx } from "clsx";
 
 function useQuery() {
   const { search } = useLocation();
@@ -11,6 +10,7 @@ function useQuery() {
 }
 
 const LoginPage = () => {
+  const MotionDiv = motion.div;
   const query = useQuery();
   const initialMode = query.get("mode") === "signup" ? "signup" : "login";
   const [mode, setMode] = useState(initialMode); // login | signup | forgot | reset
@@ -95,7 +95,7 @@ const LoginPage = () => {
         
         {/* Left Branding Panel */}
         <div className="auth-branding d-none d-lg-flex">
-          <motion.div 
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -124,13 +124,13 @@ const LoginPage = () => {
                 <ShieldCheck className="w-5 h-5" /> Role-Based Access Control
               </div>
             </div>
-          </motion.div>
+          </MotionDiv>
         </div>
 
         {/* Right Form Panel */}
         <div className="auth-form-wrapper bg-white">
           <AnimatePresence mode="wait">
-            <motion.div
+            <MotionDiv
               key={mode}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -272,7 +272,7 @@ const LoginPage = () => {
                   <button type="button" className="btn btn-link w-100 p-0 text-decoration-none small text-muted" onClick={() => setMode("login")}>Cancel</button>
                 </form>
               )}
-            </motion.div>
+            </MotionDiv>
           </AnimatePresence>
         </div>
       </div>

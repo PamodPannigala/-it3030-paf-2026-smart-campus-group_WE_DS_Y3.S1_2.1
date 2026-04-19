@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import api, { API_ORIGIN, OAUTH_LOGIN_URL } from "../services/api";
 
@@ -9,15 +9,15 @@ export const AuthProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const refreshUnreadCount = async () => {
+  const refreshUnreadCount = useCallback(async () => {
     if (!user) return;
     try {
       const res = await api.get("/notifications/unread-count");
       setUnreadCount(res.data.unreadCount);
-    } catch (err) {
-      console.error("Failed to fetch unread count", err);
+    } catch {
+      // Silent failure keeps the UI responsive even if polling fails.
     }
-  };
+  }, [user]);
 
   const refreshUser = async () => {
     try {
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       const interval = setInterval(refreshUnreadCount, 30000); // 30s refresh
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, refreshUnreadCount]);
 
   const loginWithGoogle = () => {
     window.location.href = OAUTH_LOGIN_URL;
@@ -105,6 +105,7 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
