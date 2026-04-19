@@ -6,7 +6,7 @@ import api from "./api";
 export const createTicket = (ticketData) => {
   const formData = new FormData();
 
-  // ✅ IMPORTANT FIX: ensure backend-required fields exist
+  //  ensure backend-required fields exist
   if (ticketData.title) {
     formData.append("title", ticketData.title);
   }
@@ -91,7 +91,7 @@ export const getTicketById = (id) => api.get(`/tickets/${id}`);
 // COMMENTS
 // =======================
 
-// ✅ ADD COMMENT FIXED
+//ADD COMMENT 
 export const addComment = (
   ticketId,
   author,
@@ -159,3 +159,13 @@ export const deleteComment = (ticketId, commentId, author, role) =>
   api.delete(
     `/tickets/${ticketId}/comments/${commentId}?author=${author}&authorRole=${role}`
   );
+
+
+// src/services/ticketApi.js
+export const deleteTicket = async (ticketId) => {
+  const storedEmail = localStorage.getItem("userEmail");
+  const response = await api.delete(`/tickets/${ticketId}`, {
+    params: { reporterEmail: storedEmail }
+  });
+  return response.data;
+};
