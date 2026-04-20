@@ -20,20 +20,21 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
   );
 
   const CATEGORY_OPTIONS = useMemo(
-  () => [
-    { value: "", label: "Select a category" },
-    { value: "SOFTWARE", label: " Software Issue" },
-    { value: "HARDWARE", label: " Hardware Problem" },
-    { value: "NETWORK", label: " Network/Connectivity" },
-    { value: "ELECTRICAL", label: " Electrical Issue" },
-    { value: "CARPENTRY", label: " Carpentry/Woodwork" },
-    { value: "PLUMBING", label: " Plumbing" },
-    { value: "CLEANING", label: " Cleaning/Maintenance" },
-    { value: "SECURITY", label: " Security Concern" },
-    { value: "GENERAL", label: " General Support" },
-  ],
-  []
-);
+    () => [
+      { value: "", label: "Select a category" },
+      { value: "SOFTWARE", label: " Software Issue" },
+      { value: "HARDWARE", label: " Hardware Problem" },
+      { value: "NETWORK", label: " Network/Connectivity" },
+      { value: "ELECTRICAL", label: " Electrical Issue" },
+      { value: "CARPENTRY", label: " Carpentry/Woodwork" },
+      { value: "PLUMBING", label: " Plumbing" },
+      { value: "CLEANING", label: " Cleaning/Maintenance" },
+      { value: "SECURITY", label: " Security Concern" },
+      { value: "GENERAL", label: " General Support" },
+    ],
+    []
+  );
+
   const LOCATION_OPTIONS = useMemo(
     () => [
       { value: "", label: "Select location" },
@@ -92,10 +93,19 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Special handling for contactNumber: only digits, max 10 characters (like example)
     let processedValue = value;
+    
+    // Special handling for contactNumber: only digits, max 10 characters (like example)
     if (name === "contactNumber") {
       processedValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+    
+    // Special handling for reporterName: only letters, spaces, hyphens, and apostrophes
+    if (name === "reporterName") {
+      // Allow letters, spaces, hyphens, apostrophes (for names like O'Connor, Mary-Jane)
+      processedValue = value.replace(/[^a-zA-Z\s\-']/g, "");
+      // Prevent multiple consecutive spaces
+      processedValue = processedValue.replace(/\s{2,}/g, " ");
     }
 
     setForm((prev) => ({
@@ -158,6 +168,43 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
   const validateForm = () => {
     const newErrors = {};
 
+    // Name validation - enhanced with full name requirements
+    if (!form.reporterName.trim()) {
+      newErrors.reporterName = "Name is required.";
+    } else {
+      const name = form.reporterName.trim();
+      
+      // Check minimum length (at least 2 characters)
+      if (name.length < 2) {
+        newErrors.reporterName = "Name must be at least 2 characters.";
+      }
+      // Check for numbers (should not contain any digits)
+      else if (/\d/.test(name)) {
+        newErrors.reporterName = "Name cannot contain numbers.";
+      }
+      // Check for valid characters only (letters, spaces, hyphens, apostrophes)
+      else if (!/^[a-zA-Z\s\-']+$/.test(name)) {
+        newErrors.reporterName = "Name can only contain letters, spaces, hyphens, and apostrophes.";
+      }
+      // Ensure it's a full name (at least two words, e.g., "First Last")
+      else {
+        const nameParts = name.split(/\s+/).filter(part => part.length > 0);
+        if (nameParts.length < 2) {
+          newErrors.reporterName = "Please enter your full name (first and last name).";
+        }
+        // Check each part is at least 2 characters
+        else if (nameParts.some(part => part.length < 2)) {
+          newErrors.reporterName = "Each part of your name must be at least 2 characters.";
+        }
+      }
+    }
+
+    if (!form.reporterEmail.trim()) {
+      newErrors.reporterEmail = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.reporterEmail)) {
+      newErrors.reporterEmail = "Please enter a valid email address.";
+    }
+
     if (!form.title.trim()) {
       newErrors.title = "Title is required.";
     } else if (form.title.trim().length < 5) {
@@ -190,16 +237,6 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
 
     if (!form.incidentDate) {
       newErrors.incidentDate = "Incident date is required.";
-    }
-
-    if (!form.reporterName.trim()) {
-      newErrors.reporterName = "Name is required.";
-    }
-
-    if (!form.reporterEmail.trim()) {
-      newErrors.reporterEmail = "Email is required.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.reporterEmail)) {
-      newErrors.reporterEmail = "Please enter a valid email address.";
     }
 
     setErrors(newErrors);
@@ -392,7 +429,7 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
 
               <form onSubmit={handleSubmit} noValidate>
                 <div className="form-grid">
-                  {/* Name Field */}
+                  {/* Name Field - Updated with validation */}
                   <div className="form-group">
                     <label>
                       Name<span className="required">*</span>
@@ -402,8 +439,10 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
                       name="reporterName"
                       value={form.reporterName}
                       onChange={handleChange}
-                      placeholder="Enter your full name"
+                      placeholder="Enter your full name (e.g., John Smith)"
+                      autoComplete="name"
                     />
+                    <div className="hint">First and last name required. Letters only.</div>
                     {errors.reporterName && (
                       <div className="field-error">{errors.reporterName}</div>
                     )}
