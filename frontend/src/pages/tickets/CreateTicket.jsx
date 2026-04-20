@@ -7,7 +7,7 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  // Dropdown options (like example)
+  // Dropdown options 
   const PRIORITY_OPTIONS = useMemo(
     () => [
       { value: "", label: "Select priority" },
