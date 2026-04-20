@@ -8,7 +8,6 @@ const AdminDashboardPage = () => {
   const [stats, setStats] = useState({
     unread: 0,
     users: null,
-    supportOpen: null,
   });
 
   useEffect(() => {
@@ -28,16 +27,6 @@ const AdminDashboardPage = () => {
         try {
           const usersRes = await api.get("/users");
           if (!cancelled) setStats((s) => ({ ...s, users: usersRes.data.length }));
-        } catch { /* ... */ }
-      })();
-
-      (async () => {
-        try {
-          const supRes = await api.get("/support-requests");
-          if (!cancelled) {
-             const open = supRes.data.filter((r) => r.status === "OPEN").length;
-             setStats((s) => ({ ...s, supportOpen: open }));
-          }
         } catch { /* ... */ }
       })();
     }
@@ -62,16 +51,10 @@ const AdminDashboardPage = () => {
           <p>{stats.unread}</p>
         </div>
         {isAdmin && (
-          <>
-            <div className="staff-stat-card alt">
-              <h3>Registered users</h3>
-              <p>{stats.users ?? "—"}</p>
-            </div>
-            <div className="staff-stat-card dark">
-              <h3>Open support requests</h3>
-              <p>{stats.supportOpen ?? "—"}</p>
-            </div>
-          </>
+          <div className="staff-stat-card alt">
+            <h3>Registered users</h3>
+            <p>{stats.users ?? "—"}</p>
+          </div>
         )}
         {!isAdmin && (
           <div className="staff-stat-card dark">
@@ -83,22 +66,13 @@ const AdminDashboardPage = () => {
 
       <section className="staff-action-grid" aria-label="Quick links">
         {isAdmin && (
-          <>
-            <div className="staff-action-card">
-              <span className="staff-pill">Directory</span>
-              <h4>User management</h4>
-              <Link to="/users" className="btn btn-primary w-100 mt-2">
-                User management
-              </Link>
-            </div>
-            <div className="staff-action-card">
-              <span className="staff-pill">Support</span>
-              <h4>Support queue</h4>
-              <Link to="/admin/support" className="btn btn-primary w-100 mt-2">
-                Support queue
-              </Link>
-            </div>
-          </>
+          <div className="staff-action-card">
+            <span className="staff-pill">Directory</span>
+            <h4>User management</h4>
+            <Link to="/users" className="btn btn-primary w-100 mt-2">
+              User management
+            </Link>
+          </div>
         )}
         <div className="staff-action-card">
           <span className="staff-pill">Messaging</span>
