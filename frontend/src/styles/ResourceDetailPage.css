@@ -1,0 +1,134 @@
+/* --- src/styles/DetailedView.css --- */
+
+/* 1. Custom Typography & Spacing */
+.leading-relaxed {
+  line-height: 1.8 !important;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+/* 2. Smooth Transitions for everything */
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 3. Back Button Hover Effect (Move slightly left) */
+.hover-primary {
+  transition: all 0.3s ease;
+}
+.hover-primary:hover {
+  color: var(--primary) !important;
+  transform: translateX(-5px);
+}
+
+/* 4. Utilities */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* 5. Hide Scrollbar for Image Thumbnails (Very Professional Look) */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* 6. Info Section Cards Hover Effect */
+.info-card-hover {
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+.info-card-hover:hover {
+  border-color: var(--primary);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-3px);
+}
+
+/* 7. Date & Time Input Customization (Remove ugly default browser borders) */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* =========================================
+   Global Premium Components CSS
+   ========================================= */
+
+/* --- 1. Resource Card Hover Effects (ResourceCard_FU) --- */
+.resource-card {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid #f1f5f9;
+}
+
+.resource-card:hover {
+  transform: translateY(-8px); /* මවුස් එක ගෙනිච්චම කාඩ් එක උඩට එනවා */
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  border-color: #e2e8f0;
+}
+
+/* Card ඇතුළේ පින්තූරය ලස්සනට Zoom වෙන effect එක */
+.card-img-wrapper {
+  overflow: hidden; /* පින්තූරය කාඩ් එකෙන් එළියට යන එක නවත්වනවා */
+}
+
+.card-img-zoom {
+  transition: transform 0.6s ease;
+}
+
+.resource-card:hover .card-img-zoom {
+  transform: scale(1.08); /* මවුස් එක ගෙනිච්චම පින්තූරය 8% කින් ලොකු වෙනවා */
+}
+
+/* --- 2. Primary Button Hover Effects (PrimaryButton_FU) --- */
+.btn-primary-custom {
+  background-color: #0f172a; /* Premium Dark Navy Color */
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary-custom:hover {
+  background-color: #1e293b;
+  transform: translateY(-2px); /* බටන් එක පොඩ්ඩක් උඩට එනවා */
+  box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.3);
+  color: white;
+}
+
+.btn-primary-custom:active {
+  transform: translateY(1px); /* ක්ලික් කරද්දී ඔබෙන ගතිය */
+}
+
+/* --- 3. Form Inputs & Search Bar (FormInput_FU) --- */
+/* Bootstrap වල default එන කැත නිල් පාට border එක අයින් කිරීම */
+.no-focus:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+}
+
+/* Search Bar එකේ Glassmorphism ගතිය */
+.search-bar-wrapper {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* --- 4. Badges (Available / Occupied) --- */
+.badge-premium {
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}

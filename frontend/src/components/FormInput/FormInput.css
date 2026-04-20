@@ -1,0 +1,28 @@
+/* Custom Input Group Styling */
+.custom-input-group {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0; /* Soft Slate Border */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus වුණාම ලස්සන Blue Glow එකක් එන්න */
+.custom-input-group:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
+    transform: translateY(-1px);
+}
+
+.custom-input-group input::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+/* Bootstrap default focus අයින් කරන්න */
+.no-focus:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.text-slate-400 {
+    color: #94a3b8;
+}
