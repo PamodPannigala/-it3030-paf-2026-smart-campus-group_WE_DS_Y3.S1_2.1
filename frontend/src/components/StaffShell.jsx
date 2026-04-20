@@ -2,7 +2,9 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  Headphones,
+  Building,
+  Calendar,
+  Ticket,
   Bell,
   UserCircle,
   LogOut,
@@ -52,16 +54,46 @@ const StaffShell = ({ children }) => {
           )}
           {isAdmin ? (
             <li>
-              <NavLink to="/admin/support" className={linkClass}>
-                <Headphones className="staff-menu-icon" aria-hidden />
-                <span className="label">Support queue</span>
+              <NavLink to="/admin/facilities" className={linkClass}>
+                <Building className="staff-menu-icon" aria-hidden />
+                <span className="label">Facility management</span>
               </NavLink>
             </li>
           ) : (
             <li className="disabled" title="Administrators only">
               <span>
-                <Headphones className="staff-menu-icon" aria-hidden />
-                <span className="label">Support queue</span>
+                <Building className="staff-menu-icon" aria-hidden />
+                <span className="label">Facility management</span>
+              </span>
+            </li>
+          )}
+          {isAdmin ? (
+            <li>
+              <NavLink to="/admin/bookings" className={linkClass}>
+                <Calendar className="staff-menu-icon" aria-hidden />
+                <span className="label">Booking management</span>
+              </NavLink>
+            </li>
+          ) : (
+            <li className="disabled" title="Administrators only">
+              <span>
+                <Calendar className="staff-menu-icon" aria-hidden />
+                <span className="label">Booking management</span>
+              </span>
+            </li>
+          )}
+          {isAdmin ? (
+            <li>
+              <NavLink to="/admin/tickets" className={linkClass}>
+                <Ticket className="staff-menu-icon" aria-hidden />
+                <span className="label">Ticket management</span>
+              </NavLink>
+            </li>
+          ) : (
+            <li className="disabled" title="Administrators only">
+              <span>
+                <Ticket className="staff-menu-icon" aria-hidden />
+                <span className="label">Ticket management</span>
               </span>
             </li>
           )}
