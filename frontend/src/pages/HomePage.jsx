@@ -59,10 +59,10 @@ const Home = () => {
       path: '/notifications'
     },
     {
-      title: 'SUPPORT DESK',
-      description: 'Report IT issues or operational faults directly to admins.',
-      icon: '💬',
-      path: '/support'
+      title: 'FACILITY RESOURCES',
+      description: 'Connect with facility resources and manage operations.',
+      icon: '🏗️',
+      path: '#resources'
     },
     {
       title: 'ACCOUNT SETTINGS',
