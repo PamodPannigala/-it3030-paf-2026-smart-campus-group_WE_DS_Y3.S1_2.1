@@ -21,6 +21,7 @@ public class TicketResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String rejectionReason;
+    private String resolutionNotes;  // ← ADDED for technician resolution notes
 
     // ===== EXISTING NEW FIELDS =====
     private Integer repairCount;
@@ -31,6 +32,13 @@ public class TicketResponseDTO {
     private String contactNumber;
     private LocalDateTime incidentDate;
 
+    // ✅ NEW: SLA FIELDS
+    private LocalDateTime slaFirstResponseDue;
+    private LocalDateTime slaResolutionDue;
+    private String slaStatus;
+    private LocalDateTime firstResponseAt;
+    private LocalDateTime resolvedAt;
+
     public TicketResponseDTO() {
     }
 
@@ -39,9 +47,16 @@ public class TicketResponseDTO {
                              TechnicianResponse assignedTechnician, String location,
                              List<String> imageUrls,
                              LocalDateTime createdAt, LocalDateTime updatedAt,
-                             String rejectionReason, Integer repairCount,
+                             String rejectionReason, String resolutionNotes,
+                             Integer repairCount,
                              LocalDateTime lastRepairDate, String category,
-                             String contactNumber, LocalDateTime incidentDate) {
+                             String contactNumber, LocalDateTime incidentDate,
+                             // ✅ NEW: SLA constructor parameters
+                             LocalDateTime slaFirstResponseDue,
+                             LocalDateTime slaResolutionDue,
+                             String slaStatus,
+                             LocalDateTime firstResponseAt,
+                             LocalDateTime resolvedAt) {
 
         this.id = id;
         this.title = title;
@@ -56,11 +71,19 @@ public class TicketResponseDTO {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.rejectionReason = rejectionReason;
+        this.resolutionNotes = resolutionNotes;
         this.repairCount = repairCount;
         this.lastRepairDate = lastRepairDate;
         this.category = category;
         this.contactNumber = contactNumber;
         this.incidentDate = incidentDate;
+        
+        // ✅ NEW: SLA fields
+        this.slaFirstResponseDue = slaFirstResponseDue;
+        this.slaResolutionDue = slaResolutionDue;
+        this.slaStatus = slaStatus;
+        this.firstResponseAt = firstResponseAt;
+        this.resolvedAt = resolvedAt;
     }
 
     // ===== GETTERS & SETTERS =====
@@ -109,6 +132,9 @@ public class TicketResponseDTO {
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
 
+    public String getResolutionNotes() { return resolutionNotes; }
+    public void setResolutionNotes(String resolutionNotes) { this.resolutionNotes = resolutionNotes; }
+
     public Integer getRepairCount() { return repairCount; }
     public void setRepairCount(Integer repairCount) { this.repairCount = repairCount; }
 
@@ -123,4 +149,20 @@ public class TicketResponseDTO {
 
     public LocalDateTime getIncidentDate() { return incidentDate; }
     public void setIncidentDate(LocalDateTime incidentDate) { this.incidentDate = incidentDate; }
+
+    // ✅ NEW: SLA GETTERS & SETTERS
+    public LocalDateTime getSlaFirstResponseDue() { return slaFirstResponseDue; }
+    public void setSlaFirstResponseDue(LocalDateTime slaFirstResponseDue) { this.slaFirstResponseDue = slaFirstResponseDue; }
+
+    public LocalDateTime getSlaResolutionDue() { return slaResolutionDue; }
+    public void setSlaResolutionDue(LocalDateTime slaResolutionDue) { this.slaResolutionDue = slaResolutionDue; }
+
+    public String getSlaStatus() { return slaStatus; }
+    public void setSlaStatus(String slaStatus) { this.slaStatus = slaStatus; }
+
+    public LocalDateTime getFirstResponseAt() { return firstResponseAt; }
+    public void setFirstResponseAt(LocalDateTime firstResponseAt) { this.firstResponseAt = firstResponseAt; }
+
+    public LocalDateTime getResolvedAt() { return resolvedAt; }
+    public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
 }

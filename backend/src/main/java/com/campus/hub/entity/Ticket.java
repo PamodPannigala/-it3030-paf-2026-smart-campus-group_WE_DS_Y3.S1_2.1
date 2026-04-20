@@ -20,7 +20,7 @@ public class Ticket {
     @Enumerated(EnumType.STRING)
     private TicketStatus status;
 
-    private String priority; // LOW, MEDIUM, HIGH
+    private String priority; // LOW, MEDIUM, HIGH, URGENT
 
     private String reporterName;
     private String reporterEmail;
@@ -65,6 +65,26 @@ public class Ticket {
     private String resolutionNotes;
 
     // =========================
+    // ✅ SLA FIELDS (NEW - Phase 1)
+    // =========================
+    
+    @Column(name = "first_response_at")
+    private LocalDateTime firstResponseAt;        // When technician was assigned
+    
+    @Column(name = "resolved_at")
+    private LocalDateTime resolvedAt;             // When ticket was resolved
+    
+    @Column(name = "sla_first_response_due")
+    private LocalDateTime slaFirstResponseDue;    // Deadline for first response
+    
+    @Column(name = "sla_resolution_due")
+    private LocalDateTime slaResolutionDue;       // Deadline for resolution
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sla_status")
+    private SlaStatus slaStatus;                  // ON_TRACK, AT_RISK, BREACHED
+
+    // =========================
     // CONSTRUCTOR
     // =========================
     public Ticket() {
@@ -72,6 +92,7 @@ public class Ticket {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.repairCount = 0;
+        this.slaStatus = SlaStatus.ON_TRACK;  // Default SLA status
     }
 
     // =========================
@@ -236,5 +257,49 @@ public class Ticket {
 
     public void setIncidentDate(LocalDateTime incidentDate) {
         this.incidentDate = incidentDate;
+    }
+
+    // =========================
+    // ✅ SLA GETTERS & SETTERS (NEW)
+    // =========================
+
+    public LocalDateTime getFirstResponseAt() {
+        return firstResponseAt;
+    }
+
+    public void setFirstResponseAt(LocalDateTime firstResponseAt) {
+        this.firstResponseAt = firstResponseAt;
+    }
+
+    public LocalDateTime getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public void setResolvedAt(LocalDateTime resolvedAt) {
+        this.resolvedAt = resolvedAt;
+    }
+
+    public LocalDateTime getSlaFirstResponseDue() {
+        return slaFirstResponseDue;
+    }
+
+    public void setSlaFirstResponseDue(LocalDateTime slaFirstResponseDue) {
+        this.slaFirstResponseDue = slaFirstResponseDue;
+    }
+
+    public LocalDateTime getSlaResolutionDue() {
+        return slaResolutionDue;
+    }
+
+    public void setSlaResolutionDue(LocalDateTime slaResolutionDue) {
+        this.slaResolutionDue = slaResolutionDue;
+    }
+
+    public SlaStatus getSlaStatus() {
+        return slaStatus;
+    }
+
+    public void setSlaStatus(SlaStatus slaStatus) {
+        this.slaStatus = slaStatus;
     }
 }

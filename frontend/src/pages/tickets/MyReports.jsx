@@ -23,6 +23,7 @@ import {
   X,
   AlertTriangle,
 } from "lucide-react";
+import SlaTimer from "../../components/tickets/SlaTimer"; // ✅ NEW
 
 export default function MyReports() {
   const [tickets, setTickets] = useState([]);
@@ -436,6 +437,20 @@ export default function MyReports() {
       whiteSpace: "nowrap",
       width: "80px",
     },
+    // ✅ NEW: SLA column header style
+    thSla: {
+      padding: "16px 20px",
+      textAlign: "center",
+      fontSize: "12px",
+      fontWeight: "700",
+      color: "#64748b",
+      textTransform: "uppercase",
+      letterSpacing: "0.05em",
+      background: "#f8fafc",
+      borderBottom: "1px solid #e2e8f0",
+      whiteSpace: "nowrap",
+      width: "180px",
+    },
     td: {
       padding: "20px",
       borderBottom: "1px solid #f1f5f9",
@@ -449,6 +464,14 @@ export default function MyReports() {
       textAlign: "center",
       verticalAlign: "middle",
       width: "80px",
+    },
+    // ✅ NEW: SLA cell style
+    tdSla: {
+      padding: "20px",
+      borderBottom: "1px solid #f1f5f9",
+      textAlign: "center",
+      verticalAlign: "middle",
+      width: "180px",
     },
     row: {
       cursor: "pointer",
@@ -1012,6 +1035,8 @@ export default function MyReports() {
                       {sortableHeader("Category", "category")}
                       {sortableHeader("Priority", "priority")}
                       {sortableHeader("Status", "status")}
+                      {/* ✅ NEW: SLA Column Header */}
+                      <th style={styles.thSla}>SLA Timer</th>
                       {sortableHeader("Created", "createdAt")}
                       <th style={styles.thActions}>Actions</th>
                     </tr>
@@ -1071,6 +1096,10 @@ export default function MyReports() {
                               <StatusIcon size={12} />
                               {statusConfig.label}
                             </span>
+                          </td>
+                          {/* ✅ NEW: SLA Timer Cell */}
+                          <td style={styles.tdSla}>
+                            <SlaTimer ticket={ticket} />
                           </td>
                           <td style={styles.td}>
                             <div style={styles.dateCell}>

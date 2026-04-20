@@ -30,13 +30,17 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final TechnicianRepository technicianRepository;
     private final CommentRepository commentRepository;
+    // ✅ NEW: Inject SLA Service
+    private final SlaService slaService;
 
     public TicketService(TicketRepository ticketRepository,
                          TechnicianRepository technicianRepository,
-                         CommentRepository commentRepository) {
+                         CommentRepository commentRepository,
+                         SlaService slaService) {  // ✅ NEW parameter
         this.ticketRepository = ticketRepository;
         this.technicianRepository = technicianRepository;
         this.commentRepository = commentRepository;
+        this.slaService = slaService;  // ✅ NEW
     }
 
     // =========================
@@ -100,6 +104,13 @@ public class TicketService {
         dto.setContactNumber(ticket.getContactNumber());
         dto.setIncidentDate(ticket.getIncidentDate());
 
+        // NEW: Add SLA fields to DTO
+        dto.setSlaFirstResponseDue(ticket.getSlaFirstResponseDue());
+        dto.setSlaResolutionDue(ticket.getSlaResolutionDue());
+        dto.setSlaStatus(ticket.getSlaStatus() != null ? ticket.getSlaStatus().name() : null);
+        dto.setFirstResponseAt(ticket.getFirstResponseAt());
+        dto.setResolvedAt(ticket.getResolvedAt());
+
         return dto;
     }
 
@@ -142,6 +153,9 @@ public class TicketService {
         ticket.setAssignedTechnician(tech.getName());
         ticket.setUpdatedAt(LocalDateTime.now());
 
+        // ✅ NEW: Record first response (technician assignment)
+        slaService.recordFirstResponse(ticket);
+
         return convertToDTO(ticketRepository.save(ticket));
     }
 
@@ -177,6 +191,9 @@ public class TicketService {
         ticket.setStatus(TicketStatus.OPEN);
         ticket.setCreatedAt(LocalDateTime.now());
         ticket.setUpdatedAt(LocalDateTime.now());
+
+        // ✅ NEW: Calculate SLA deadlines
+        slaService.calculateSlaDeadlines(ticket);
 
         return convertToDTO(ticketRepository.save(ticket));
     }
@@ -215,6 +232,9 @@ public class TicketService {
         ticket.setStatus(TicketStatus.OPEN);
         ticket.setCreatedAt(LocalDateTime.now());
         ticket.setUpdatedAt(LocalDateTime.now());
+
+        // ✅ NEW: Calculate SLA deadlines
+        slaService.calculateSlaDeadlines(ticket);
 
         return convertToDTO(ticketRepository.save(ticket));
     }
@@ -319,6 +339,8 @@ public class TicketService {
 
             if (technician != null) {
                 ticket.setAssignedTechnician(technician);
+                // ✅ NEW: Record first response when admin assigns technician
+                slaService.recordFirstResponse(ticket);
             }
         }
 
@@ -333,6 +355,11 @@ public class TicketService {
 
         ticket.setUpdatedAt(LocalDateTime.now());
 
+        // ✅ NEW: Record resolution if status is RESOLVED or CLOSED
+        if (status == TicketStatus.RESOLVED || status == TicketStatus.CLOSED) {
+            slaService.recordResolution(ticket);
+        }
+
         return convertToDTO(ticketRepository.save(ticket));
     }
 
@@ -340,25 +367,25 @@ public class TicketService {
     // DELETE TICKET
     // =========================
     @Transactional
-public void deleteTicket(Long id, String reporterEmail) {
-    if (reporterEmail == null || reporterEmail.trim().isEmpty()) {
-        throw new RuntimeException("Reporter email is required");
+    public void deleteTicket(Long id, String reporterEmail) {
+        if (reporterEmail == null || reporterEmail.trim().isEmpty()) {
+            throw new RuntimeException("Reporter email is required");
+        }
+        
+        Ticket ticket = ticketRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Ticket not found"));
+        
+        String normalizedEmail = reporterEmail.trim();
+        String ticketEmail = ticket.getReporterEmail() != null ? ticket.getReporterEmail().trim() : "";
+        
+        if (!ticketEmail.equalsIgnoreCase(normalizedEmail)) {
+            throw new RuntimeException("You can only delete your own tickets");
+        }
+        
+        // Delete comments first (works whether 0 or many comments)
+        commentRepository.deleteByTicketId(id);
+        
+        // Delete the ticket
+        ticketRepository.delete(ticket);
     }
-    
-    Ticket ticket = ticketRepository.findById(id)
-        .orElseThrow(() -> new RuntimeException("Ticket not found"));
-    
-    String normalizedEmail = reporterEmail.trim();
-    String ticketEmail = ticket.getReporterEmail() != null ? ticket.getReporterEmail().trim() : "";
-    
-    if (!ticketEmail.equalsIgnoreCase(normalizedEmail)) {
-        throw new RuntimeException("You can only delete your own tickets");
-    }
-    
-    // Delete comments first (works whether 0 or many comments)
-    commentRepository.deleteByTicketId(id);
-    
-    // Delete the ticket
-    ticketRepository.delete(ticket);
-}
 }

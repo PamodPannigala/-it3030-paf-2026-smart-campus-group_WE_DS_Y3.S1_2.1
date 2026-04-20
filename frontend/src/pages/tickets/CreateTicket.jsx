@@ -2,12 +2,13 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createTicket } from "../../services/ticketApi";
+import SlaPreview from "../../components/tickets/SlaPreview"; // ✅ NEW
 
 export default function CreateTicket({ userName = "", userEmail = "" }) {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  // Dropdown options 
+  // Dropdown options (like example)
   const PRIORITY_OPTIONS = useMemo(
     () => [
       { value: "", label: "Select priority" },
@@ -525,6 +526,13 @@ export default function CreateTicket({ userName = "", userEmail = "" }) {
                       <div className="field-error">{errors.priority}</div>
                     )}
                   </div>
+
+                  {/* ✅ NEW: SLA Preview - Shows when priority is selected */}
+                  {form.priority && (
+                    <div className="form-group full-width">
+                      <SlaPreview priority={form.priority} />
+                    </div>
+                  )}
 
                   {/* Location Dropdown */}
                   <div className="form-group">

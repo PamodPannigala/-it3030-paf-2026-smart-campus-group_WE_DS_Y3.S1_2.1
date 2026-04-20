@@ -17,6 +17,7 @@ import {
   Loader2,
   Inbox,
 } from "lucide-react";
+import SlaTimer from "../../components/tickets/SlaTimer"; // ✅ NEW
 
 export default function PublicTickets() {
   const [tickets, setTickets] = useState([]);
@@ -495,6 +496,12 @@ export default function PublicTickets() {
       fontSize: "15px",
       maxWidth: "400px",
     },
+    // ✅ NEW: SLA Timer container style
+    slaContainer: {
+      marginLeft: "auto",
+      display: "flex",
+      alignItems: "center",
+    },
   };
 
   if (loading) {
@@ -663,6 +670,10 @@ export default function PublicTickets() {
                           <span style={styles.dot}></span>
                           <span>Ticket #{ticket.id}</span>
                         </div>
+                      </div>
+                      {/* ✅ NEW: SLA Timer in header */}
+                      <div style={styles.slaContainer}>
+                        <SlaTimer ticket={ticket} />
                       </div>
                     </div>
 
