@@ -8,6 +8,7 @@ import com.campus.hub.exception.ResourceNotFoundException;
 import com.campus.hub.repository.ResourceRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,19 @@ public class ResourceServiceImpl implements ResourceService {
 
         // method call to validate the uniqueness of the resource name during creation
         validateResourceNameUniqueness(dto.getName(), null);
+
+        // method call to validate the capacity based on resource type
+        validateResourceCapacity(dto.getType(), dto.getCapacity());
+
+        // method call to validate the location for FACILITY type resources
+        validateFacilityLocation(dto.getLocation(), dto.getType(), null);
+
+        // method call to validate open and close times
+        validateResourceTime(dto.getOpenTime(), dto.getCloseTime());
+
+        // method call to validate overlapping facilities in the same location (only for
+        // FACILITY type)
+        validateFacilityOverlap(dto, null);
 
         Resource resource = new Resource();
         mapToEntity(dto, resource);
@@ -61,6 +75,20 @@ public class ResourceServiceImpl implements ResourceService {
                     // method call to validate the uniqueness of the resource name during update
                     // (excluding the current resource)
                     validateResourceNameUniqueness(dto.getName(), id);
+
+                    // method call to validate the capacity based on resource type
+                    validateResourceCapacity(dto.getType(), dto.getCapacity());
+
+                    // method call to validate the location for FACILITY type resources
+                    validateFacilityLocation(dto.getLocation(), dto.getType(), id);
+
+                    // method call to validate open and close times
+                    validateResourceTime(dto.getOpenTime(), dto.getCloseTime());
+
+                    // method call to validate overlapping facilities in the same location (only for
+                    // update
+                    // FACILITY type)
+                    validateFacilityOverlap(dto, id);
 
                     mapToEntity(dto, existing);
                     return mapToResponseDTO(resourceRepository.save(existing));
@@ -146,6 +174,77 @@ public class ResourceServiceImpl implements ResourceService {
             // If the name already exists, throw a BusinessException with a clear message
             throw new BusinessException(
                     "Resource Name '" + name + "' is already in use. Please select a different name.");
+        }
+    }
+
+    // Helper Method: logic for validating capacity based on resource type
+    private void validateResourceCapacity(String type, Integer capacity) {
+        if (capacity == null)
+            return;
+
+        // 1. Negative and 0 capacity is not allowed for any resource
+        if (capacity <= 0) {
+            throw new BusinessException("Capacity must be a positive integer greater than 0.");
+        }
+
+        // 2. Maximum capacity validation (Must be less than 500)
+        if (capacity > 500) {
+            throw new BusinessException("Maximum capacity cannot exceed 500.");
+        }
+
+    }
+
+    // Helper Method: logic for validating overlapping facilities in the same
+    // location (only for FACILITY type)
+    private void validateFacilityLocation(String location, String type, Long id) {
+
+        // 1. If Type is "FACILITY", then check if there is any facility in the same
+        // location
+        if ("FACILITY".equalsIgnoreCase(type)) {
+            boolean exists = resourceRepository.existsByLocationAndFacilityType(location, id);
+
+            if (exists) {
+                throw new BusinessException(
+                        "The location (" + location + ") already has a facility. Please choose a different location.");
+            }
+        }
+    }
+
+    // Helper Method: logic for validating open and close times)
+    private void validateResourceTime(LocalTime openTime, LocalTime closeTime) {
+        if (openTime != null && closeTime != null) {
+
+            // Rule1: Open Time and Close Time cannot be the same
+            if (openTime.equals(closeTime)) {
+                throw new BusinessException("Open Time and Close Time cannot be the same.");
+            }
+
+            // Rule2: Close Time must be after Open Time
+            if (!closeTime.isAfter(openTime)) {
+                throw new BusinessException("Close Time must be after Open Time.");
+            }
+        }
+    }
+
+    // Helper Method: logic for validating overlapping facilities in the same
+    // location (only for FACILITY type)
+    private void validateFacilityOverlap(ResourceRequestDTO dto, Long id) {
+
+        // 1. If Type is "FACILITY", then check for overlapping facilities in the same
+        // location
+        if ("FACILITY".equalsIgnoreCase(dto.getType())) {
+
+            boolean overlapping = resourceRepository.isFacilityOverlapping(
+                    dto.getLocation(),
+                    dto.getOpenTime(),
+                    dto.getCloseTime(),
+                    id);
+
+            if (overlapping) {
+                throw new BusinessException(
+                        String.format("The facility at this location is already booked for the specified time period.",
+                                dto.getLocation()));
+            }
         }
     }
 
