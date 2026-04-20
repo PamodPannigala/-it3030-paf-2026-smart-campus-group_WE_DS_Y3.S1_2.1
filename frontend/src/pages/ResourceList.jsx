@@ -3,35 +3,44 @@ import axios from "axios";
 import { QRCodeSVG } from "qrcode.react";
 import { useLocation } from "react-router-dom";
 import { uploadImageToCloudinary } from "../utils/ImageUpload.js";
+import AIInsightPanel from "../components/AIInsightPanel/AIInsightPanel.jsx";
+import { toast, Toaster } from "react-hot-toast";
+import Swal from "sweetalert2";
 
 const ResourceList = () => {
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const location = useLocation(); // URL එකේ විස්තර කියවන්න මේක ඕනේ
-  const [selectedFile, setSelectedFile] = useState(null); //Image upload state
+  const location = useLocation();
+  const [selectedFile, setSelectedFile] = useState(null);
 
-  // --- Search සහ Filter සඳහා States ---
+  // --- Search and Filter States ---
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("ALL");
+  const [filterLocation, setFilterLocation] = useState("ALL");
+  const [filterCapacity, setFilterCapacity] = useState("ALL");
 
   const [showModal, setShowModal] = useState(false);
-  const [isEdit, setIsEdit] = useState(false); // Add ද Update ද කියලා බලන්න
-  const [currentId, setCurrentId] = useState(null); // Edit කරන row එකේ ID එක තියාගන්න
+  const [isEdit, setIsEdit] = useState(false);
+  const [currentId, setCurrentId] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
   const [formData, setFormData] = useState({
     name: "",
     type: "FACILITY",
     capacity: "",
     location: "",
-    status: "ACTIVE", // Default එක ACTIVE කළා
-    openTime: "08:00", // Default විවෘත කරන වෙලාව
-    closeTime: "17:00", // Default වහන වෙලාව
+    status: "ACTIVE",
+    openTime: "08:00",
+    closeTime: "17:00",
     availableWeekends: false,
+    purchaseYear: "",
   });
+
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
   const fetchResources = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/resources");
+      const response = await axios.get("http://10.155.45.1:8080/api/resources");
       setResources(response.data);
     } catch (err) {
       setError("Unable to fetch data. Check backend.");
@@ -40,12 +49,10 @@ const ResourceList = () => {
     }
   };
 
-  //Handle Edit Function
   const handleEdit = (item) => {
-    setIsEdit(true); // දැන් අපි ඉන්නේ Edit mode එකේ
-    setCurrentId(item.id); // අදාළ ID එක save කරගන්නවා
+    setIsEdit(true);
+    setCurrentId(item.id);
     setFormData({
-      // පරණ දත්ත ටික form එකට දානවා
       name: item.name,
       type: item.type,
       capacity: item.capacity,
@@ -54,47 +61,68 @@ const ResourceList = () => {
       openTime: item.openTime,
       closeTime: item.closeTime,
       availableWeekends: item.availableWeekends,
+      purchaseYear: item.purchaseYear || "",
     });
-    setShowModal(true); // Modal එක open කරනවා
+    setShowModal(true);
   };
 
   useEffect(() => {
     fetchResources();
-  }, []); // මුලින්ම data ටික ඇදලා ගන්නවා
+  }, []);
 
   useEffect(() => {
-    fetchResources(); // මුලින්ම දත්ත ටික ගේනවා
-
-    // URL එකේ ?editId=... කියලා කෑල්ලක් තියෙනවද බලනවා
+    fetchResources();
     const queryParams = new URLSearchParams(location.search);
     const editIdFromURL = queryParams.get("editId");
 
-    // resources ලිස්ට් එක ලෝඩ් වෙලා තියෙනවා නම් සහ URL එකේ ID එකක් තියෙනවා නම්:
     if (editIdFromURL && resources.length > 0) {
       const itemToEdit = resources.find(
         (r) => r.id === parseInt(editIdFromURL),
       );
       if (itemToEdit) {
-        handleEdit(itemToEdit); // මෙතනින් තමයි ඔයාගේ Edit Modal එක ඔටෝම ඇරෙන්නේ
+        handleEdit(itemToEdit);
       }
     }
-  }, [location.search, resources.length]); // Dependency array එකට මේ දෙක දෙන්න
+  }, [location.search, resources.length]);
 
-  // --- Filter Logic එක (Frontend එකේම සිද්ධ වෙනවා) ---
+  // --- Filter Logic ---
   const filteredResources = resources.filter((item) => {
-    const matchesSearch = item.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === "ALL" || item.type === filterType;
-    return matchesSearch && matchesType;
+    const matchesLocation =
+      filterLocation === "ALL" || item.location === filterLocation;
+
+    const cap = parseInt(item.capacity);
+    let matchesCapacity = true;
+
+    if (filterCapacity === "1-10") {
+      matchesCapacity = cap >= 1 && cap <= 10;
+    } else if (filterCapacity === "11-50") {
+      matchesCapacity = cap >= 11 && cap <= 50;
+    } else if (filterCapacity === "50+") {
+      matchesCapacity = cap > 50;
+    }
+
+    return matchesSearch && matchesType && matchesLocation && matchesCapacity;
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let updatedData = { ...formData, [name]: value };
+
+    if (name === "type") {
+      if (value === "EQUIPMENT") {
+        updatedData.capacity = "1";
+      } else if (value === "FACILITY") {
+        updatedData.purchaseYear = "";
+      }
+    }
+    setFormData(updatedData);
   };
 
   const downloadQR = () => {
-    // 1. QR එක තියෙන SVG එක හොයාගන්නවා
     const svg = document.querySelector(".qr-container svg");
     if (!svg) return;
 
@@ -103,14 +131,12 @@ const ResourceList = () => {
     const ctx = canvas.getContext("2d");
     const img = new Image();
 
-    // SVG එක පින්තූරයක් බවට පත් කරන ලොජික් එක
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
       const pngFile = canvas.toDataURL("image/png");
 
-      // බ්‍රවුසරයෙන් ඔටෝමැටිකව ඩවුන්ලෝඩ් වෙන්න සලස්වනවා
       const downloadLink = document.createElement("a");
       downloadLink.download = `QR_Tag_${formData.name || currentId}.png`;
       downloadLink.href = pngFile;
@@ -120,56 +146,174 @@ const ResourceList = () => {
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // Form එක refresh වෙන්න කලින් අල්ලගන්න
+  // --- Validation Logic (unchanged) ---
+  useEffect(() => {
+    let errors = {};
+    const currentYear = new Date().getFullYear();
 
-    // 🔴 1. Cloudinary Upload (අලුත් කෑල්ල)
-    let uploadedImageUrl = formData.imageUrl || ""; // පින්තූරේ ලින්ක් එක තියාගන්න
+    if (formData.name) {
+      const isNameDuplicate = resources.some((res) => {
+        if (isEdit && res.id === currentId) return false;
+        return res.name.toLowerCase() === formData.name.trim().toLowerCase();
+      });
 
-    // selectedFile state එකේ පින්තූරයක් තෝරලා තියෙනවා නම් විතරක් Cloudinary යවනවා
-    // මචං, selectedFile state එක උඩින් හදාගන්න අමතක කරන්න එපා!
-    if (selectedFile) {
-      try {
-        // මෙන්න අර utils එකේ function එක call කරනවා!
-        const url = await uploadImageToCloudinary(selectedFile);
-        if (url) {
-          uploadedImageUrl = url; // URL එක සාර්ථකව ලැබුණොත් ඒක final variable එකට දානවා
-        } else {
-          console.error("Failed to get image URL from Cloudinary");
-          alert("Resorse Image Uploaded Successfully...");
-          return; // Error එකක් ආවොත් එතනින් නවත්වනවා
-        }
-      } catch (error) {
-        console.error("Error during image upload", error);
-        alert("පින්තූරය upload කිරීමේදී ගැටලුවක් මතු විය.");
-        return; // Error එකක් ආවොත් එතනින් නවත්වනවා
+      if (isNameDuplicate) {
+        errors.name =
+          "This name already exists. Please choose a different name.";
       }
     }
 
-    // 2. Data Object එක Backend එකට ගැලපෙන විදිහට හදනවා
-    // ඔයාගේ formData එක ඇතුළට imageUrl එකත් එකතු කරනවා
+    const capValue = parseInt(formData.capacity);
+    if (formData.capacity !== "") {
+      if (capValue < 1) {
+        errors.capacity = "Capacity must be at least 1.";
+      } else if (capValue > 500) {
+        errors.capacity = "Maximum capacity cannot exceed 500.";
+      }
+    }
+
+    if (formData.type === "EQUIPMENT") {
+      const yearVal = parseInt(formData.purchaseYear);
+      if (!formData.purchaseYear) {
+        errors.purchaseYear = "Purchase year is required for equipment.";
+      } else if (yearVal < 2000) {
+        errors.purchaseYear = "Year cannot be earlier than 2000.";
+      } else if (yearVal > currentYear) {
+        errors.purchaseYear = `Max year is ${currentYear}.`;
+      }
+    }
+
+    if (formData.capacity !== "" && parseInt(formData.capacity) < 1) {
+      errors.capacity = "Capacity must be at least 1.";
+    }
+
+    if (formData.openTime && formData.closeTime) {
+      if (formData.closeTime <= formData.openTime) {
+        errors.closeTime = "Close time must be later than open time.";
+      }
+    }
+
+    if (
+      formData.type === "FACILITY" &&
+      formData.openTime &&
+      formData.closeTime
+    ) {
+      const isOverlapping = resources.some((res) => {
+        if (isEdit && res.id === currentId) return false;
+
+        const sameContext =
+          res.type === "FACILITY" &&
+          res.location === formData.location &&
+          res.availableWeekends === formData.availableWeekends;
+
+        return (
+          sameContext &&
+          formData.openTime < res.closeTime &&
+          formData.closeTime > res.openTime
+        );
+      });
+      if (isOverlapping) {
+        errors.closeTime =
+          "This facility is already booked for this time slot!";
+      }
+
+      if (formData.type === "FACILITY" && formData.location) {
+        const isLocationTaken = resources.some((res) => {
+          if (isEdit && res.id === currentId) return false;
+          return res.type === "FACILITY" && res.location === formData.location;
+        });
+
+        if (isLocationTaken) {
+          errors.location =
+            "This location is already assigned to another facility.";
+        }
+      }
+    }
+
+    if (selectedFile) {
+      const maxSize = 5 * 1024 * 1024;
+      if (selectedFile.size > maxSize) {
+        errors.image = "Image size must be less than 5MB.";
+      } else {
+        delete errors.image;
+      }
+    } else {
+      delete errors.image;
+    }
+
+    setFormErrors(errors);
+  }, [formData, selectedFile, resources, isEdit, currentId]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (Object.keys(formErrors).length > 0) {
+      alert("Please fix the errors before saving.");
+      return;
+    }
+
+    const isOverlapping = resources.some((res) => {
+      if (isEdit && res.id === currentId) return false;
+
+      if (formData.type === "FACILITY") {
+        const sameContext =
+          res.type === "FACILITY" &&
+          res.location === formData.location &&
+          res.availableWeekends === formData.availableWeekends;
+
+        if (sameContext) {
+          return (
+            formData.openTime < res.closeTime &&
+            formData.closeTime > res.openTime
+          );
+        }
+      }
+      return false;
+    });
+
+    if (isOverlapping) {
+      alert("❌ This location is already booked for this time slot!");
+      return;
+    }
+
+    let uploadedImageUrl = formData.imageUrl || "";
+
+    if (selectedFile) {
+      try {
+        const url = await uploadImageToCloudinary(selectedFile);
+        if (url) {
+          uploadedImageUrl = url;
+        } else {
+          console.error("Failed to get image URL from Cloudinary");
+          toast.error(
+            "Image uploaded, but failed to get URL. Please try again.",
+          );
+          return;
+        }
+      } catch (error) {
+        console.error("Error during image upload", error);
+        toast.error("Failed to upload image.");
+        return;
+      }
+    }
+
     const resourceData = {
-      ...formData, // ඔයාගේ දැනට තියෙන name, type, etc. ටික
-      imageUrl: uploadedImageUrl, // මෙන්න අලුත් පින්තූර ලින්ක් එක යනවා!
+      ...formData,
+      imageUrl: uploadedImageUrl,
     };
 
     try {
       if (isEdit) {
-        // Update කරනවා නම් (PUT Request)
-        // formData වෙනුවට resourceData යවනවා
         await axios.put(
-          `http://localhost:8080/api/resources/${currentId}`,
+          `http://10.155.45.1:8080/api/resources/${currentId}`,
           resourceData,
         );
-        alert("Resource updated successfully!");
+        toast.success("Resource updated successfully!");
       } else {
-        // අලුතින් දානවා නම් (POST Request)
-        // formData වෙනුවට resourceData යවනවා
-        await axios.post("http://localhost:8080/api/resources", resourceData);
-        alert("Resource added successfully!");
+        await axios.post("http://10.155.45.1:8080/api/resources", resourceData);
+        toast.success("Resource added successfully!");
       }
 
-      // වැඩේ ඉවර වුණාම ඔක්කොම reset කරනවා (ඇතුළතimageUrl reset කරන්න ඕනේ නැහැ, formData reset වෙද්දී ඒකත් فاضි වෙයි)
       setShowModal(false);
       setIsEdit(false);
       setCurrentId(null);
@@ -179,47 +323,78 @@ const ResourceList = () => {
         capacity: "",
         location: "",
         status: "ACTIVE",
-        imageUrl: "", // Reset කරද්දී මේකත් කරන්න
+        openTime: "08:00",
+        closeTime: "17:00",
+        availableWeekends: false,
+        imageUrl: "",
+        purchaseYear: "",
       });
 
-      // 3. selectedFile State එක reset කරන්න (ඊළඟ පාරට)
       setSelectedFile(null);
-
-      // 4. Input එකේ පේන file එකේ නමත් reset කරන්න
-      const fileInput = document.getElementById("resourceImage"); // Input id එක
+      const fileInput = document.getElementById("resourceImage");
       if (fileInput) fileInput.value = "";
 
-      fetchResources(); // Table එක refresh කරනවා
+      fetchResources();
     } catch (err) {
       console.error("Error saving resource to backend", err);
-      alert("Error saving resource! Please check backend.");
+      toast.error("Error saving resource! Please check backend.");
     }
   };
 
-  //delete
   const handleDelete = async (id) => {
-    // මකන්න කලින් ඇත්තටම ඕනෙද කියලා අහනවා (Safety first!)
     if (window.confirm("Are you sure you want to delete this resource?")) {
       try {
-        await axios.delete(`http://localhost:8080/api/resources/${id}`);
-        alert("Resource deleted successfully!");
-        fetchResources(); // ටේබල් එකේ ලිස්ට් එක ආයෙත් ඇදලා ගන්න (Refresh)
+        await axios.delete(`http://10.155.45.1:8080/api/resources/${id}`);
+        toast.success("Resource deleted successfully!");
+        fetchResources();
       } catch (err) {
         console.error("Delete error:", err);
-        alert("Failed to delete the resource. Please try again.");
+        toast.error("Failed to delete the resource. Please try again.");
       }
     }
   };
 
-  if (loading) return <div className="container mt-4">Loading...</div>;
+  if (loading)
+    return (
+      <div className="container-fluid mt-4 text-center">Loading Data...</div>
+    );
+
+  // --- Real-time Calculations for the 4 Cards ---
+  const activeEquipmentsCount = resources.filter(
+    (r) => r.type === "EQUIPMENT" && r.status === "ACTIVE",
+  ).length;
+  const activeFacilitiesCount = resources.filter(
+    (r) => r.type === "FACILITY" && r.status === "ACTIVE",
+  ).length;
+  const oosEquipmentsCount = resources.filter(
+    (r) => r.type === "EQUIPMENT" && r.status === "OUT_OF_SERVICE",
+  ).length;
+  const oosFacilitiesCount = resources.filter(
+    (r) => r.type === "FACILITY" && r.status === "OUT_OF_SERVICE",
+  ).length;
 
   return (
-    <div className="container-fluid">
-      <div className="d-flex justify-content-between align-items-center mt-4 mb-4">
-        <h1>Inventory Catalogue</h1>
+    <div
+      className="container-fluid bg-light pt-4 pb-5"
+      style={{ minHeight: "100vh" }}
+    >
+      <Toaster position="top-right" reverseOrder={false} />
 
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-center mb-5 px-3">
+        <div>
+          <h1
+            className="fw-bold text-dark mb-1"
+            style={{ letterSpacing: "-0.8px", fontSize: "2.25rem" }}
+          >
+            Resource Inventory
+          </h1>
+          <p className="text-muted mb-0 fs-5">
+            System Overview & Resource Management Portal
+          </p>
+        </div>
         <button
-          className="btn btn-primary"
+          className="btn btn-primary shadow d-flex align-items-center gap-2 fw-semibold rounded-3 px-4 py-2"
           onClick={() => {
             setIsEdit(false);
             setShowModal(true);
@@ -232,169 +407,360 @@ const ResourceList = () => {
               openTime: "08:00",
               closeTime: "17:00",
               availableWeekends: false,
+              purchaseYear: "",
             });
+            setSelectedFile(null);
           }}
         >
-          + Add Resource
+          <i className="bi bi-plus-circle fs-5"></i>
+          Add New Resource
         </button>
       </div>
 
-      {/* --- Search and Filter Bar --- */}
-      <div className="row mb-4 p-3 bg-light rounded shadow-sm">
-        <div className="col-md-6">
-          <label className="form-label font-weight-bold">Search by Name</label>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Type resource name (e.g. Lab 01)..."
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Metric Cards */}
+      <div className="row g-4 mb-5 px-3">
+        <div className="col-md-3">
+          <div className="card border-0 shadow-sm rounded-4 h-100">
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-start">
+                <i className="bi bi-tools text-primary fs-1"></i>
+                <span className="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
+                  Optimal
+                </span>
+              </div>
+              <h2 className="fw-bold text-dark mt-3 mb-1">
+                {activeEquipmentsCount}
+              </h2>
+              <p className="text-muted fw-medium">Active Equipments</p>
+            </div>
+          </div>
         </div>
-        <div className="col-md-4">
-          <label className="form-label font-weight-bold">Filter by Type</label>
-          <select
-            className="form-select"
-            onChange={(e) => setFilterType(e.target.value)}
-          >
-            <option value="ALL">All</option>
-            <option value="FACILITY">Facility</option>
-            <option value="EQUIPMENT">Equipment</option>
-          </select>
+
+        <div className="col-md-3">
+          <div className="card border-0 shadow-sm rounded-4 h-100">
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-start">
+                <i className="bi bi-building text-primary fs-1"></i>
+                <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+                  High
+                </span>
+              </div>
+              <h2 className="fw-bold text-dark mt-3 mb-1">
+                {activeFacilitiesCount}
+              </h2>
+              <p className="text-muted fw-medium">Active Facilities</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-3">
+          <div className="card border-0 shadow-sm rounded-4 h-100">
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-start">
+                <i className="bi bi-exclamation-triangle text-danger fs-1"></i>
+                <span className="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill">
+                  Critical
+                </span>
+              </div>
+              <h2 className="fw-bold text-dark mt-3 mb-1">
+                {oosEquipmentsCount}
+              </h2>
+              <p className="text-muted fw-medium">Out of Service Equipments</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-3">
+          <div className="card border-0 shadow-sm rounded-4 h-100">
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-start">
+                <i className="bi bi-clock-history text-warning fs-1"></i>
+                <span className="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill">
+                  Action Req.
+                </span>
+              </div>
+              <h2 className="fw-bold text-dark mt-3 mb-1">
+                {oosFacilitiesCount}
+              </h2>
+              <p className="text-muted fw-medium">Out of Service Facilities</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Table Section */}
-      <table className="table table-hover table-bordered shadow-sm bg-white text-center align-middle">
-        <thead className="table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Image</th>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Capacity</th>
-            <th>Location</th>
-            <th>Status</th>
-            <th style={{ width: "140px" }}>Availability</th>
-            {/* Header එකේ කළු පාට එන්න මෙතන <th>Actions</th> එක අනිවාර්යයි */}
-            <th style={{ width: "180px" }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredResources.length > 0 ? (
-            filteredResources.map((item) => (
-              <tr key={item.id}>
-                <td>{item.id}</td>
-                <td>
-                  <img
-                    /* 'res' වෙනුවට 'item' (map එකේ තියෙන නම) පාවිච්චි කර නිවැරදි කරන ලදී */
-                    src={item.imageUrl || "https://via.placeholder.com/50"}
-                    alt="resource"
-                    className="img-thumbnail"
-                    style={{
-                      width: "50px",
-                      height: "50px",
-                      objectFit: "cover",
-                    }}
-                  />
-                </td>
-                <td>{item.name}</td>
-                <td>{item.type}</td>
-                <td>{item.capacity}</td>
-                <td>{item.location}</td>
-                <td>
-                  <span
-                    className={`badge ${
-                      item.status === "ACTIVE" || item.status === "AVAILABLE"
-                        ? "bg-success"
-                        : "bg-danger"
-                    }`}
-                  >
-                    {item.status}
-                  </span>
-                </td>
-                <td className="align-middle text-nowrap">
-                  <div
-                    className="fw-bold text-primary"
-                    style={{ fontSize: "0.85rem" }}
-                  >
-                    {item.openTime} - {item.closeTime}
-                  </div>
-                  <span
-                    className={`badge ${item.availableWeekends ? "bg-info" : "bg-secondary"}`}
-                    style={{ fontSize: "0.65rem" }}
-                  >
-                    {item.availableWeekends ? "Mon - Sun" : "Mon - Fri"}
-                  </span>
-                </td>
+      {/* Search & Filter Bar */}
+      <div className="card border-0 shadow-sm rounded-4 mb-5 mx-3 bg-info-subtle">
+        <div className="card-body p-4">
+          <div className="row g-4 align-items-end">
+            <div className="col-md-4">
+              <label className="form-label text-muted fw-semibold small mb-2">
+                SEARCH RESOURCE
+              </label>
+              <div className="input-group">
+                <span className="input-group-text bg-white">
+                  <i className="bi bi-search"></i>
+                </span>
+                <input
+                  type="text"
+                  className="form-control border-start-0 shadow-none"
+                  placeholder="Search by ID, Name or Location..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
 
-                {/* බටන් මැදට කරලා, සයිස් එක සමාන කරපු කොටස */}
-                <td>
-                  <div className="d-flex justify-content-center gap-3">
-                    <button
-                      className="btn btn-success btn-sm"
-                      style={{ width: "80px" }} // Edit බටන් එක කොළ පාට සහ සයිස් එක 70px
-                      onClick={() => handleEdit(item)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      style={{ width: "80px" }} // Delete බටන් එකේ සයිස් එකත් 70px
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
+            <div className="col-md-2">
+              <label className="form-label text-muted fw-semibold small mb-2">
+                TYPE
+              </label>
+              <select
+                className="form-select shadow-none"
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+              >
+                <option value="ALL">All Types</option>
+                <option value="FACILITY">Facility</option>
+                <option value="EQUIPMENT">Equipment</option>
+              </select>
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label text-muted fw-semibold small mb-2">
+                LOCATION
+              </label>
+              <select
+                className="form-select shadow-none"
+                value={filterLocation}
+                onChange={(e) => setFilterLocation(e.target.value)}
+              >
+                <option value="ALL">All Locations</option>
+                <option value="G1101">G1101</option>
+                <option value="F1305">F1305</option>
+                <option value="G1203">G1203</option>
+              </select>
+            </div>
+
+            <div className="col-md-2">
+              <label className="form-label text-muted fw-semibold small mb-2">
+                CAPACITY
+              </label>
+              <select
+                className="form-select shadow-none"
+                value={filterCapacity}
+                onChange={(e) => setFilterCapacity(e.target.value)}
+              >
+                <option value="ALL">Any Capacity</option>
+                <option value="1-10">1 - 10 Pax</option>
+                <option value="11-50">11 - 50 Pax</option>
+                <option value="50+">50+ Pax</option>
+              </select>
+            </div>
+
+            <div className="col-md-2 text-md-end">
+              <button
+                className="btn btn-outline-secondary px-4 py-2"
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterType("ALL");
+                  setFilterLocation("ALL");
+                  setFilterCapacity("ALL");
+                }}
+              >
+                <i className="bi bi-arrow-repeat me-2"></i>Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Table */}
+      <div className="card border-0 shadow-sm rounded-4 overflow-hidden mx-3 mb-5">
+        <div className="table-responsive">
+          <table className="table table-hover align-middle bg-white mb-0">
+            <thead className="table-info ">
+              <tr>
+                <th className="py-4 px-4 fw-semibold text-uppercase small">
+                  Resource
+                </th>
+                <th className="py-4 fw-semibold text-uppercase small">Type</th>
+                <th className="py-4 fw-semibold text-uppercase small">
+                  Details
+                </th>
+                <th className="py-4 fw-semibold text-uppercase small">
+                  Status
+                </th>
+                <th className="py-4 fw-semibold text-uppercase small">
+                  Operating Hours
+                </th>
+                <th className="py-4 text-end px-4 fw-semibold text-uppercase small">
+                  Actions
+                </th>
               </tr>
-            ))
-          ) : (
-            /* colSpan එක 9 කරන්න (Columns 9ක් තියෙන නිසා) */
-            <tr>
-              <td colSpan="9" className="text-center">
-                No matching resources found.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {filteredResources.length > 0 ? (
+                filteredResources.map((item) => (
+                  <tr key={item.id}>
+                    <td className="px-4 py-4">
+                      <div className="d-flex align-items-center">
+                        <img
+                          src={
+                            item.imageUrl ||
+                            "https://via.placeholder.com/50x50/ddd/666?text=Resource"
+                          }
+                          alt="resource"
+                          className="rounded-3 me-3 shadow-sm"
+                          style={{
+                            width: "52px",
+                            height: "52px",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <div>
+                          <div className="fw-semibold text-dark">
+                            {item.name}
+                          </div>
+                          <small className="text-muted">ID: #{item.id}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4">
+                      <span className="badge bg-light border text-secondary px-3 py-2 rounded-pill fw-medium">
+                        {item.type === "FACILITY"
+                          ? "🏢 Facility"
+                          : "🔧 Equipment"}
+                      </span>
+                    </td>
+                    <td className="py-4">
+                      <div>
+                        <i className="bi bi-geo-alt text-primary me-2"></i>
+                        {item.location}
+                      </div>
+                      <div className="text-muted small">
+                        <i className="bi bi-people me-2"></i>
+                        {item.capacity} Pax
+                      </div>
+                    </td>
+                    <td className="py-4">
+                      {item.status === "ACTIVE" ||
+                      item.status === "AVAILABLE" ? (
+                        <span className="badge border border-success text-success bg-white px-4 py-2 rounded-pill">
+                          <i className="bi bi-check-circle-fill me-1"></i>{" "}
+                          ACTIVE
+                        </span>
+                      ) : (
+                        <span className="badge border border-danger text-danger bg-white px-4 py-2 rounded-pill">
+                          <i className="bi bi-x-circle-fill me-1"></i> OUT OF
+                          SERVICE
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4">
+                      <div className="fw-medium">
+                        {item.openTime} – {item.closeTime}
+                      </div>
+                      <small className="text-muted">
+                        {item.availableWeekends ? "Mon - Sun" : "Mon - Fri"}
+                      </small>
+                    </td>
+                    <td className="text-end px-4 py-4">
+                      <div className="d-flex justify-content-end gap-2">
+                        <button
+                          className="btn btn-outline-primary btn-sm d-flex align-items-center justify-content-center"
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "10px",
+                          }}
+                          onClick={() => handleEdit(item)}
+                          title="Edit"
+                        >
+                          <i className="bi bi-pencil-square"></i>
+                        </button>
+                        <button
+                          className="btn btn-outline-danger btn-sm d-flex align-items-center justify-content-center"
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "10px",
+                          }}
+                          onClick={() => handleDelete(item.id)}
+                          title="Delete"
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="text-center py-5 text-muted fw-medium"
+                  >
+                    No matching resources found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {/* Modal - Add Resource (ACTIVE / OUT_OF_SERVICE options) */}
+      {/* Modal */}
       {showModal && (
         <div
           className="modal d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050 }}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 1050,
+            backdropFilter: "blur(8px)",
+          }}
         >
-          <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">
-                  {isEdit ? "Update Resource" : "Add New Resource"}
-                </h5>
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content border-0 shadow rounded-4 overflow-hidden">
+              <div className="modal-header bg-primary text-white border-0 py-4 px-4">
+                <h4 className="modal-title fw-bold">
+                  {isEdit ? "Update Resource Details" : "Add New Resource"}
+                </h4>
                 <button
                   type="button"
-                  className="btn-close"
+                  className="btn-close btn-close-white"
                   onClick={() => setShowModal(false)}
                 ></button>
               </div>
+
               <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Name</label>
+                <div className="modal-body p-4 bg-light">
+                  <div className="row g-4">
+                    {/* Your existing form fields - unchanged */}
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold text-secondary">
+                        Resource Name
+                      </label>
                       <input
                         type="text"
-                        className="form-control"
+                        className={`form-control shadow-sm ${formErrors.name ? "is-invalid" : ""}`}
                         name="name"
                         value={formData.name}
                         onChange={handleChange}
                         required
                       />
+                      {formErrors.name && (
+                        <div className="invalid-feedback">
+                          {formErrors.name}
+                        </div>
+                      )}
                     </div>
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Type</label>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold text-secondary">
+                        Resource Type
+                      </label>
                       <select
-                        className="form-select"
+                        className="form-select shadow-sm"
                         name="type"
                         value={formData.type}
                         onChange={handleChange}
@@ -403,169 +769,201 @@ const ResourceList = () => {
                         <option value="EQUIPMENT">Equipment</option>
                       </select>
                     </div>
-                  </div>
 
-                  <div className="row">
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Capacity</label>
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold text-secondary">
+                        Capacity (Pax)
+                      </label>
                       <input
                         type="number"
-                        className="form-control"
+                        className={`form-control shadow-sm ${formErrors.capacity ? "is-invalid" : ""}`}
                         name="capacity"
                         value={formData.capacity}
+                        min="1"
                         onChange={handleChange}
                         required
                       />
+                      {formErrors.capacity && (
+                        <div className="invalid-feedback">
+                          {formErrors.capacity}
+                        </div>
+                      )}
                     </div>
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Location</label>
+
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold text-secondary">
+                        Location
+                      </label>
                       <input
                         type="text"
-                        className="form-control"
+                        className={`form-control shadow-sm ${formErrors.location ? "is-invalid" : ""}`}
                         name="location"
                         value={formData.location}
                         onChange={handleChange}
                         required
                       />
+                      {formErrors.location && (
+                        <div className="invalid-feedback">
+                          {formErrors.location}
+                        </div>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Time Selection Row */}
-                  <div className="row mb-3">
                     <div className="col-md-6">
-                      <label className="form-label fw-bold">Open Time</label>
+                      <label className="form-label fw-semibold text-secondary">
+                        Open Time
+                      </label>
                       <input
                         type="time"
-                        className="form-control"
+                        className={`form-control shadow-sm ${formErrors.closeTime ? "is-invalid" : ""}`}
                         name="openTime"
                         value={formData.openTime}
                         onChange={handleChange}
                         required
                       />
                     </div>
+
                     <div className="col-md-6">
-                      <label className="form-label fw-bold">Close Time</label>
+                      <label className="form-label fw-semibold text-secondary">
+                        Close Time
+                      </label>
                       <input
                         type="time"
-                        className="form-control"
+                        className={`form-control shadow-sm ${formErrors.closeTime ? "is-invalid" : ""}`}
                         name="closeTime"
                         value={formData.closeTime}
                         onChange={handleChange}
                         required
                       />
+                      {formErrors.closeTime && (
+                        <div className="invalid-feedback">
+                          {formErrors.closeTime}
+                        </div>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Weekend Availability Toggle */}
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">
-                      Availability Window
-                    </label>
-                    <select
-                      className="form-select"
-                      name="availableWeekends"
-                      value={formData.availableWeekends}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          availableWeekends: e.target.value === "true",
-                        })
-                      }
-                    >
-                      <option value="false">Weekdays Only (Mon - Fri)</option>
-                      <option value="true">Full Week (Mon - Sun)</option>
-                    </select>
-                  </div>
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold text-secondary">
+                        Availability
+                      </label>
+                      <select
+                        className="form-select shadow-sm"
+                        name="availableWeekends"
+                        value={formData.availableWeekends}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            availableWeekends: e.target.value === "true",
+                          })
+                        }
+                      >
+                        <option value="false">Weekdays Only (Mon - Fri)</option>
+                        <option value="true">Full Week (Mon - Sun)</option>
+                      </select>
+                    </div>
 
-                  <div className="mb-3">
-                    <label className="form-label">Status</label>
-                    <select
-                      className="form-select"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                    >
-                      <option value="ACTIVE">Active</option>
-                      <option value="OUT_OF_SERVICE">Out of Service</option>
-                    </select>
-                  </div>
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold text-secondary">
+                        Status
+                      </label>
+                      <select
+                        className="form-select shadow-sm"
+                        name="status"
+                        value={formData.status}
+                        onChange={handleChange}
+                      >
+                        <option value="ACTIVE">Active</option>
+                        <option value="OUT_OF_SERVICE">Out of Service</option>
+                      </select>
+                    </div>
 
-                  {/* --- Image Upload--- */}
-                  <div className="mb-3 border-top pt-3">
-                    <label
-                      htmlFor="resourceImage"
-                      className="form-label fw-bold"
-                    >
-                      Resource Image (Optional)
-                    </label>
-                    <div className="input-group">
+                    <div className="col-md-12">
+                      <label className="form-label fw-semibold text-secondary">
+                        Purchase Year (Equipment Only)
+                      </label>
+                      <input
+                        type="number"
+                        className={`form-control shadow-sm ${formErrors.purchaseYear ? "is-invalid" : ""}`}
+                        name="purchaseYear"
+                        placeholder="e.g. 2023"
+                        value={formData.purchaseYear}
+                        onChange={handleChange}
+                        disabled={formData.type === "FACILITY"}
+                        min="2000"
+                        max={new Date().getFullYear()}
+                      />
+                      {formErrors.purchaseYear && (
+                        <div className="invalid-feedback">
+                          {formErrors.purchaseYear}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="col-md-12">
+                      <label className="form-label fw-semibold text-secondary">
+                        Resource Image (Optional)
+                      </label>
                       <input
                         type="file"
                         id="resourceImage"
-                        className="form-control"
+                        className={`form-control shadow-sm ${formErrors.image ? "is-invalid" : ""}`}
                         accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files[0];
-                          if (file) {
-                            setSelectedFile(file);
-                          }
+                          if (file) setSelectedFile(file);
                         }}
                       />
-                      <label
-                        className="input-group-text"
-                        htmlFor="resourceImage"
-                      >
-                        Upload
-                      </label>
+                      {formErrors.image && (
+                        <div className="invalid-feedback d-block">
+                          {formErrors.image}
+                        </div>
+                      )}
+                      <small className="text-muted">
+                        JPG, PNG, WEBP (Max 5MB)
+                      </small>
                     </div>
-                    <div className="form-text mt-1 text-muted">
-                      Accepted formats: JPG, PNG, WEBP (Max: 5MB)
-                    </div>
+
+                    {isEdit && (
+                      <div className="col-12 text-center border-top pt-4 mt-3">
+                        <h6 className="fw-bold text-secondary mb-3">
+                          Resource QR Tag
+                        </h6>
+                        <div className="qr-container bg-white p-4 d-inline-block rounded-4 shadow-sm border">
+                          <QRCodeSVG
+                            value={`http://10.155.45.1:5173/resource/view/${currentId}`}
+                            size={160}
+                            level="H"
+                            includeMargin
+                          />
+                        </div>
+                        <div className="mt-3">
+                          <button
+                            type="button"
+                            className="btn btn-outline-primary px-4 rounded-pill"
+                            onClick={downloadQR}
+                          >
+                            <i className="bi bi-download me-2"></i>Download PNG
+                            Tag
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-
-                  {/* QR Code Section - පෙන්වන්නේ Edit කරද්දී විතරයි */}
-                  {isEdit && (
-                    <div className="mt-4 pt-3 border-top text-center">
-                      <h6 className="fw-bold text-secondary mb-3">
-                        Resource QR Tag
-                      </h6>
-
-                      {/* මෙතන අනිවාර්යයෙන්ම qr-container කියන class එක තියෙන්න ඕනේ */}
-                      <div className="qr-container bg-light p-3 d-inline-block rounded shadow-sm border">
-                        <QRCodeSVG
-                          value={`http://10.187.244.1:5173/resource/view/${currentId}`}
-                          size={160}
-                          level={"H"}
-                          includeMargin={true}
-                        />
-                      </div>
-
-                      <div className="mt-2 text-center">
-                        <small className="text-muted d-block mb-2">
-                          Save this tag for physical labeling
-                        </small>
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm px-4"
-                          onClick={downloadQR} // <--- මෙන්න මෙතනට download function එක දුන්නා
-                        >
-                          Download PNG Tag
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                <div className="modal-footer">
+                <div className="modal-footer border-0 bg-light px-4 py-4">
                   <button
                     type="button"
-                    className="btn btn-secondary"
+                    className="btn btn-light px-4 fw-semibold"
                     onClick={() => setShowModal(false)}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-success">
-                    Save to Catalogue
+                  <button
+                    type="submit"
+                    className="btn btn-primary px-5 fw-semibold shadow-sm"
+                  >
+                    {isEdit ? "Save Changes" : "Add to Catalogue"}
                   </button>
                 </div>
               </form>
@@ -573,6 +971,11 @@ const ResourceList = () => {
           </div>
         </div>
       )}
+
+      {/* AI Insight Panel */}
+      <div className="mx-3 mt-4">
+        <AIInsightPanel resources={resources} />
+      </div>
     </div>
   );
 };

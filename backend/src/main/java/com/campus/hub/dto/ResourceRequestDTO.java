@@ -24,8 +24,7 @@ public class ResourceRequestDTO {
     @NotBlank(message = "Location is required")
     private String location;
 
-    @Pattern(regexp = "ACTIVE|AVAILABLE|MAINTENANCE|OUT_OF_SERVICE", 
-         message = "Status must be ACTIVE, AVAILABLE, MAINTENANCE, or OUT_OF_SERVICE")
+    @Pattern(regexp = "ACTIVE|AVAILABLE|MAINTENANCE|OUT_OF_SERVICE", message = "Status must be ACTIVE, AVAILABLE, MAINTENANCE, or OUT_OF_SERVICE")
     private String status;
     private String purchaseDate;
     private String lastMaintenanceDate;
@@ -34,4 +33,7 @@ public class ResourceRequestDTO {
     private LocalTime closeTime;
     private boolean availableWeekends;
     private String imageUrl;
+
+    @Min(2000)
+    private Integer purchaseYear;
 }

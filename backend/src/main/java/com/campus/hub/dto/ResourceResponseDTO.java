@@ -20,4 +20,5 @@ public class ResourceResponseDTO {
     private LocalTime closeTime;
     private boolean availableWeekends;
     private String imageUrl;
+    private Integer purchaseYear;
 }

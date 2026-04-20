@@ -1,0 +1,88 @@
+/* Floating Action Button (FAB) */
+.ai-fab {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #0d6efd, #00d4ff);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 20px rgba(13, 110, 253, 0.5);
+  cursor: pointer;
+  z-index: 2000;
+  transition: all 0.3s ease;
+  animation: pulse-blue 2s infinite;
+}
+
+.ai-fab:hover {
+  transform: scale(1.1);
+}
+
+@keyframes pulse-blue {
+  0% {
+    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(13, 110, 253, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(13, 110, 253, 0);
+  }
+}
+
+/* AI Floating Card */
+.ai-floating-card {
+  position: fixed;
+  bottom: 100px;
+  right: 30px;
+  width: 380px;
+  max-height: 600px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  z-index: 2001;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ai-card-header {
+  background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+  color: white;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ai-card-body {
+  padding: 15px;
+  height: 350px;
+  overflow-y: auto;
+  background-color: #f8fafc;
+}
+
+.ai-card-footer {
+  padding: 15px;
+  background: white;
+  border-top: 1px solid #eee;
+}
+
+.ai-close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+.ai-close-btn:hover {
+  color: #ff4d4d;
+}
