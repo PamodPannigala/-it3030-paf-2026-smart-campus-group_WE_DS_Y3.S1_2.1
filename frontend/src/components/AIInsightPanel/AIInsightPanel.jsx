@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
+import "./AIInsightPanel.css";
 
 const AIInsightPanel = ({ resources }) => {
   const [question, setQuestion] = useState("");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); //panel open close state
 
   const systemPrompt = `
 # ROLE
@@ -15,22 +17,22 @@ You are a High-Precision Infrastructure Auditor and AI Strategy Consultant. You 
 - Lifespans: Projector=5, AC=8, Laptop=4, Furniture=10, Others=8.
 
 
-# GUARDRAIL LOGIC
-1. **Check Target Type**: Identify the 'type' of the resource from the JSON.
-2. **IF Search Query does NOT match any ID, Name, Type, or Location**:
-   - STOP all processes.
-   - Use the "⚠️ NOT FOUND" Output Structure.
-3. **IF Type == "FACILITY" OR the query is a Location ID (e.g., G1101)**:
-   - STOP all calculations.
-   - Response: ""⚠️ Sytem allow to check Equipments Health  only.Please enter the 
-               correct Equipment Id or Equipment Name to get the health insights.""
+# ANALYSIS LOGIC (SMART FILTER)
+1. **Data Discovery**: First, look through the provided JSON to find the resource the user is asking about (Match by ID or Name).
+2. **Identification**: 
+   - IF the resource is **EQUIPMENT**: Proceed immediately to the CALCULATION ALGORITHM.
+   - IF the resource is a **FACILITY or LOCATION**: Stop and politely explain that you can only provide health insights for specific equipment.
+   - IF NO match is found at all: Provide the "⚠️ NOT FOUND" report.
 
 4. **IF Type == "EQUIPMENT"**:
    - Proceed to the CALCULATION ALGORITHM.
 
+5. **IF Type == "FACILITY"**:
+   - Stop and politely explain that you can only provide health insights for specific equipment.
+
 # CALCULATION ALGORITHM (STRICT STEPS)
 ## STEP 0: DATA LOOKUP (CRITICAL)
-- Search the JSON for the given ID.
+- Search the JSON for the given ID  for type is "EQUIPMENTs" only.
 - **READ the 'purchaseYear' directly.** If it says 2023, you MUST use 2023. 
 - Only use the default (2021) if the field is strictly missing or null.
 
@@ -46,10 +48,7 @@ You are a High-Precision Infrastructure Auditor and AI Strategy Consultant. You 
 6. **Weighted_Status (40%)** = (Status == 'ACTIVE' ? 100 : 0) * 0.4.
 7. **Final_Health** = Weighted_Physical + Weighted_Status.
 
-## STEP 2: FACILITY AGGREGATION
-- If the ID is a Facility (e.g., ID 7), find all equipment where "location" == Facility ID.
-- **Facility Physical_Score** = AVERAGE of the Physical_Scores of all linked assets (Apply the Step 1 Floor Rule to each asset first).
-- **Facility Final_Health** = (Facility Physical_Score * 0.6) + (Facility Status Weight * 0.4).
+
 
 # OUTPUT STRUCTURE (STRICT AUDIT FORMAT)
 ##📋AUDIT REPORT: ID [ID] ([Name])
@@ -102,76 +101,99 @@ ${JSON.stringify(resources)}
     if (!question) return;
     setLoading(true);
     try {
-      // Ollama  (Local API)
       const res = await axios.post("http://localhost:11434/api/generate", {
         model: "qwen2.5-coder:7b",
         prompt: systemPrompt + "\nUser Question: " + question,
         stream: false,
-        options: {
-          temperature: 0,
-          num_ctx: 4096,
-          top_k: 1,
-          top_p: 0.01,
-        },
+        options: { temperature: 0, num_ctx: 4096, top_k: 1, top_p: 0.01 },
       });
       setResponse(res.data.response);
     } catch (err) {
-      setResponse("Sorry check your Ollama setup.");
+      setResponse("⚠️ Sorry, please check your Ollama setup.");
     }
     setLoading(false);
   };
 
   return (
-    <div
-      style={{
-        backgroundColor: "#fff",
-        padding: "20px",
-        borderRadius: "15px",
-        border: "1px solid #e2e8f0",
-        height: "100%",
-      }}
-    >
-      <h5 className="fw-bold text-primary mb-3">🤖 AI Facility Assistant</h5>
+    <>
+      {/* Floating Action Button */}
+      {!isOpen && (
+        <div className="ai-fab" onClick={() => setIsOpen(true)}>
+          <i className="bi bi-robot fs-3 text-white"></i>
+        </div>
+      )}
 
-      {/* Response display */}
-      <div
-        style={{
-          height: "300px",
-          overflowY: "auto",
-          backgroundColor: "#f8fafc",
-          padding: "15px",
-          borderRadius: "10px",
-          marginBottom: "15px",
-          fontSize: "14px",
-        }}
-      >
-        {loading ? (
-          <p> Still Thinking... ⏳</p>
-        ) : (
-          <ReactMarkdown>
-            {response || "Hello Admin, How can I help you today?"}
-          </ReactMarkdown>
-        )}
-      </div>
+      {/* Floating AI Panel */}
+      {isOpen && (
+        <div className="ai-floating-card">
+          {/* Header */}
+          <div className="ai-card-header">
+            <span className="fw-bold">
+              <i className="bi bi-stars"></i> AI Facility Assistant
+            </span>
+            <button
+              className="btn btn-sm text-white"
+              onClick={() => setIsOpen(false)}
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
+          </div>
 
-      {/* Input */}
-      <div className="d-flex gap-2">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Ask about resources..."
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-        />
-        <button onClick={askAI} className="btn btn-primary" disabled={loading}>
-          Ask
-        </button>
-      </div>
+          {/* Body (Response Area) */}
+          <div className="ai-card-body">
+            {loading ? (
+              <div className="text-center mt-5">
+                <div
+                  className="spinner-border text-primary"
+                  role="status"
+                ></div>
+                <p className="mt-2 text-muted">
+                  Analyzing Infrastructure... ⏳
+                </p>
+              </div>
+            ) : (
+              <div className="ai-response-text">
+                <ReactMarkdown>
+                  {response ||
+                    "👋 Hello Admin! Ask me anything about your equipment health."}
+                </ReactMarkdown>
+              </div>
+            )}
+          </div>
 
-      <p style={{ fontSize: "11px", color: "#94a3b8", marginTop: "10px" }}>
-        *AI uses custom risk formulas for predictive analysis.
-      </p>
-    </div>
+          {/* Footer (Input Area) */}
+          <div className="ai-card-footer">
+            <div className="input-group mb-2">
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Analyze ID6 health..."
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && askAI()}
+              />
+              <button
+                onClick={askAI}
+                className="btn btn-primary btn-sm"
+                disabled={loading}
+              >
+                <i className="bi bi-send-fill"></i>
+              </button>
+            </div>
+            <p
+              style={{
+                fontSize: "10px",
+                color: "#94a3b8",
+                textAlign: "center",
+                margin: 0,
+              }}
+            >
+              *AI uses custom risk formulas for predictive analysis.
+            </p>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
