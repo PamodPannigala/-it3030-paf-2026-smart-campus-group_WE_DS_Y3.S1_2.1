@@ -38,24 +38,28 @@ const Sidebar = () => {
               Operations dashboard
             </NavLink>
             {isAdmin && (
-              <>
-                <NavLink to="/users" className={navLinkClass}>
-                  <Users className="me-2" size={18} />
-                  User management
-                </NavLink>
-                <NavLink to="/admin/facilities" className={navLinkClass}>
-                  <Building className="me-2" size={18} />
-                  Facility management
-                </NavLink>
-                <NavLink to="/admin/bookings" className={navLinkClass}>
-                  <Calendar className="me-2" size={18} />
-                  Booking management
-                </NavLink>
-                <NavLink to="/admin/tickets" className={navLinkClass}>
-                  <Ticket className="me-2" size={18} />
-                  Ticket management
-                </NavLink>
-              </>
+              <NavLink to="/users" className={navLinkClass}>
+                <Users className="me-2" size={18} />
+                User management
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink to="/admin/facilities" className={navLinkClass}>
+                <Building className="me-2" size={18} />
+                Facility management
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink to="/admin/bookings" className={navLinkClass}>
+                <Calendar className="me-2" size={18} />
+                Booking management
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink to="/admin/tickets" className={navLinkClass}>
+                <Ticket className="me-2" size={18} />
+                Ticket management
+              </NavLink>
             )}
             <NavLink to="/notifications" className={navLinkClass}>
               <Bell className="me-2" size={18} />
