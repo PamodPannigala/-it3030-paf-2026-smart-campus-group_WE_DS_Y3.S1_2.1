@@ -1,0 +1,51 @@
+/* MyBookings.css - Card hover effects like catalogue page */
+
+/* Card Hover Effect */
+.booking-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.booking-card-hover:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border-color: rgba(37, 99, 235, 0.2);
+}
+
+/* Image zoom effect on hover */
+.booking-card-hover .card-img-top {
+  transition: transform 0.5s ease;
+}
+
+.booking-card-hover:hover .card-img-top {
+  transform: scale(1.05);
+}
+
+/* Smooth card body transition */
+.booking-card-hover .card-body {
+  transition: background-color 0.3s ease;
+}
+
+.booking-card-hover:hover .card-body {
+  background-color: #fafbff;
+}
+
+/* Alert message animations */
+.booking-card-hover .alert {
+  transition: all 0.3s ease;
+}
+
+.booking-card-hover:hover .alert {
+  transform: translateX(4px);
+}
+
+/* Button hover effect */
+.booking-card-hover .btn-outline-danger {
+  transition: all 0.3s ease;
+}
+
+.booking-card-hover .btn-outline-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.2);
+}

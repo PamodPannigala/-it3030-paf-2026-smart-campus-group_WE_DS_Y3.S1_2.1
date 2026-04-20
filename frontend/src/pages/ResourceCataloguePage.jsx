@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
+import { Search, LayoutGrid, CalendarCheck } from "lucide-react"; // ADD CalendarCheck here
 import { useNavigate } from "react-router-dom";
 
 import "../styles/ResourceCataloguePage.css";
@@ -7,6 +8,7 @@ import "../styles/ResourceCataloguePage.css";
 const ResourceCataloguePage = () => {
   const [resources, setResources] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("ALL");
   const [activeCategory, setActiveCategory] = useState("All Assets");
   const [statusFilter, setStatusFilter] = useState("Any Status");
   const [locationFilter, setLocationFilter] = useState("All Buildings");
