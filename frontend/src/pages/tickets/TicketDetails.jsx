@@ -19,6 +19,7 @@ import {
   Heart,
   Hash,
 } from "lucide-react";
+import SlaProgress from "../../components/tickets/SlaProgress"; // ✅ NEW
 
 const BACKEND_URL = "http://localhost:8080";
 
@@ -153,7 +154,7 @@ const handleEditComment = async (commentId) => {
 
   const handleDeleteComment = async (commentId) => {
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
-    
+
     try {
       await axios.delete(
         `${BACKEND_URL}/api/tickets/${ticketId}/comments/${commentId}?author=${userEmail}&authorRole=${userRole.toUpperCase()}`
@@ -282,6 +283,26 @@ const handleEditComment = async (commentId) => {
       urgent: { color: "#ef4444", bg: "#fef2f2", label: "Urgent" },
     };
     return configs[p] || configs.low;
+  };
+
+  // ✅ FIXED: Get SLA status color for sidebar — now checks ticket completion first
+  const getSlaStatusConfig = (ticket) => {
+    // Check if ticket is completed first
+    const isCompleted = ["closed", "resolved", "repaired"].includes(
+      (ticket?.status || "").toLowerCase()
+    );
+
+    if (isCompleted) {
+      return { color: "#059669", bg: "#d1fae5", label: "Completed" };
+    }
+
+    const s = (ticket?.slaStatus || "ON_TRACK").toUpperCase();
+    const configs = {
+      ON_TRACK: { color: "#2563eb", bg: "#dbeafe", label: "On Track" },
+      AT_RISK: { color: "#d97706", bg: "#fef3c7", label: "At Risk" },
+      BREACHED: { color: "#dc2626", bg: "#fee2e2", label: "Breached" },
+    };
+    return configs[s] || configs.ON_TRACK;
   };
 
   const sortedComments = useMemo(() => {
@@ -529,6 +550,8 @@ const handleEditComment = async (commentId) => {
   const stageState = useMemo(() => getStageState(ticket?.status), [ticket]);
   const statusConfig = useMemo(() => getStatusConfig(ticket?.status), [ticket]);
   const priorityConfig = useMemo(() => getPriorityConfig(ticket?.priority), [ticket]);
+  // ✅ FIXED: Pass full ticket object instead of just slaStatus
+  const slaConfig = useMemo(() => getSlaStatusConfig(ticket), [ticket]);
   const StatusIcon = statusConfig.icon;
 
   if (loading) return <div style={{ padding: 30 }}>Loading ticket details...</div>;
@@ -556,6 +579,11 @@ const handleEditComment = async (commentId) => {
                 <div style={styles.stage}><div style={{...styles.dot, ...(stageState.closed ? styles.dotActive : {})}}>{stageState.closed ? "✓" : "4"}</div><div>Closed</div></div>
               </div>
             </section>
+
+            {/* ✅ NEW: SLA Progress Section */}
+            {ticket.slaFirstResponseDue && (
+              <SlaProgress ticket={ticket} />
+            )}
 
             {/* Main Ticket Card */}
             <section style={styles.postShell}>
@@ -585,7 +613,7 @@ const handleEditComment = async (commentId) => {
               </div>
 
               <h1 style={styles.postTitle}>{ticket.title}</h1>
-              
+
               {/* Tags Row */}
               <div style={styles.tagsRow}>
                 <span style={{
@@ -744,7 +772,7 @@ const handleEditComment = async (commentId) => {
             <div style={styles.quickActionsCard}>
               <h3 style={styles.infoCardTitle}>Quick Actions</h3>
               <p style={styles.quickActionsText}>Navigate through your support space</p>
-              
+
               <Link to="/support" style={styles.quickLink}>
                 <ChevronLeft size={16} />
                 Return to Help Centre
@@ -765,47 +793,83 @@ const handleEditComment = async (commentId) => {
                 <Hash size={18} />
                 Ticket Information
               </h3>
-              
+
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>Ticket ID</span>
                 <span style={styles.infoValue}>#{ticket.id}</span>
               </div>
-              
+
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>Created</span>
                 <span style={styles.infoValue}>{formatFullDate(ticket.createdAt)}</span>
               </div>
-              
+
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>Status</span>
                 <span style={{...styles.infoValue, color: statusConfig.color}}>
                   {ticket.status || "New"}
                 </span>
               </div>
-              
+
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>Priority</span>
                 <span style={{...styles.infoValue, color: priorityConfig.color}}>
                   {ticket.priority || "Low"}
                 </span>
               </div>
-              
+
+              {/* ✅ FIXED: SLA Status in sidebar — now shows "Completed" for closed tickets */}
+              {ticket.slaStatus && (
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>SLA Status</span>
+                  <span style={{
+                    ...styles.infoValue, 
+                    color: slaConfig.color,
+                    background: slaConfig.bg,
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '12px'
+                  }}>
+                    {slaConfig.label}
+                  </span>
+                </div>
+              )}
+
               <div style={styles.infoRow}>
                 <span style={styles.infoLabel}>Category</span>
                 <span style={styles.infoValue}>{ticket.category || "General"}</span>
               </div>
-              
+
               {ticket.location && (
                 <div style={styles.infoRow}>
                   <span style={styles.infoLabel}>Location</span>
                   <span style={styles.infoValue}>{ticket.location}</span>
                 </div>
               )}
-              
+
               {ticket.contactNumber && (
                 <div style={styles.infoRow}>
                   <span style={styles.infoLabel}>Contact</span>
                   <span style={styles.infoValue}>{ticket.contactNumber}</span>
+                </div>
+              )}
+
+              {/* ✅ NEW: SLA Deadlines in sidebar */}
+              {ticket.slaFirstResponseDue && (
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>Response Due</span>
+                  <span style={{...styles.infoValue, fontFamily: 'monospace', fontSize: '12px'}}>
+                    {formatFullDate(ticket.slaFirstResponseDue)}
+                  </span>
+                </div>
+              )}
+
+              {ticket.slaResolutionDue && (
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>Resolution Due</span>
+                  <span style={{...styles.infoValue, fontFamily: 'monospace', fontSize: '12px'}}>
+                    {formatFullDate(ticket.slaResolutionDue)}
+                  </span>
                 </div>
               )}
             </div>

@@ -4,7 +4,19 @@ const SlaProgress = ({ ticket }) => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('ON_TRACK');
 
+  // ✅ Check if ticket is completed
+  const isCompleted = ['closed', 'resolved', 'repaired'].includes(
+    (ticket?.status || '').toLowerCase()
+  );
+
   useEffect(() => {
+    // ✅ Don't run timer for completed tickets
+    if (isCompleted) {
+      setStatus('COMPLETED');
+      setProgress(100);
+      return;
+    }
+
     if (!ticket.slaFirstResponseDue && !ticket.slaResolutionDue) return;
 
     const calculate = () => {
@@ -33,20 +45,37 @@ const SlaProgress = ({ ticket }) => {
     };
 
     calculate();
-    const timer = setInterval(calculate, 30000); // Update every 30s
+    const timer = setInterval(calculate, 30000);
 
     return () => clearInterval(timer);
-  }, [ticket]);
+  }, [ticket, isCompleted]); // ✅ Added isCompleted dependency
 
   const getBarColor = () => {
+    if (status === 'COMPLETED') return '#059669'; // ✅ Green for completed
     if (status === 'BREACHED') return '#dc2626';
     if (status === 'AT_RISK') return '#d97706';
     return '#2563eb';
   };
 
   const getMetrics = () => {
-    const now = new Date();
     const created = new Date(ticket.createdAt);
+    
+    // ✅ For completed tickets, show final metrics (not running clock)
+    if (isCompleted) {
+      const target = ticket.firstResponseAt 
+        ? new Date(ticket.slaResolutionDue) 
+        : new Date(ticket.slaFirstResponseDue);
+      const total = target - created;
+      return {
+        label: ticket.firstResponseAt ? 'Time to Resolution' : 'Time to First Response',
+        target: ticket.slaResolutionDue,
+        elapsed: total, // Show full duration
+        total: total,
+        deadline: target
+      };
+    }
+    
+    const now = new Date();
     
     if (!ticket.firstResponseAt) {
       return {
@@ -102,18 +131,22 @@ const SlaProgress = ({ ticket }) => {
         marginBottom: '16px'
       }}>
         <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#111827' }}>
-          ⏱️ SLA Timer: {metrics.label}
+          {isCompleted ? '✅ SLA Completed' : `⏱️ SLA Timer: ${metrics.label}`}
         </h3>
         <span style={{
           fontSize: '13px',
           fontWeight: 700,
-          color: status === 'BREACHED' ? '#dc2626' : status === 'AT_RISK' ? '#d97706' : '#2563eb',
+          color: status === 'COMPLETED' ? '#059669' : 
+                 status === 'BREACHED' ? '#dc2626' : 
+                 status === 'AT_RISK' ? '#d97706' : '#2563eb',
           fontFamily: 'monospace',
           padding: '4px 10px',
           borderRadius: '8px',
-          background: status === 'BREACHED' ? '#fee2e2' : status === 'AT_RISK' ? '#fef3c7' : '#dbeafe'
+          background: status === 'COMPLETED' ? '#d1fae5' :
+                      status === 'BREACHED' ? '#fee2e2' : 
+                      status === 'AT_RISK' ? '#fef3c7' : '#dbeafe'
         }}>
-          {status === 'BREACHED' ? 'BREACHED' : `${Math.round(progress)}% elapsed`}
+          {status === 'COMPLETED' ? 'COMPLETED' : `${Math.round(progress)}% elapsed`}
         </span>
       </div>
 
@@ -149,7 +182,9 @@ const SlaProgress = ({ ticket }) => {
           borderRadius: '12px',
           textAlign: 'center'
         }}>
-          <div style={{ color: '#6b7280', marginBottom: '6px', fontWeight: 600 }}>Elapsed</div>
+          <div style={{ color: '#6b7280', marginBottom: '6px', fontWeight: 600 }}>
+            {isCompleted ? 'Total Time' : 'Elapsed'}
+          </div>
           <div style={{ fontWeight: 800, color: '#111827', fontFamily: 'monospace', fontSize: '16px' }}>
             {formatDuration(metrics.elapsed)}
           </div>
@@ -160,14 +195,16 @@ const SlaProgress = ({ ticket }) => {
           borderRadius: '12px',
           textAlign: 'center'
         }}>
-          <div style={{ color: '#6b7280', marginBottom: '6px', fontWeight: 600 }}>Remaining</div>
+          <div style={{ color: '#6b7280', marginBottom: '6px', fontWeight: 600 }}>
+            {isCompleted ? 'Status' : 'Remaining'}
+          </div>
           <div style={{ 
             fontWeight: 800, 
-            color: progress > 80 ? '#dc2626' : '#111827',
+            color: isCompleted ? '#059669' : progress > 80 ? '#dc2626' : '#111827',
             fontFamily: 'monospace',
             fontSize: '16px'
           }}>
-            {formatDuration(metrics.total - metrics.elapsed)}
+            {isCompleted ? 'Done' : formatDuration(metrics.total - metrics.elapsed)}
           </div>
         </div>
         <div style={{
@@ -176,14 +213,21 @@ const SlaProgress = ({ ticket }) => {
           borderRadius: '12px',
           textAlign: 'center'
         }}>
-          <div style={{ color: '#6b7280', marginBottom: '6px', fontWeight: 600 }}>Deadline</div>
+          <div style={{ color: '#6b7280', marginBottom: '6px', fontWeight: 600 }}>
+            {isCompleted ? 'Completed On' : 'Deadline'}
+          </div>
           <div style={{ fontWeight: 800, color: '#111827', fontFamily: 'monospace', fontSize: '14px' }}>
-            {metrics.deadline.toLocaleDateString()} {metrics.deadline.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            {isCompleted 
+              ? (ticket.closedAt 
+                  ? new Date(ticket.closedAt).toLocaleDateString() + ' ' + new Date(ticket.closedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                  : metrics.deadline.toLocaleDateString() + ' ' + metrics.deadline.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}))
+              : metrics.deadline.toLocaleDateString() + ' ' + metrics.deadline.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            }
           </div>
         </div>
       </div>
 
-      {/* Breached Warning */}
+      {/* Status Messages */}
       {status === 'BREACHED' && (
         <div style={{
           marginTop: '16px',
@@ -200,6 +244,25 @@ const SlaProgress = ({ ticket }) => {
         }}>
           <span>⚠️</span>
           SLA deadline has been breached. This ticket has been escalated to supervisors.
+        </div>
+      )}
+
+      {status === 'COMPLETED' && (
+        <div style={{
+          marginTop: '16px',
+          padding: '12px 16px',
+          background: '#d1fae5',
+          border: '1.5px solid #6ee7b7',
+          borderRadius: '12px',
+          color: '#059669',
+          fontSize: '13px',
+          fontWeight: 600,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <span>✅</span>
+          Ticket resolved within SLA. Great work!
         </div>
       )}
     </div>

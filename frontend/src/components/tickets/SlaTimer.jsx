@@ -4,7 +4,19 @@ const SlaTimer = ({ ticket }) => {
   const [timeLeft, setTimeLeft] = useState(null);
   const [status, setStatus] = useState('ON_TRACK');
 
+  // ✅ Check if ticket is completed (Closed, Resolved, or Repaired)
+  const isCompleted = ['closed', 'resolved', 'repaired'].includes(
+    (ticket.status || '').toLowerCase()
+  );
+
   useEffect(() => {
+    // ✅ Don't run timer for completed tickets
+    if (isCompleted) {
+      setStatus('COMPLETED');
+      setTimeLeft(0);
+      return;
+    }
+
     if (!ticket.slaFirstResponseDue && !ticket.slaResolutionDue) return;
 
     const calculateStatus = () => {
@@ -38,7 +50,7 @@ const SlaTimer = ({ ticket }) => {
     const timer = setInterval(calculateStatus, 1000);
 
     return () => clearInterval(timer);
-  }, [ticket]);
+  }, [ticket, isCompleted]); // ✅ Added isCompleted to dependency array
 
   const formatTime = (ms) => {
     if (ms <= 0) return 'BREACHED';
@@ -55,6 +67,14 @@ const SlaTimer = ({ ticket }) => {
 
   const getStatusStyles = () => {
     switch (status) {
+      case 'COMPLETED': // ✅ New status
+        return { 
+          bg: '#d1fae5', 
+          text: '#059669', 
+          border: '#6ee7b7', 
+          label: 'COMPLETED',
+          dot: '#059669'
+        };
       case 'BREACHED':
         return { 
           bg: '#fee2e2', 
@@ -112,8 +132,9 @@ const SlaTimer = ({ ticket }) => {
       }} />
       <span>{styles.label}</span>
       <span style={{ opacity: 0.5 }}>|</span>
-      <span>{isFirstResponse ? 'Response: ' : 'Resolution: '}</span>
-      <span>{formatTime(timeLeft)}</span>
+      {/* ✅ Show "Done" instead of timer for completed tickets */}
+      <span>{isCompleted ? '' : (isFirstResponse ? 'Response: ' : 'Resolution: ')}</span>
+      <span>{isCompleted ? 'Done' : formatTime(timeLeft)}</span>
       
       <style>{`
         @keyframes pulse {
