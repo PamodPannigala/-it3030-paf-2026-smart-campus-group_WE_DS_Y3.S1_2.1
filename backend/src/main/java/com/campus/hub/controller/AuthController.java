@@ -20,7 +20,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +27,7 @@ import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,12 +35,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controller for handling authentication-related requests including login, signup,
+ * Controller for handling authentication-related requests including login,
+ * signup,
  * and password recovery.
  */
+
 @RestController
 @RequestMapping("/api/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
@@ -48,6 +49,17 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final SecurityContextRepository securityContextRepository;
+
+    public AuthController(AuthenticatedUserResolver authenticatedUserResolver,
+            CampusUserRepository campusUserRepository, PasswordEncoder passwordEncoder,
+            PasswordResetTokenRepository passwordResetTokenRepository,
+            SecurityContextRepository securityContextRepository) {
+        this.authenticatedUserResolver = authenticatedUserResolver;
+        this.campusUserRepository = campusUserRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.securityContextRepository = securityContextRepository;
+    }
 
     /**
      * Retrieves the currently authenticated user's profile information.
@@ -65,14 +77,14 @@ public class AuthController {
                 user.getUsername(),
                 user.getRole(),
                 user.getAuthProvider(),
-                user.getProfilePictureUrl()
-        );
+                user.getProfilePictureUrl());
     }
 
     /**
      * Registers a new user account with the provided details.
      *
-     * @param request the signup request containing name, email, username, and password
+     * @param request the signup request containing name, email, username, and
+     *                password
      * @return the details of the created user
      */
     @PostMapping("/signup")
@@ -107,15 +119,15 @@ public class AuthController {
                 saved.getUsername(),
                 saved.getRole(),
                 saved.getAuthProvider(),
-                saved.getProfilePictureUrl()
-        );
+                saved.getProfilePictureUrl());
     }
 
     /**
      * Authenticates a user using their credentials and starts a security session.
      *
-     * @param request the login request containing username/email and password
-     * @param httpServletRequest the current servlet request
+     * @param request             the login request containing username/email and
+     *                            password
+     * @param httpServletRequest  the current servlet request
      * @param httpServletResponse the current servlet response
      * @return the profile details of the logged-in user
      */
@@ -123,8 +135,7 @@ public class AuthController {
     public AuthUserResponse login(
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpServletRequest,
-            HttpServletResponse httpServletResponse
-    ) {
+            HttpServletResponse httpServletResponse) {
         CampusUser existingUser = resolveUserForPasswordLogin(request.usernameOrEmail());
 
         if (existingUser.getPasswordHash() == null || existingUser.getPasswordHash().isBlank()) {
@@ -138,8 +149,7 @@ public class AuthController {
         Authentication auth = new UsernamePasswordAuthenticationToken(
                 existingUser.getEmail(),
                 null,
-                List.of(new SimpleGrantedAuthority("ROLE_" + existingUser.getRole().name()))
-        );
+                List.of(new SimpleGrantedAuthority("ROLE_" + existingUser.getRole().name())));
 
         SecurityContextImpl context = new SecurityContextImpl();
         context.setAuthentication(auth);
@@ -158,8 +168,7 @@ public class AuthController {
                 existingUser.getUsername(),
                 existingUser.getRole(),
                 existingUser.getAuthProvider(),
-                existingUser.getProfilePictureUrl()
-        );
+                existingUser.getProfilePictureUrl());
     }
 
     /**

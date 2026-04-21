@@ -1,5 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 
+
 const AuthPage = () => {
   const { user, loading, login, logout, refreshUser } = useAuth();
 

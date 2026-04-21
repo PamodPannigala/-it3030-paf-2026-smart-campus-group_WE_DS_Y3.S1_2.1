@@ -5,7 +5,6 @@ import com.campus.hub.entity.CampusUser;
 import com.campus.hub.repository.CampusUserRepository;
 import java.util.Locale;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,10 +12,14 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class AuthenticatedUserResolver {
 
     private final CampusUserRepository campusUserRepository;
+
+    public AuthenticatedUserResolver(CampusUserRepository campusUserRepository) {
+        this.campusUserRepository = campusUserRepository;
+    }
+
 
     public CampusUser resolve(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {

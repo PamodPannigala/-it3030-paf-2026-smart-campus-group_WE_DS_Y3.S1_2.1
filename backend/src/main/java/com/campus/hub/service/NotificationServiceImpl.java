@@ -14,17 +14,11 @@ import com.campus.hub.entity.CampusUser;
 import com.campus.hub.repository.CampusUserRepository;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campus.hub.entity.Role;
 
-/**
- * Implementation of NotificationService providing logic for sending, retrieving,
- * and managing user notifications and preferences.
- */
 @Service
-@RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
@@ -32,46 +26,51 @@ public class NotificationServiceImpl implements NotificationService {
     private final CampusUserRepository campusUserRepository;
     private final EmailService emailService;
 
-    /**
-     * Creates a new notification or broadcasts to a group based on the targetGroup property.
-     *
-     * @param request the create request details
-     * @return the response for specific notifications, or null for broadcasts
-     */
+    // Manual constructor for dependency injection
+    public NotificationServiceImpl(NotificationRepository notificationRepository,
+            NotificationPreferenceRepository preferenceRepository,
+            CampusUserRepository campusUserRepository,
+            EmailService emailService) {
+        this.notificationRepository = notificationRepository;
+        this.preferenceRepository = preferenceRepository;
+        this.campusUserRepository = campusUserRepository;
+        this.emailService = emailService;
+    }
+
     @Override
     @Transactional
     public NotificationResponse create(NotificationCreateRequest request) {
-        if ("SPECIFIC".equalsIgnoreCase(request.targetGroup())) {
+        // Record accessors replaced with standard getters
+        if ("SPECIFIC".equalsIgnoreCase(request.getTargetGroup())) {
             return createSpecific(request);
-        } else if ("ALL_USERS".equalsIgnoreCase(request.targetGroup())) {
+        } else if ("ALL_USERS".equalsIgnoreCase(request.getTargetGroup())) {
             broadcast(request, null);
-            return null; // Controller might need a different return for bulk
-        } else if ("ALL_ADMINS".equalsIgnoreCase(request.targetGroup())) {
+            return null;
+        } else if ("ALL_ADMINS".equalsIgnoreCase(request.getTargetGroup())) {
             broadcast(request, Role.ADMIN);
             return null;
         }
-        throw new IllegalArgumentException("Invalid target group: " + request.targetGroup());
+        throw new IllegalArgumentException("Invalid target group: " + request.getTargetGroup());
     }
 
     private NotificationResponse createSpecific(NotificationCreateRequest request) {
-        if (request.userId() == null) {
+        if (request.getUserId() == null) {
             throw new IllegalArgumentException("userId is required for SPECIFIC target group");
         }
-        CampusUser user = campusUserRepository.findById(request.userId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + request.userId()));
+        CampusUser user = campusUserRepository.findById(request.getUserId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + request.getUserId()));
 
         Notification notification = buildNotification(user, request);
         Notification saved = notificationRepository.save(notification);
-        
-        // Trigger external notifications
+
         triggerExternalNotifications(user, saved);
-        
+
         return toResponse(saved);
     }
 
     private void broadcast(NotificationCreateRequest request, Role targetRole) {
-        List<CampusUser> targets = targetRole == null 
-                ? campusUserRepository.findAll() 
+        List<CampusUser> targets = targetRole == null
+                ? campusUserRepository.findAll()
                 : campusUserRepository.findByRole(targetRole);
 
         List<Notification> batch = new ArrayList<>();
@@ -80,32 +79,28 @@ public class NotificationServiceImpl implements NotificationService {
             batch.add(n);
         }
         List<Notification> savedBatch = notificationRepository.saveAll(batch);
-        
-        // Trigger external (simple loop for broadcast)
+
         for (Notification n : savedBatch) {
             triggerExternalNotifications(n.getUser(), n);
         }
     }
 
     private Notification buildNotification(CampusUser user, NotificationCreateRequest request) {
-        return Notification.builder()
-                .user(user)
-                .category(request.category())
-                .title(request.title().trim())
-                .message(request.message().trim())
-                .isRead(false)
-                .referenceType(request.referenceType().trim())
-                .referenceId(request.referenceId())
-                .build();
+        // Replaced .builder() with manual constructor
+        // Params: id, user, category, title, message, isRead, referenceType,
+        // referenceId, createdAt
+        return new Notification(
+                null,
+                user,
+                request.getCategory(),
+                request.getTitle().trim(),
+                request.getMessage().trim(),
+                false,
+                request.getReferenceType().trim(),
+                request.getReferenceId(),
+                null);
     }
 
-    /**
-     * Retrieves all notifications for a specific user.
-     *
-     * @param userId the ID of the user
-     * @param unreadOnly if true, only unread notifications are returned
-     * @return a list of notification responses
-     */
     @Override
     @Transactional(readOnly = true)
     public List<NotificationResponse> getNotificationsForUser(Long userId, boolean unreadOnly) {
@@ -152,12 +147,6 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
 
-    /**
-     * Retrieves the notification preferences for a specific user.
-     *
-     * @param userId the ID of the user
-     * @return the user's notification preferences
-     */
     @Override
     @Transactional(readOnly = true)
     public NotificationPreferenceResponse getPreferences(Long userId) {
@@ -172,13 +161,20 @@ public class NotificationServiceImpl implements NotificationService {
         validateUserExists(userId);
         NotificationPreference preference = getOrCreatePreference(userId);
 
-        if (request.systemEnabled() != null) preference.setSystemEnabled(request.systemEnabled());
-        if (request.bookingEnabled() != null) preference.setBookingEnabled(request.bookingEnabled());
-        if (request.facilityEnabled() != null) preference.setFacilityEnabled(request.facilityEnabled());
-        if (request.ticketStatusEnabled() != null) preference.setTicketStatusEnabled(request.ticketStatusEnabled());
-        if (request.ticketCommentEnabled() != null) preference.setTicketCommentEnabled(request.ticketCommentEnabled());
-        if (request.emailEnabled() != null) preference.setEmailEnabled(request.emailEnabled());
-        if (request.pushEnabled() != null) preference.setPushEnabled(request.pushEnabled());
+        if (request.getSystemEnabled() != null)
+            preference.setSystemEnabled(request.getSystemEnabled());
+        if (request.getBookingEnabled() != null)
+            preference.setBookingEnabled(request.getBookingEnabled());
+        if (request.getFacilityEnabled() != null)
+            preference.setFacilityEnabled(request.getFacilityEnabled());
+        if (request.getTicketStatusEnabled() != null)
+            preference.setTicketStatusEnabled(request.getTicketStatusEnabled());
+        if (request.getTicketCommentEnabled() != null)
+            preference.setTicketCommentEnabled(request.getTicketCommentEnabled());
+        if (request.getEmailEnabled() != null)
+            preference.setEmailEnabled(request.getEmailEnabled());
+        if (request.getPushEnabled() != null)
+            preference.setPushEnabled(request.getPushEnabled());
 
         NotificationPreference saved = preferenceRepository.save(preference);
         return toPreferenceResponse(saved);
@@ -193,17 +189,18 @@ public class NotificationServiceImpl implements NotificationService {
                 notification.isRead(),
                 notification.getReferenceType(),
                 notification.getReferenceId(),
-                notification.getCreatedAt()
-        );
+                notification.getCreatedAt());
     }
 
     private void triggerExternalNotifications(CampusUser user, Notification notification) {
         NotificationPreference preference = preferenceRepository.findByUserId(user.getId()).orElse(null);
-        if (preference == null) return;
+        if (preference == null)
+            return;
 
         if (preference.isEmailEnabled() && isNotificationCategoryEnabled(user, notification.getCategory())) {
-            String body = String.format("Hello %s,\n\nYou have a new notification: %s\n\n%s\n\nBest regards,\nSmart Campus Team", 
-                user.getFullName(), notification.getTitle(), notification.getMessage());
+            String body = String.format(
+                    "Hello %s,\n\nYou have a new notification: %s\n\n%s\n\nBest regards,\nSmart Campus Team",
+                    user.getFullName(), notification.getTitle(), notification.getMessage());
             emailService.sendEmail(user.getEmail(), "Smart Campus Notification: " + notification.getTitle(), body);
         }
     }
@@ -216,8 +213,7 @@ public class NotificationServiceImpl implements NotificationService {
                 preference.isTicketStatusEnabled(),
                 preference.isTicketCommentEnabled(),
                 preference.isEmailEnabled(),
-                preference.isPushEnabled()
-        );
+                preference.isPushEnabled());
     }
 
     private void validateUserExists(Long userId) {
@@ -231,16 +227,21 @@ public class NotificationServiceImpl implements NotificationService {
                 .orElseGet(() -> {
                     CampusUser user = campusUserRepository.findById(userId)
                             .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
-                    NotificationPreference defaults = NotificationPreference.builder()
-                            .user(user)
-                            .systemEnabled(true)
-                            .bookingEnabled(true)
-                            .facilityEnabled(true)
-                            .ticketStatusEnabled(true)
-                            .ticketCommentEnabled(true)
-                            .emailEnabled(false)
-                            .pushEnabled(false)
-                            .build();
+
+                    // Replaced .builder() with manual constructor
+                    // Params: id, user, system, booking, facility, ticketStatus, ticketComment,
+                    // email, push
+                    NotificationPreference defaults = new NotificationPreference(
+                            null,
+                            user,
+                            true, // systemEnabled
+                            true, // bookingEnabled
+                            true, // facilityEnabled
+                            true, // ticketStatusEnabled
+                            true, // ticketCommentEnabled
+                            false, // emailEnabled
+                            false // pushEnabled
+                    );
                     return preferenceRepository.save(defaults);
                 });
     }

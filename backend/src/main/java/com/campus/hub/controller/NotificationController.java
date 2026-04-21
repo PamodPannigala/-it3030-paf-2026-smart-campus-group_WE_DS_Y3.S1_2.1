@@ -10,7 +10,6 @@ import com.campus.hub.entity.CampusUser;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -30,11 +29,16 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/notifications")
-@RequiredArgsConstructor
 public class NotificationController {
 
     private final NotificationService notificationService;
     private final AuthenticatedUserResolver authenticatedUserResolver;
+
+    public NotificationController(NotificationService notificationService, AuthenticatedUserResolver authenticatedUserResolver) {
+        this.notificationService = notificationService;
+        this.authenticatedUserResolver = authenticatedUserResolver;
+    }
+
 
     /**
      * Creates a new notification (Admin only).

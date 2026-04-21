@@ -5,12 +5,10 @@ import com.campus.hub.repository.NotificationPreferenceRepository;
 import com.campus.hub.repository.NotificationRepository;
 import com.campus.hub.repository.SupportRequestRepository;
 import com.campus.hub.repository.CampusUserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class AccountDeletionServiceImpl implements AccountDeletionService {
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -18,6 +16,15 @@ public class AccountDeletionServiceImpl implements AccountDeletionService {
     private final NotificationPreferenceRepository notificationPreferenceRepository;
     private final SupportRequestRepository supportRequestRepository;
     private final CampusUserRepository campusUserRepository;
+
+    public AccountDeletionServiceImpl(PasswordResetTokenRepository passwordResetTokenRepository, NotificationRepository notificationRepository, NotificationPreferenceRepository notificationPreferenceRepository, SupportRequestRepository supportRequestRepository, CampusUserRepository campusUserRepository) {
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.notificationRepository = notificationRepository;
+        this.notificationPreferenceRepository = notificationPreferenceRepository;
+        this.supportRequestRepository = supportRequestRepository;
+        this.campusUserRepository = campusUserRepository;
+    }
+
 
     @Override
     @Transactional

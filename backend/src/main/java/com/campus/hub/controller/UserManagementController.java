@@ -6,7 +6,6 @@ import com.campus.hub.dto.UserSummaryResponse;
 import com.campus.hub.service.UserManagementService;
 import jakarta.validation.Valid;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,10 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/users")
-@RequiredArgsConstructor
 public class UserManagementController {
 
     private final UserManagementService userManagementService;
+
+    public UserManagementController(UserManagementService userManagementService) {
+        this.userManagementService = userManagementService;
+    }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -44,6 +46,7 @@ public class UserManagementController {
             @PathVariable Long userId,
             @Valid @RequestBody RoleUpdateRequest request
     ) {
-        return userManagementService.updateRole(userId, request.role());
+        // Changed request.role() to request.getRole()
+        return userManagementService.updateRole(userId, request.getRole());
     }
 }

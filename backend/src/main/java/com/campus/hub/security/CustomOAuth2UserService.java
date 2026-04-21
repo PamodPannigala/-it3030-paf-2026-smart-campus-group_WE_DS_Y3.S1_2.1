@@ -6,7 +6,6 @@ import com.campus.hub.repository.CampusUserRepository;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -20,10 +19,14 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final CampusUserRepository campusUserRepository;
+
+    public CustomOAuth2UserService(CampusUserRepository campusUserRepository) {
+        this.campusUserRepository = campusUserRepository;
+    }
+
     private final DefaultOAuth2UserService delegate = new DefaultOAuth2UserService();
 
     @Value("${app.seed.admin-email:}")

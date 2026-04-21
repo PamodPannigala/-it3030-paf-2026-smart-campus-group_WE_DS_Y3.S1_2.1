@@ -13,17 +13,24 @@ import com.campus.hub.entity.CampusUser;
 import com.campus.hub.entity.Role;
 import com.campus.hub.repository.CampusUserRepository;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class SupportRequestServiceImpl implements SupportRequestService {
 
     private final SupportRequestRepository supportRequestRepository;
     private final CampusUserRepository campusUserRepository;
     private final NotificationService notificationService;
+
+    // Manual constructor for Dependency Injection
+    public SupportRequestServiceImpl(SupportRequestRepository supportRequestRepository,
+            CampusUserRepository campusUserRepository,
+            NotificationService notificationService) {
+        this.supportRequestRepository = supportRequestRepository;
+        this.campusUserRepository = campusUserRepository;
+        this.notificationService = notificationService;
+    }
 
     @Override
     @Transactional
@@ -31,12 +38,18 @@ public class SupportRequestServiceImpl implements SupportRequestService {
         CampusUser user = campusUserRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
 
-        SupportRequest entity = SupportRequest.builder()
-                .user(user)
-                .subject(request.subject().trim())
-                .description(request.description().trim())
-                .status(SupportRequestStatus.OPEN)
-                .build();
+        // Replaced .builder() with the manual constructor
+        // Parameters: id, user, subject, description, status, adminNotes, createdAt,
+        // updatedAt
+        SupportRequest entity = new SupportRequest(
+                null,
+                user,
+                request.getSubject().trim(), // Updated to getter
+                request.getDescription().trim(), // Updated to getter
+                SupportRequestStatus.OPEN,
+                null,
+                null,
+                null);
 
         SupportRequest saved = supportRequestRepository.save(entity);
 
@@ -52,8 +65,7 @@ public class SupportRequestServiceImpl implements SupportRequestService {
                     "New support request",
                     user.getFullName() + " submitted: " + preview,
                     "SUPPORT_REQUEST",
-                    String.valueOf(saved.getId())
-            ));
+                    String.valueOf(saved.getId())));
         }
 
         return toResponse(saved);
@@ -80,18 +92,19 @@ public class SupportRequestServiceImpl implements SupportRequestService {
     @Override
     @Transactional
     public SupportRequestResponse updateByAdmin(Long requestId, SupportRequestAdminUpdateRequest request) {
-        if (request.status() == null && (request.adminNotes() == null || request.adminNotes().isBlank())) {
+        // Updated record-style calls to getters
+        if (request.getStatus() == null && (request.getAdminNotes() == null || request.getAdminNotes().isBlank())) {
             throw new IllegalArgumentException("Provide status and/or admin notes to update");
         }
 
         SupportRequest entity = supportRequestRepository.findById(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Support request not found with id: " + requestId));
 
-        if (request.status() != null) {
-            entity.setStatus(request.status());
+        if (request.getStatus() != null) {
+            entity.setStatus(request.getStatus());
         }
-        if (request.adminNotes() != null) {
-            entity.setAdminNotes(request.adminNotes().trim());
+        if (request.getAdminNotes() != null) {
+            entity.setAdminNotes(request.getAdminNotes().trim());
         }
 
         SupportRequest saved = supportRequestRepository.save(entity);
@@ -109,8 +122,7 @@ public class SupportRequestServiceImpl implements SupportRequestService {
                 "Update on your support request",
                 body,
                 "SUPPORT_REQUEST",
-                String.valueOf(saved.getId())
-        ));
+                String.valueOf(saved.getId())));
 
         return toResponse(saved);
     }
@@ -125,8 +137,6 @@ public class SupportRequestServiceImpl implements SupportRequestService {
                 entity.getStatus(),
                 entity.getAdminNotes(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
-        );
+                entity.getUpdatedAt());
     }
 }
-

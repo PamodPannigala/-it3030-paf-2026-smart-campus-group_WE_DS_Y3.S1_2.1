@@ -69,6 +69,21 @@ const StaffShell = ({ children }) => {
           )}
           {isAdmin ? (
             <li>
+              <NavLink to="/admin/inventory" className={linkClass}>
+                <Building className="staff-menu-icon" aria-hidden />
+                <span className="label">Inventory management</span>
+              </NavLink>
+            </li>
+          ) : (
+            <li className="disabled" title="Administrators only">
+              <span>
+                <Building className="staff-menu-icon" aria-hidden />
+                <span className="label">Inventory management</span>
+              </span>
+            </li>
+          )}
+          {isAdmin ? (
+            <li>
               <NavLink to="/admin/bookings" className={linkClass}>
                 <Calendar className="staff-menu-icon" aria-hidden />
                 <span className="label">Booking management</span>

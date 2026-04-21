@@ -8,7 +8,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.Locale;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,12 +18,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/profile")
-@RequiredArgsConstructor
 public class ProfileController {
 
     private final AuthenticatedUserResolver authenticatedUserResolver;
     private final CampusUserRepository campusUserRepository;
     private final AccountDeletionService accountDeletionService;
+
+    public ProfileController(AuthenticatedUserResolver authenticatedUserResolver, CampusUserRepository campusUserRepository, AccountDeletionService accountDeletionService) {
+        this.authenticatedUserResolver = authenticatedUserResolver;
+        this.campusUserRepository = campusUserRepository;
+        this.accountDeletionService = accountDeletionService;
+    }
+
 
     public record ProfileUpdateRequest(
             @NotBlank(message = "fullName is required")
