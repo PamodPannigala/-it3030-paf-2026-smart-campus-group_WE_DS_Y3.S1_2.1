@@ -15,18 +15,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,7 +47,6 @@ public class AuthController {
     private final CampusUserRepository campusUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository;
 
     /**
@@ -132,8 +131,14 @@ public class AuthController {
             throw new IllegalArgumentException("This account uses Google login. Continue with Google.");
         }
 
-        Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(existingUser.getEmail(), request.password())
+        if (!passwordEncoder.matches(request.password(), existingUser.getPasswordHash())) {
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                existingUser.getEmail(),
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_" + existingUser.getRole().name()))
         );
 
         SecurityContextImpl context = new SecurityContextImpl();

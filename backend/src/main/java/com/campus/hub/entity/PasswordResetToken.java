@@ -1,6 +1,4 @@
 package com.campus.hub.entity;
-
-import com.campus.hub.entity.CampusUser;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

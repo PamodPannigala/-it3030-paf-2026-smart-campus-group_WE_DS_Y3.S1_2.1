@@ -3,7 +3,6 @@ package com.campus.hub.service;
 import com.campus.hub.exception.EntityNotFoundException;
 import com.campus.hub.dto.NotificationCreateRequest;
 import com.campus.hub.entity.NotificationCategory;
-import com.campus.hub.service.NotificationService;
 import com.campus.hub.dto.SupportRequestAdminUpdateRequest;
 import com.campus.hub.dto.SupportRequestCreateRequest;
 import com.campus.hub.dto.SupportRequestResponse;
@@ -42,7 +41,7 @@ public class SupportRequestServiceImpl implements SupportRequestService {
         SupportRequest saved = supportRequestRepository.save(entity);
 
         String preview = saved.getSubject().length() > 80
-                ? saved.getSubject().substring(0, 80) + "…"
+                ? saved.getSubject().substring(0, 80) + "..."
                 : saved.getSubject();
 
         for (CampusUser admin : campusUserRepository.findByRole(Role.ADMIN)) {
@@ -130,3 +129,4 @@ public class SupportRequestServiceImpl implements SupportRequestService {
         );
     }
 }
+
