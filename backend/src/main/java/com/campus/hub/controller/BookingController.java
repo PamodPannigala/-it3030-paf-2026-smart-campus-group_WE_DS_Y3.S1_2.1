@@ -28,13 +28,13 @@ public class BookingController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
-    
+
     // Check for conflicts
     @GetMapping("/check-conflict")
     public ResponseEntity<?> checkConflict(@RequestParam Long resourceId,
-                                           @RequestParam String date,
-                                           @RequestParam String startTime,
-                                           @RequestParam String endTime) {
+            @RequestParam String date,
+            @RequestParam String startTime,
+            @RequestParam String endTime) {
         boolean hasConflict = bookingService.checkConflict(resourceId, date, startTime, endTime);
         return ResponseEntity.ok(Map.of("conflicts", hasConflict ? List.of("Conflict found") : List.of()));
     }
@@ -104,27 +104,25 @@ public class BookingController {
         try {
             byte[] qrImage = bookingService.generateQRCodeImage(id);
             return ResponseEntity.ok()
-                .contentType(org.springframework.http.MediaType.IMAGE_PNG)
-                .body(qrImage);
+                    .contentType(org.springframework.http.MediaType.IMAGE_PNG)
+                    .body(qrImage);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
-    
+
     // Verify check-in (called by scanner)
     @PostMapping("/verify-checkin")
     public ResponseEntity<?> verifyCheckin(@RequestBody Map<String, String> payload) {
         try {
             String qrData = payload.get("qrData");
             Booking booking = bookingService.verifyAndCheckin(qrData);
-            BookingResponseDTO bookingDTO = bookingService.convertToDTO(booking); 
             return ResponseEntity.ok(Map.of(
-                "message", "Check-in successful",
-                "bookingId", booking.getId(),
-                "resourceName", booking.getResourceId(),
-                "checkedInAt", booking.getCheckedInAt().toString(),
-                "checkedIn", booking.isCheckedIn()
-            ));
+                    "message", "Check-in successful",
+                    "bookingId", booking.getId(),
+                    "resourceName", booking.getResourceId(),
+                    "checkedInAt", booking.getCheckedInAt().toString(),
+                    "checkedIn", booking.isCheckedIn()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }

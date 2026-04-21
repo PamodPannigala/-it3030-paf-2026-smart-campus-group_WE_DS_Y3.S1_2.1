@@ -5,7 +5,6 @@ import com.campus.hub.dto.TicketRequestDTO;
 import com.campus.hub.dto.TicketResponseDTO;
 import com.campus.hub.entity.Technician;
 import com.campus.hub.entity.Ticket;
-import com.campus.hub.entity.Comment;
 import com.campus.hub.entity.TicketStatus;
 import com.campus.hub.repository.CommentRepository;
 import com.campus.hub.repository.TechnicianRepository;
@@ -34,13 +33,13 @@ public class TicketService {
     private final SlaService slaService;
 
     public TicketService(TicketRepository ticketRepository,
-                         TechnicianRepository technicianRepository,
-                         CommentRepository commentRepository,
-                         SlaService slaService) {  // ✅ NEW parameter
+            TechnicianRepository technicianRepository,
+            CommentRepository commentRepository,
+            SlaService slaService) { // ✅ NEW parameter
         this.ticketRepository = ticketRepository;
         this.technicianRepository = technicianRepository;
         this.commentRepository = commentRepository;
-        this.slaService = slaService;  // ✅ NEW
+        this.slaService = slaService; // ✅ NEW
     }
 
     // =========================
@@ -49,7 +48,8 @@ public class TicketService {
     private List<String> saveFiles(List<MultipartFile> files) throws IOException {
 
         List<String> urls = new ArrayList<>();
-        if (files == null || files.isEmpty()) return urls;
+        if (files == null || files.isEmpty())
+            return urls;
 
         Path uploadPath = Paths.get("uploads");
 
@@ -59,7 +59,8 @@ public class TicketService {
 
         for (MultipartFile file : files) {
 
-            if (file.isEmpty()) continue;
+            if (file.isEmpty())
+                continue;
 
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
             Path filePath = uploadPath.resolve(fileName);
@@ -165,9 +166,9 @@ public class TicketService {
     public List<TicketResponseDTO> getTicketsByTechnician(String email) {
         Technician technician = technicianRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Technician not found with email: " + email));
-        
+
         List<Ticket> tickets = ticketRepository.findByAssignedTechnician(technician.getName());
-        
+
         return tickets.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -211,8 +212,7 @@ public class TicketService {
             String category,
             String contactNumber,
             LocalDateTime incidentDate,
-            List<MultipartFile> attachments
-    ) throws IOException {
+            List<MultipartFile> attachments) throws IOException {
 
         Ticket ticket = new Ticket();
 
@@ -252,8 +252,7 @@ public class TicketService {
             String category,
             String contactNumber,
             LocalDateTime incidentDate,
-            List<MultipartFile> attachments
-    ) throws IOException {
+            List<MultipartFile> attachments) throws IOException {
 
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
@@ -322,8 +321,7 @@ public class TicketService {
             String technician,
             String rejectionReason,
             String role,
-            String userName
-    ) {
+            String userName) {
 
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
@@ -371,20 +369,20 @@ public class TicketService {
         if (reporterEmail == null || reporterEmail.trim().isEmpty()) {
             throw new RuntimeException("Reporter email is required");
         }
-        
+
         Ticket ticket = ticketRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Ticket not found"));
-        
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
         String normalizedEmail = reporterEmail.trim();
         String ticketEmail = ticket.getReporterEmail() != null ? ticket.getReporterEmail().trim() : "";
-        
+
         if (!ticketEmail.equalsIgnoreCase(normalizedEmail)) {
             throw new RuntimeException("You can only delete your own tickets");
         }
-        
+
         // Delete comments first (works whether 0 or many comments)
         commentRepository.deleteByTicketId(id);
-        
+
         // Delete the ticket
         ticketRepository.delete(ticket);
     }

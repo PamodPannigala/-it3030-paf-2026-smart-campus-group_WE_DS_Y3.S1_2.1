@@ -56,7 +56,7 @@ function App() {
             <Route path="/my-bookings" element={<MyBookings />} />
             <Route path="/admin/bookings" element={<AdminBookings />} />
             <Route path="/admin/checkin" element={<QRScanner />} />
-</Routes>
+    </Routes>
         </div>
       </div>
     </div>
