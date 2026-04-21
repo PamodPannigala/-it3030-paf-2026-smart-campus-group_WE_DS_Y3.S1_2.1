@@ -31,7 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-# Local Maven caches used only for this machine/session
-.m2repo/
-.mvn-home/

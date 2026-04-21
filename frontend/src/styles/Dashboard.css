@@ -1,0 +1,38 @@
+/* Report Excel Premium Download Button */
+.btn-download-pro {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px;
+  background: linear-gradient(
+    135deg,
+    #1d976c,
+    #93f9b9
+  ); /* Excel Green Gradient */
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  border: none;
+  border-radius: 15px; /* Capsule Shape */
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(29, 151, 108, 0.3);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-decoration: none;
+}
+
+/* Hover Effect */
+.btn-download-pro:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 8px 25px rgba(29, 151, 108, 0.5);
+  color: #fff;
+}
+
+/* Icon Animation inside button */
+.btn-download-pro i {
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+.btn-download-pro:hover i {
+  transform: translateY(2px);
+}
