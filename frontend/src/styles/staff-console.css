@@ -1,0 +1,297 @@
+/* Staff / admin console — sidebar + main (inspired layout, campus palette) */
+.staff-console-root {
+  min-height: 100vh;
+  display: flex;
+  background: var(--ch-ice);
+}
+
+.staff-sidebar {
+  width: 88px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--ch-navy) 0%, #0f1f3d 100%);
+  color: var(--ch-white);
+  transition: width 0.28s ease;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex-shrink: 0;
+  box-shadow: 4px 0 24px rgba(10, 20, 40, 0.25);
+  z-index: 40;
+}
+
+.staff-sidebar:hover {
+  width: 248px;
+}
+
+.staff-sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 88px;
+}
+
+.staff-sidebar-mark {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--ch-blue) 0%, #00a8e8 100%);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--ch-white);
+  box-shadow: 0 4px 16px rgba(0, 119, 182, 0.45);
+  flex-shrink: 0;
+}
+
+.staff-sidebar-title {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  transition: opacity 0.2s ease;
+}
+
+.staff-sidebar:hover .staff-sidebar-title {
+  opacity: 1;
+  max-width: 160px;
+  margin-left: 0.75rem;
+}
+
+.staff-menu {
+  list-style: none;
+  padding: 0.75rem 0;
+  margin: 0;
+}
+
+.staff-menu li {
+  margin: 0.15rem 0;
+}
+
+.staff-menu a,
+.staff-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1.1rem;
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: background 0.2s ease, color 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.staff-menu a:hover,
+.staff-menu button:hover {
+  background: rgba(0, 119, 182, 0.2);
+  color: var(--ch-white);
+}
+
+.staff-menu a.active,
+.staff-menu a[aria-current="page"] {
+  background: rgba(0, 119, 182, 0.35);
+  border-left-color: var(--ch-yellow);
+  color: var(--ch-white);
+}
+
+.staff-menu-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  opacity: 0.95;
+}
+
+.staff-menu span.label {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: opacity 0.15s ease;
+}
+
+.staff-sidebar:hover .staff-menu span.label {
+  opacity: 1;
+  max-width: 200px;
+}
+
+.staff-menu li.disabled > span {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1.1rem;
+  color: rgba(255, 255, 255, 0.35);
+  border-left: 3px solid transparent;
+}
+
+.staff-main {
+  flex: 1;
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+}
+
+.staff-main-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.staff-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid var(--ch-border);
+}
+
+.staff-page-header .kicker {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ch-blue);
+  font-weight: 600;
+}
+
+.staff-page-header h1 {
+  margin: 0.2rem 0 0;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 700;
+  color: var(--ch-navy);
+}
+
+.staff-page-header .sub {
+  margin: 0.35rem 0 0;
+  color: var(--ch-muted);
+  max-width: 52ch;
+  font-size: 0.95rem;
+}
+
+/* Stat / overview cards */
+.staff-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.staff-stat-card {
+  background: linear-gradient(135deg, var(--ch-blue) 0%, #0096d6 55%, #00b4d8 100%);
+  color: var(--ch-white);
+  padding: 1.35rem 1.5rem;
+  border-radius: var(--ch-radius);
+  box-shadow: var(--ch-shadow);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.staff-stat-card::after {
+  content: "";
+  position: absolute;
+  right: -20%;
+  top: -40%;
+  width: 55%;
+  height: 120%;
+  background: radial-gradient(circle, rgba(255, 214, 10, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.staff-stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(0, 119, 182, 0.35);
+}
+
+.staff-stat-card.alt {
+  background: linear-gradient(135deg, var(--ch-orange) 0%, #ffaa33 100%);
+}
+
+.staff-stat-card.alt::after {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+}
+
+.staff-stat-card.dark {
+  background: linear-gradient(135deg, var(--ch-navy) 0%, #152a50 100%);
+}
+
+.staff-stat-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.92;
+  position: relative;
+  z-index: 1;
+}
+
+.staff-stat-card p {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+}
+
+.staff-action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.staff-action-card {
+  background: var(--ch-white);
+  border-radius: var(--ch-radius);
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(10, 20, 40, 0.06);
+  border: 1px solid var(--ch-border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.staff-action-card:hover {
+  border-color: rgba(0, 119, 182, 0.35);
+  box-shadow: 0 8px 28px rgba(0, 119, 182, 0.12);
+}
+
+.staff-action-card h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: var(--ch-navy);
+}
+
+.staff-action-card p {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: var(--ch-muted);
+}
+
+.staff-pill {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(255, 149, 0, 0.15);
+  color: #c60;
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .staff-sidebar {
+    width: 72px;
+  }
+  .staff-sidebar:hover {
+    width: 220px;
+  }
+}

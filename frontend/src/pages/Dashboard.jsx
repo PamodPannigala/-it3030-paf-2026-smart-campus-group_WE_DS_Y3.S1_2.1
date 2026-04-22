@@ -42,7 +42,7 @@ const Dashboard = () => {
       try {
         //Old Analytics API (for Cards)
         const analyticsResponse = await axios.get(
-          "http://localhost:8080/api/resources/analytics",
+          "http://localhost:8082/api/resources/analytics",
         );
         setTotalResources(analyticsResponse.data.totalResources);
         setAvailable(analyticsResponse.data.availableResources);
@@ -50,7 +50,7 @@ const Dashboard = () => {
 
         //New Resources API එක (for Charts)
         const resourcesResponse = await axios.get(
-          "http://localhost:8080/api/resources",
+          "http://localhost:8082/api/resources",
         );
         setResources(resourcesResponse.data);
       } catch (err) {
