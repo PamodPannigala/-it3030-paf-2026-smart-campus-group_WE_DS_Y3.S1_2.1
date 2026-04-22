@@ -8,7 +8,7 @@ const PublicResourceView = () => {
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE = "http://192.168.1.100:8080";
+  const API_BASE = "http://10.155.45.1:8082";
 
   useEffect(() => {
     axios
@@ -312,7 +312,7 @@ const PublicResourceView = () => {
                   ADMIN CONTROLS
                 </p>
                 <button
-                  onClick={() => navigate(`/inventory?editId=${id}`)}
+                  onClick={() => navigate(`/admin/inventory?editId=${id}`)}
                   className="btn btn-light w-100 py-2 border-0"
                   style={{
                     backgroundColor: "#F2F3FF",

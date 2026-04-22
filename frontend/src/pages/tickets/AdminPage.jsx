@@ -53,7 +53,7 @@ import {
   Area
 } from 'recharts';
 
-const BACKEND_URL = "http://localhost:8080";
+const BACKEND_URL = "http://localhost:8082";
 
 // Professional color palette
 const COLORS = {

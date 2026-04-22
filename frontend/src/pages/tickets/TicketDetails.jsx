@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import SlaProgress from "../../components/tickets/SlaProgress"; // ✅ NEW
 
-const BACKEND_URL = "http://localhost:8080";
+const BACKEND_URL = "http://localhost:8082";
 
 export default function TicketDetails() {
   const { ticketId } = useParams();

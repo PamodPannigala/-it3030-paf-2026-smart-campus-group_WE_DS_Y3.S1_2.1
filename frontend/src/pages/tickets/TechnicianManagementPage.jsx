@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-const BACKEND_URL = "http://localhost:8080";
+const BACKEND_URL = "http://localhost:8082";
 
 // Status configuration for consistent styling
 const STATUS_CONFIG = {

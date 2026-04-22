@@ -63,7 +63,7 @@ export default function TicketSuccessPage() {
         </p>
         <button
           className="btn"
-          onClick={() => navigate("/support")}
+          onClick={() => navigate("/support-home")}
         >
           OK
         </button>

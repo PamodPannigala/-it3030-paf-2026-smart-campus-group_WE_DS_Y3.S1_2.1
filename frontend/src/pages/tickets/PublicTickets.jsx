@@ -36,7 +36,7 @@ export default function PublicTickets() {
   const fetchTickets = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:8080/api/tickets");
+      const res = await axios.get("http://localhost:8082/api/tickets");
       setTickets(res.data || []);
     } catch (error) {
       console.error("Error fetching public tickets", error);

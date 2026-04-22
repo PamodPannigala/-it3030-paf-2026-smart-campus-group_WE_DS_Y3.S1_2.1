@@ -18,7 +18,7 @@ const ResourceCataloguePage = () => {
   const navigate = useNavigate();
 
   // Define the Backend Base URL to handle relative image paths
-  const BACKEND_BASE_URL = "http://localhost:8080";
+  const BACKEND_BASE_URL = "http://localhost:8082";
 
   useEffect(() => {
     const fetchResources = async () => {
@@ -153,7 +153,6 @@ const ResourceCataloguePage = () => {
           </div>
         </div>
       </header>
-
       <main className="container pb-5">
         <div className="glass-card p-2 shadow-sm filter-card mb-5">
           <div className="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
@@ -379,32 +378,7 @@ const ResourceCataloguePage = () => {
           </div>
         )}
       </main>
-
-      <footer className="bg-navy text-white pt-5 pb-4">
-        <div className="container">
-          <div className="row g-5 pb-4 border-bottom border-secondary border-opacity-25">
-            <div className="col-lg-5">
-              <h5 className="fw-bold mb-3">
-                <i className="bi bi-grid-3x3-gap-fill text-blue me-2"></i>
-                University Asset Hub
-              </h5>
-              <p
-                className="text-white-50 mb-4"
-                style={{ fontSize: "13.5px", maxWidth: "360px" }}
-              >
-                Seamless discovery and reservation of academic resources.
-              </p>
-            </div>
-            <div className="col-lg-2">
-              <h6 className="small fw-bold text-white-50 mb-3">EXPLORE</h6>
-              <ul className="list-unstyled small text-white-50">
-                <li className="mb-2">Lab Assets</li>
-                <li className="mb-2">Digital Licenses</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </footer>
+      //footer can be added here if needed in the future
     </div>
   );
 };
