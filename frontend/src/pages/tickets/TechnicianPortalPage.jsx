@@ -55,6 +55,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import SlaTimer from "../../components/tickets/SlaTimer";
 
 const BACKEND_URL = "http://localhost:8082";
 
@@ -312,10 +313,35 @@ export default function TechnicianPortalPage() {
     };
   }, [tickets]);
 
+  // ✅ NEW: Helper to check if ticket has SLA alert (BREACHED or AT_RISK)
+  const isSlaAlert = (ticket) => {
+    if (!ticket.slaFirstResponseDue && !ticket.slaResolutionDue) return false;
+    
+    const isCompleted = ['closed', 'resolved', 'repaired'].includes(
+      (ticket.status || '').toLowerCase()
+    );
+    if (isCompleted) return false;
+
+    const now = new Date();
+    const created = new Date(ticket.createdAt);
+    const target = ticket.firstResponseAt 
+      ? new Date(ticket.slaResolutionDue) 
+      : new Date(ticket.slaFirstResponseDue);
+    
+    if (now > target) return true; // BREACHED
+    
+    const total = target - created;
+    const elapsed = now - created;
+    const percent = (elapsed / total) * 100;
+    
+    return percent > 80; // AT_RISK
+  };
+
   // Filter tickets
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
       const matchesStatus = statusFilter === "all" ? true : 
+        statusFilter === "SLA_ALERT" ? isSlaAlert(t) :
         t.status?.replace("_", " ") === statusFilter?.replace("_", " ");
       const searchLower = search.toLowerCase().trim();
       const blob = [
@@ -1741,6 +1767,28 @@ export default function TechnicianPortalPage() {
                   {status === "all" ? "All" : status}
                 </button>
               ))}
+              {/* ✅ NEW: SLA Alert filter button */}
+              <button
+                onClick={() => setStatusFilter("SLA_ALERT")}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "999px",
+                  border: "none",
+                  fontSize: "12px",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  background: statusFilter === "SLA_ALERT" ? "#dc2626" : "#fef2f2",
+                  color: statusFilter === "SLA_ALERT" ? "#ffffff" : "#dc2626",
+                  transition: "all 0.2s",
+                  whiteSpace: "nowrap",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px"
+                }}
+              >
+                <AlertCircle size={14} />
+                SLA Alert
+              </button>
             </div>
             <div style={{ position: "relative" }}>
               <Search size={18} style={{
@@ -1836,9 +1884,14 @@ export default function TechnicianPortalPage() {
                         <StatusIcon size={12} />
                         {style.label}
                       </span>
-                      <span style={{ fontSize: "12px", color: COLORS.text.muted }}>
-                        {formatDateTime(ticket.createdAt)}
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        {ticket.slaFirstResponseDue && (
+                          <SlaTimer ticket={ticket} />
+                        )}
+                        <span style={{ fontSize: "12px", color: COLORS.text.muted }}>
+                          {formatDateTime(ticket.createdAt)}
+                        </span>
+                      </div>
                     </div>
                     <h4 style={{
                       margin: "0 0 4px 0",
@@ -1894,6 +1947,26 @@ export default function TechnicianPortalPage() {
                   marginBottom: "16px"
                 }}>
                   <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "12px" }}>
+                      {selectedTicket.slaFirstResponseDue && (
+                        <SlaTimer ticket={selectedTicket} />
+                      )}
+                      <span style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: currentStatusStyle.gradient,
+                        color: currentStatusStyle.color,
+                        padding: "8px 16px",
+                        borderRadius: "999px",
+                        fontSize: "13px",
+                        fontWeight: "700",
+                        border: `1px solid ${currentStatusStyle.border}`
+                      }}>
+                        {React.createElement(currentStatusStyle.icon, { size: 14 })}
+                        {currentStatusStyle.label}
+                      </span>
+                    </div>
                     <h2 style={{
                       margin: "0 0 8px 0",
                       fontSize: "24px",
@@ -1911,21 +1984,6 @@ export default function TechnicianPortalPage() {
                       Reported by <strong>{selectedTicket.reporterName}</strong> • {formatDateTime(selectedTicket.createdAt)}
                     </p>
                   </div>
-                  <span style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    background: currentStatusStyle.gradient,
-                    color: currentStatusStyle.color,
-                    padding: "8px 16px",
-                    borderRadius: "999px",
-                    fontSize: "13px",
-                    fontWeight: "700",
-                    border: `1px solid ${currentStatusStyle.border}`
-                  }}>
-                    {React.createElement(currentStatusStyle.icon, { size: 14 })}
-                    {currentStatusStyle.label}
-                  </span>
                 </div>
 
                 {/* Quick Actions */}
