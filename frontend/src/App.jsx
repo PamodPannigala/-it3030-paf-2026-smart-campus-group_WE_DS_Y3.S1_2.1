@@ -1,16 +1,50 @@
-import { Route, Routes, useLocation } from "react-router-dom";
-import Sidebar from "./components/Sidebar";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+
+// Shared Components
 import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
+import Footer from "./components/Footer";
+
+// Auth + Layout
+import ProtectedRoute from "./components/ProtectedRoute";
+import EndUserOnlyRoute from "./components/EndUserOnlyRoute";
+import StaffShell from "./components/StaffShell";
+import GateStaffLayout from "./components/GateStaffLayout";
+
+// Auth Pages
+import LoginPage from "./pages/LoginPage";
+import OAuthSuccessPage from "./pages/OAuthSuccessPage";
+
+// General Pages
+import HomePage from "./pages/HomePage";
+import ProfileSettingsPage from "./pages/ProfileSettingsPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import NotificationPreferencesPage from "./pages/NotificationPreferencesPage";
+import SupportPage from "./pages/SupportPage";
+
+// Admin Pages
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminSupportPage from "./pages/AdminSupportPage";
+import UserManagementPage from "./pages/UserManagementPage";
+
+// ===== YOUR MODULES =====
+
+// Dashboard & Resources
 import Dashboard from "./pages/Dashboard";
 import ResourceList from "./pages/ResourceList";
 import PublicResourceView from "./components/PublicResourceView";
 import ResourceCataloguePage from "./pages/ResourceCataloguePage";
 import ResourceDetailPage from "./pages/ResourceDetailPage";
+
+// Booking
 import BookingForm from "./pages/BookingForm";
 import BookingSuccess from "./pages/BookingSuccess";
 import MyBookings from "./pages/MyBookings";
 import AdminBookings from "./pages/AdminBookings";
 import QRScanner from "./pages/QRScanner";
+
+// Ticketing System
 import SupportHomePage from "./pages/tickets/SupportHomePage";
 import CreateTicket from "./pages/tickets/CreateTicket";
 import MyReports from "./pages/tickets/MyReports";
@@ -21,28 +55,173 @@ import AdminPage from "./pages/tickets/AdminPage";
 import TechnicianManagementPage from "./pages/tickets/TechnicianManagementPage";
 import TechnicianPortalPage from "./pages/tickets/TechnicianPortalPage";
 
-function App() {
-  const location = useLocation();
-  console.log(location.pathname);
-  return (
-    <div className="d-flex" id="wrapper">
-      {location.pathname !== "/catalogue" && <Sidebar />}
+function AppContent() {
+  const { user, loading, isStaff } = useAuth();
+  const { pathname } = useLocation();
 
-      <div id="page-content-wrapper" className="w-100">
-        <Navbar />
-        <div className="container-fluid p-4">
+  // Detect staff/admin console
+  const staffConsole =
+    !loading &&
+    user &&
+    isStaff &&
+    (pathname.startsWith("/admin") ||
+      pathname === "/users" ||
+      pathname === "/notifications" ||
+      pathname === "/settings");
+
+  // Hide sidebar on public catalogue
+  const hideSidebar =
+    pathname === "/catalogue" ||
+    pathname === "/" ||
+    pathname === "/home" ||
+    pathname.startsWith("/resource/view") ||
+    pathname.startsWith("/booking") ||
+    pathname.startsWith("/ticket") ||
+    pathname === "/notifications" ||
+    pathname === "/settings" ||
+    pathname === "/booking/:id" ||
+    pathname === "/preferences";
+
+  return (
+    <div className="min-vh-100 d-flex flex-column">
+      {/* NAVBAR */}
+      {!staffConsole && <Navbar />}
+
+      <div className="d-flex flex-grow-1">
+        {/* SIDEBAR (only for normal users) */}
+        {!staffConsole && !hideSidebar && <Sidebar />}
+
+        {/* MAIN CONTENT */}
+        <div className="flex-grow-1 container-fluid p-4">
           <Routes>
-            {/* <Route path="/" element={<h1>Home</h1>} /> */}
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/inventory" element={<ResourceList />} />
-            <Route path="/support" element={<SupportHomePage />} />
-            <Route path="/ticket/:ticketId" element={<TicketDetails />} />
+            {/* ===== AUTH ===== */}
+            <Route path="/" element={<LoginPage />} />
+            <Route path="/oauth-success" element={<OAuthSuccessPage />} />
+
+            {/* ===== HOME ===== */}
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ===== DASHBOARD (YOUR) ===== */}
+            <Route
+              path="/admin/facilities"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ===== ADMIN ===== */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute staffOnly>
+                  <StaffShell>
+                    <AdminDashboardPage />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/support"
+              element={
+                <ProtectedRoute adminOnly>
+                  <StaffShell>
+                    <AdminSupportPage />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute adminOnly>
+                  <StaffShell>
+                    <UserManagementPage />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ===== SETTINGS ===== */}
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <GateStaffLayout>
+                    <ProfileSettingsPage />
+                  </GateStaffLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <GateStaffLayout>
+                    <NotificationsPage />
+                  </GateStaffLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/preferences"
+              element={
+                <ProtectedRoute>
+                  <NotificationPreferencesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ===== SUPPORT (END USER) ===== */}
+            <Route
+              path="/support"
+              element={
+                <ProtectedRoute>
+                  <EndUserOnlyRoute>
+                    <SupportPage />
+                  </EndUserOnlyRoute>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ===== RESOURCE SYSTEM ===== */}
+            <Route path="/admin/inventory" element={<ResourceList />} />
+            <Route path="/catalogue" element={<ResourceCataloguePage />} />
+            <Route path="/resource/view/:id" element={<PublicResourceView />} />
+            <Route
+              path="/resourseDetail/:id"
+              element={<ResourceDetailPage />}
+            />
+
+            {/* ===== BOOKING ===== */}
+            <Route path="/booking/:id" element={<BookingForm />} />
+            <Route path="/booking-success/:id" element={<BookingSuccess />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
+            <Route path="/admin/bookings" element={<AdminBookings />} />
+            <Route path="/admin/checkin" element={<QRScanner />} />
+
+            {/* ===== TICKETING ===== */}
+            <Route path="/support-home" element={<SupportHomePage />} />
             <Route path="/create-ticket" element={<CreateTicket />} />
             <Route path="/my-reports" element={<MyReports />} />
             <Route path="/community-tickets" element={<PublicTickets />} />
+            <Route path="/ticket/:ticketId" element={<TicketDetails />} />
             <Route path="/my-reports/:ticketId" element={<TicketDetails />} />
             <Route path="/ticket-success" element={<TicketSuccessPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+
+            <Route path="/admin/tickets" element={<AdminPage />} />
             <Route
               path="/admin/technicians"
               element={<TechnicianManagementPage />}
@@ -51,26 +230,21 @@ function App() {
               path="/technician/portal"
               element={<TechnicianPortalPage />}
             />
-            {/* <Route path="/" element={<Dashboard />} /> */}
-            {/* <Route path="/inventory" element={<ResourceList />} /> */}
 
-            {/* // App.js ඇතුළේ Routes තියෙන තැනට මේක එකතු කරන්න */}
-            <Route path="/resource/view/:id" element={<PublicResourceView />} />
-            <Route path="/catalogue" element={<ResourceCataloguePage />} />
-            <Route
-              path="/resourseDetail/:id"
-              element={<ResourceDetailPage />}
-            />
-            <Route path="/booking/:id" element={<BookingForm />} />
-            <Route path="/booking-success/:id" element={<BookingSuccess />} />
-            <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/admin/bookings" element={<AdminBookings />} />
-            <Route path="/admin/checkin" element={<QRScanner />} />
+            {/* ===== FALLBACK ===== */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </div>
+
+      {/* FOOTER */}
+      {!staffConsole && <Footer />}
     </div>
   );
+}
+
+function App() {
+  return <AppContent />;
 }
 
 export default App;

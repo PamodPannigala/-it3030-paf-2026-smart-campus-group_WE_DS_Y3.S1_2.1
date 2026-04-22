@@ -21,7 +21,7 @@ const DetailedResourceView = () => {
       try {
         // --- REAL BACKEND FETCH ---
         const response = await axios.get(
-          `http://localhost:8080/api/resources/${id}`,
+          `http://localhost:8082/api/resources/${id}`,
         );
         const data = response.data;
 
