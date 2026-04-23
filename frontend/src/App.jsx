@@ -80,6 +80,14 @@ function AppContent() {
     pathname === "/notifications" ||
     pathname === "/settings" ||
     pathname === "/booking/:id" ||
+    pathname === "/preferences" ||
+    pathname === "/admin/inventory" ||
+    pathname.startsWith("/resourseDetail");
+    pathname === "/support-home" ||
+    pathname === "/create-ticket" ||
+    pathname === "/my-reports" ||
+    pathname === "/community-tickets" ||
+    pathname === "/my-bookings" ||
     pathname === "/preferences";
 
   return (
@@ -92,7 +100,7 @@ function AppContent() {
         {!staffConsole && !hideSidebar && <Sidebar />}
 
         {/* MAIN CONTENT */}
-        <div className="flex-grow-1 container-fluid p-4">
+        <div className={staffConsole ? "flex-grow-1" : "flex-grow-1 container-fluid p-4"}>
           <Routes>
             {/* ===== AUTH ===== */}
             <Route path="/" element={<LoginPage />} />
@@ -112,8 +120,10 @@ function AppContent() {
             <Route
               path="/admin/facilities"
               element={
-                <ProtectedRoute>
-                  <Dashboard />
+                <ProtectedRoute staffOnly>
+                  <StaffShell>
+                    <Dashboard />
+                  </StaffShell>
                 </ProtectedRoute>
               }
             />
@@ -179,7 +189,9 @@ function AppContent() {
               path="/preferences"
               element={
                 <ProtectedRoute>
-                  <NotificationPreferencesPage />
+                  <GateStaffLayout>
+                    <NotificationPreferencesPage />
+                  </GateStaffLayout>
                 </ProtectedRoute>
               }
             />
@@ -197,7 +209,14 @@ function AppContent() {
             />
 
             {/* ===== RESOURCE SYSTEM ===== */}
-            <Route path="/admin/inventory" element={<ResourceList />} />
+            <Route
+              path="/admin/inventory"
+              element={
+                <GateStaffLayout>
+                  <ResourceList />
+                </GateStaffLayout>
+              }
+            />
             <Route path="/catalogue" element={<ResourceCataloguePage />} />
             <Route path="/resource/view/:id" element={<PublicResourceView />} />
             <Route
@@ -209,8 +228,26 @@ function AppContent() {
             <Route path="/booking/:id" element={<BookingForm />} />
             <Route path="/booking-success/:id" element={<BookingSuccess />} />
             <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/admin/bookings" element={<AdminBookings />} />
-            <Route path="/admin/checkin" element={<QRScanner />} />
+            <Route
+              path="/admin/bookings"
+              element={
+                <ProtectedRoute adminOnly>
+                  <StaffShell>
+                    <AdminBookings />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/checkin"
+              element={
+                <ProtectedRoute staffOnly>
+                  <StaffShell>
+                    <QRScanner />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
 
             {/* ===== TICKETING ===== */}
             <Route path="/support-home" element={<SupportHomePage />} />
@@ -221,10 +258,25 @@ function AppContent() {
             <Route path="/my-reports/:ticketId" element={<TicketDetails />} />
             <Route path="/ticket-success" element={<TicketSuccessPage />} />
 
-            <Route path="/admin/tickets" element={<AdminPage />} />
+            <Route
+              path="/admin/tickets"
+              element={
+                <ProtectedRoute staffOnly>
+                  <StaffShell>
+                    <AdminPage />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/admin/technicians"
-              element={<TechnicianManagementPage />}
+              element={
+                <ProtectedRoute adminOnly>
+                  <StaffShell>
+                    <TechnicianManagementPage />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/technician/portal"

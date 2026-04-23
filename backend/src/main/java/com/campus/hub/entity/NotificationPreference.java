@@ -37,7 +37,7 @@ public class NotificationPreference {
     private boolean ticketCommentEnabled = true;
 
     @Column(nullable = false)
-    private boolean emailEnabled = false;
+    private boolean emailEnabled = true;
 
     @Column(nullable = false)
     private boolean pushEnabled = false;

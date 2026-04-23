@@ -33,7 +33,7 @@ const LoginPage = () => {
   const [resetForm, setResetForm] = useState({ token: "", newPassword: "" });
 
   const goAfterAuth = (user) => {
-    if (user?.role === "ADMIN" || user?.role === "TECHNICIAN") {
+    if (user?.role === "ADMIN" || user?.role === "TECHNICIAN" || user?.role === "SECURITY") {
       navigate("/admin", { replace: true });
     } else {
       navigate("/home", { replace: true });

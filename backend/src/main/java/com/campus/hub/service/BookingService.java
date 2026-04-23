@@ -4,11 +4,16 @@ import com.campus.hub.dto.BookingResponseDTO;
 import com.campus.hub.dto.BookingRequest;
 import com.campus.hub.entity.Booking;
 import com.campus.hub.entity.BookingStatus;
+import com.campus.hub.entity.Role;
 import com.campus.hub.repository.BookingRepository;
 import com.campus.hub.repository.ResourceRepository;
+import com.campus.hub.dto.NotificationCreateRequest;
+import com.campus.hub.entity.NotificationCategory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -23,6 +28,9 @@ public class BookingService {
     
     @Autowired
     private BookingRepository bookingRepository;
+
+    @Autowired
+    private NotificationService notificationService;
     
     // Convert Booking to DTO with resource details
     public BookingResponseDTO convertToDTO(Booking booking) {
@@ -54,7 +62,7 @@ public class BookingService {
     }
     
     // Create booking and return DTO
-    public BookingResponseDTO createBooking(BookingRequest request) {
+    public BookingResponseDTO createBooking(BookingRequest request, Long authenticatedUserId) {
         // Check for conflicts before creating
         boolean hasConflict = checkConflict(
             request.getResourceId(),
@@ -69,7 +77,7 @@ public class BookingService {
         
         Booking booking = new Booking();
         booking.setResourceId(request.getResourceId());
-        booking.setUserId(request.getUserId() != null ? request.getUserId() : 1L);
+        booking.setUserId(authenticatedUserId);
         booking.setBookingDate(LocalDate.parse(request.getBookingDate()));
         booking.setStartTime(LocalTime.parse(request.getStartTime()));
         booking.setEndTime(LocalTime.parse(request.getEndTime()));
@@ -132,14 +140,30 @@ public class BookingService {
         booking.setQrCode(qrToken);
         booking.setQrCodeGeneratedAt(LocalDateTime.now());
         
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+        try {
+            notificationService.create(new NotificationCreateRequest(
+                saved.getUserId(),
+                "SPECIFIC",
+                NotificationCategory.BOOKING,
+                "Booking Approved",
+                "Your booking has been approved.",
+                "BOOKING",
+                String.valueOf(saved.getId())
+            ));
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
+        return saved;
     }
     
     // Method for QR Token Generation 
     private String generateQRToken(Booking booking) {
         // Simple approach: encode booking ID + timestamp + secret
         String data = booking.getId() + "-" + System.currentTimeMillis() + "-CAMPUSHUB";
-        return java.util.Base64.getEncoder().encodeToString(data.getBytes());
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(data.getBytes(StandardCharsets.UTF_8));
     }
 
     // Reject booking
@@ -149,7 +173,24 @@ public class BookingService {
         booking.setStatus(BookingStatus.REJECTED);
         booking.setRejectionReason(reason);
         booking.setUpdatedAt(LocalDateTime.now());
-        return bookingRepository.save(booking);
+        
+        Booking saved = bookingRepository.save(booking);
+
+        try {
+            notificationService.create(new NotificationCreateRequest(
+                saved.getUserId(),
+                "SPECIFIC",
+                NotificationCategory.BOOKING,
+                "Booking Rejected",
+                "Your booking has been rejected. Reason: " + reason,
+                "BOOKING",
+                String.valueOf(saved.getId())
+            ));
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
+        return saved;
     }
     
     // Get all bookings as DTOs
@@ -163,6 +204,12 @@ public class BookingService {
         Booking booking = bookingRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Booking not found"));
         bookingRepository.delete(booking);
+    }
+
+    public BookingResponseDTO getBookingById(Long id) {
+        return bookingRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
     }
 
     // Generate QR code image as byte array
@@ -200,9 +247,43 @@ public class BookingService {
     
     // Verify QR code and check-in with full validation
     public Booking verifyAndCheckin(String qrData) {
+        return verifyAndCheckin(qrData, getCurrentUserId(), null);
+    }
+
+    // Validate QR and booking rules without checking in
+    public Booking validateCheckin(String qrData, Long currentUserId, Role currentUserRole) {
+        return resolveAndValidateCheckinBooking(qrData, currentUserId, currentUserRole);
+    }
+
+    // Resolve booking by QR data without applying check-in validations
+    public Booking findBookingByQr(String qrData) {
+        if (qrData == null || qrData.trim().isEmpty()) {
+            throw new RuntimeException("Invalid QR code");
+        }
+        String normalizedQrData = normalizeQrData(qrData);
+        return bookingRepository.findByQrCode(qrData)
+            .orElseGet(() -> bookingRepository.findByQrCode(normalizedQrData).orElseThrow(() -> new RuntimeException("Invalid QR code")));
+    }
+
+    // Verify QR code and check-in with authenticated user context
+    public Booking verifyAndCheckin(String qrData, Long currentUserId, Role currentUserRole) {
+        Booking booking = resolveAndValidateCheckinBooking(qrData, currentUserId, currentUserRole);
+        
+        // Mark as checked in
+        booking.setCheckedIn(true);
+        booking.setCheckedInAt(LocalDateTime.now());
+        booking.setUpdatedAt(LocalDateTime.now());
+        
+        return bookingRepository.save(booking);
+    }
+
+    private Booking resolveAndValidateCheckinBooking(String qrData, Long currentUserId, Role currentUserRole) {
+        if (qrData == null || qrData.trim().isEmpty()) {
+            throw new RuntimeException("Invalid QR code");
+        }
+
         // Find booking by QR code
-        Booking booking = bookingRepository.findByQrCode(qrData)
-            .orElseThrow(() -> new RuntimeException("Invalid QR code"));
+        Booking booking = findBookingByQr(qrData);
         
         // Check if booking is approved
         if (booking.getStatus() != BookingStatus.APPROVED) {
@@ -241,22 +322,34 @@ public class BookingService {
             }
         }
         
-        // VALIDATION 3: Check if user is the one who made the booking
-        Long currentUserId = getCurrentUserId();
-        if (currentUserId != null && !booking.getUserId().equals(currentUserId)) {
+        // VALIDATION 3: Allow staff/admin scanners; enforce ownership for end users
+        boolean isStaffScanner = currentUserRole == Role.ADMIN || currentUserRole == Role.TECHNICIAN;
+        if (!isStaffScanner && currentUserId != null && !booking.getUserId().equals(currentUserId)) {
             throw new RuntimeException("You are not authorized to check in for this booking");
         }
-        
-        // Mark as checked in
-        booking.setCheckedIn(true);
-        booking.setCheckedInAt(LocalDateTime.now());
-        booking.setUpdatedAt(LocalDateTime.now());
-        
-        return bookingRepository.save(booking);
+
+        return booking;
+    }
+
+    // Normalize scanner input to reduce false "invalid QR" mismatches
+    private String normalizeQrData(String qrData) {
+        String normalized = qrData.trim();
+
+        if (normalized.contains("%")) {
+            try {
+                normalized = URLDecoder.decode(normalized, StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException ignored) {
+                // Keep raw value when scanner output is not URL-encoded.
+            }
+        }
+
+        // Some scanner/transport layers can convert '+' into spaces.
+        normalized = normalized.replace(" ", "+");
+        return normalized;
     }
     
     // Helper method to get current logged-in user ID
     private Long getCurrentUserId() {
-        return 1L;
+        return null;
     }
 }

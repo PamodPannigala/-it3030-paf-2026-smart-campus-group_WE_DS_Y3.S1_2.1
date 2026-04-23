@@ -40,7 +40,7 @@ const ResourceList = () => {
 
   const fetchResources = async () => {
     try {
-      const response = await axios.get("http://10.155.45.1:8082/api/resources");
+      const response = await axios.get("http://10.218.54.1:8082/api/resources");
       setResources(response.data);
     } catch (err) {
       setError("Unable to fetch data. Check backend.");
@@ -62,6 +62,7 @@ const ResourceList = () => {
       closeTime: item.closeTime,
       availableWeekends: item.availableWeekends,
       purchaseYear: item.purchaseYear || "",
+      imageUrl: item.imageUrl || "",
     });
     setShowModal(true);
   };
@@ -305,12 +306,12 @@ const ResourceList = () => {
     try {
       if (isEdit) {
         await axios.put(
-          `http://10.155.45.1:8082/api/resources/${currentId}`,
+          `http://10.218.54.1:8082/api/resources/${currentId}`,
           resourceData,
         );
         toast.success("Resource updated successfully!");
       } else {
-        await axios.post("http://10.155.45.1:8082/api/resources", resourceData);
+        await axios.post("http://10.218.54.1:8082/api/resources", resourceData);
         toast.success("Resource added successfully!");
       }
 
@@ -344,7 +345,7 @@ const ResourceList = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this resource?")) {
       try {
-        await axios.delete(`http://10.155.45.1:8082/api/resources/${id}`);
+        await axios.delete(`http://10.218.54.1:8082/api/resources/${id}`);
         toast.success("Resource deleted successfully!");
         fetchResources();
       } catch (err) {
@@ -903,6 +904,23 @@ const ResourceList = () => {
                       <label className="form-label fw-semibold text-secondary">
                         Resource Image (Optional)
                       </label>
+                      {formData.imageUrl && !selectedFile && (
+                        <div className="mb-3">
+                          <img
+                            src={formData.imageUrl}
+                            alt="Current"
+                            className="rounded-3 shadow-sm border"
+                            style={{
+                              width: "100px",
+                              height: "100px",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <div className="small text-muted mt-1">
+                            Current image
+                          </div>
+                        </div>
+                      )}
                       <input
                         type="file"
                         id="resourceImage"
@@ -930,7 +948,7 @@ const ResourceList = () => {
                         </h6>
                         <div className="qr-container bg-white p-4 d-inline-block rounded-4 shadow-sm border">
                           <QRCodeSVG
-                            value={`http://10.155.45.1:5173/resource/view/${currentId}`}
+                            value={`http://10.218.54.1:5173/resource/view/${currentId}`}
                             size={160}
                             level="H"
                             includeMargin

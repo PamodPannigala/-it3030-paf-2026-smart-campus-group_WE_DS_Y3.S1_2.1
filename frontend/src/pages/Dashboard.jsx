@@ -212,6 +212,20 @@ const Dashboard = () => {
 
     // 5. FILE DOWNLOAD
     XLSX.writeFile(workbook, "Infrastructure_Dashboard_Report.xlsx");
+
+    // Trigger notification to admins silently
+    try {
+      axios.post("http://localhost:8082/api/notifications", {
+        targetGroup: "ALL_ADMINS",
+        category: "FACILITY",
+        title: "Facility Report Exported",
+        message: "An administrator has exported the Infrastructure Dashboard Report (XLSX).",
+        referenceType: "FACILITY",
+        referenceId: "DASHBOARD"
+      }, { withCredentials: true });
+    } catch (err) {
+      console.error("Failed to send download notification", err);
+    }
   };
 
   return (

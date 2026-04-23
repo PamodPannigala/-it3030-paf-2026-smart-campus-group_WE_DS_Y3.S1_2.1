@@ -14,6 +14,7 @@ import com.campus.hub.entity.CampusUser;
 import com.campus.hub.repository.CampusUserRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.campus.hub.entity.Role;
@@ -57,13 +58,22 @@ public class NotificationServiceImpl implements NotificationService {
         if (request.getUserId() == null) {
             throw new IllegalArgumentException("userId is required for SPECIFIC target group");
         }
-        CampusUser user = campusUserRepository.findById(request.getUserId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + request.getUserId()));
+        Optional<CampusUser> userOpt = campusUserRepository.findById(request.getUserId());
+        if (userOpt.isEmpty()) {
+            return null;
+        }
+        CampusUser user = userOpt.get();
+        
+        // Check if this category is enabled for the user
+        NotificationPreference preference = preferenceRepository.findByUserId(user.getId()).orElse(null);
+        if (!isNotificationCategoryEnabled(preference, request.getCategory())) {
+            return null;
+        }
 
         Notification notification = buildNotification(user, request);
         Notification saved = notificationRepository.save(notification);
 
-        triggerExternalNotifications(user, saved);
+        triggerExternalNotifications(user, saved, preference);
 
         return toResponse(saved);
     }
@@ -75,13 +85,25 @@ public class NotificationServiceImpl implements NotificationService {
 
         List<Notification> batch = new ArrayList<>();
         for (CampusUser user : targets) {
-            Notification n = buildNotification(user, request);
-            batch.add(n);
+            NotificationPreference pref = preferenceRepository.findByUserId(user.getId()).orElse(null);
+            
+            // Only add to batch if category is enabled for this user
+            if (isNotificationCategoryEnabled(pref, request.getCategory())) {
+                Notification n = buildNotification(user, request);
+                batch.add(n);
+                
+                // For broadcast, we trigger external per-user immediately or collect them
+                // Here we'll save first then trigger to match specific flow
+            }
         }
+        
+        if (batch.isEmpty()) return;
+        
         List<Notification> savedBatch = notificationRepository.saveAll(batch);
 
         for (Notification n : savedBatch) {
-            triggerExternalNotifications(n.getUser(), n);
+            NotificationPreference pref = preferenceRepository.findByUserId(n.getUser().getId()).orElse(null);
+            triggerExternalNotifications(n.getUser(), n, pref);
         }
     }
 
@@ -148,7 +170,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public NotificationPreferenceResponse getPreferences(Long userId) {
         validateUserExists(userId);
         NotificationPreference preference = getOrCreatePreference(userId);
@@ -192,16 +214,19 @@ public class NotificationServiceImpl implements NotificationService {
                 notification.getCreatedAt());
     }
 
-    private void triggerExternalNotifications(CampusUser user, Notification notification) {
-        NotificationPreference preference = preferenceRepository.findByUserId(user.getId()).orElse(null);
-        if (preference == null)
+    private void triggerExternalNotifications(CampusUser user, Notification notification, NotificationPreference preference) {
+        if (preference == null) {
             return;
+        }
 
-        if (preference.isEmailEnabled() && isNotificationCategoryEnabled(user, notification.getCategory())) {
+        boolean categoryEnabled = isNotificationCategoryEnabled(preference, notification.getCategory());
+        
+        if (preference.isEmailEnabled() && categoryEnabled) {
             String body = String.format(
-                    "Hello %s,\n\nYou have a new notification: %s\n\n%s\n\nBest regards,\nSmart Campus Team",
+                    "Hello %s,\n\nYou have a new notification from Smart Campus Hub:\n\nTitle: %s\nMessage: %s\n\nYou can view more details by logging into your portal.\n\nBest regards,\nSmart Campus Team",
                     user.getFullName(), notification.getTitle(), notification.getMessage());
-            emailService.sendEmail(user.getEmail(), "Smart Campus Notification: " + notification.getTitle(), body);
+            
+            emailService.sendEmail(user.getEmail(), "Smart Campus Hub: " + notification.getTitle(), body);
         }
     }
 
@@ -239,19 +264,20 @@ public class NotificationServiceImpl implements NotificationService {
                             true, // facilityEnabled
                             true, // ticketStatusEnabled
                             true, // ticketCommentEnabled
-                            false, // emailEnabled
+                            true, // emailEnabled
                             false // pushEnabled
                     );
                     return preferenceRepository.save(defaults);
                 });
     }
 
-    private boolean isNotificationCategoryEnabled(CampusUser user, NotificationCategory category) {
-        NotificationPreference preference = preferenceRepository.findByUserId(user.getId())
-                .orElse(null);
-
+    private boolean isNotificationCategoryEnabled(NotificationPreference preference, NotificationCategory category) {
         if (preference == null) {
             return true;
+        }
+        
+        if (category == null) {
+            return true; // Default to enabled if no category specified
         }
 
         return switch (category) {

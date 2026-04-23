@@ -6,6 +6,8 @@ import com.campus.hub.entity.Resource;
 import com.campus.hub.exception.BusinessException;
 import com.campus.hub.exception.ResourceNotFoundException;
 import com.campus.hub.repository.ResourceRepository;
+import com.campus.hub.dto.NotificationCreateRequest;
+import com.campus.hub.entity.NotificationCategory;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
@@ -17,9 +19,11 @@ import java.util.stream.Collectors;
 @Service
 public class ResourceServiceImpl implements ResourceService {
     private final ResourceRepository resourceRepository;
+    private final NotificationService notificationService;
 
-    public ResourceServiceImpl(ResourceRepository resourceRepository) {
+    public ResourceServiceImpl(ResourceRepository resourceRepository, NotificationService notificationService) {
         this.resourceRepository = resourceRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -44,6 +48,23 @@ public class ResourceServiceImpl implements ResourceService {
         Resource resource = new Resource();
         mapToEntity(dto, resource);
         Resource saved = resourceRepository.save(resource);
+
+        if ("FACILITY".equalsIgnoreCase(dto.getType())) {
+            try {
+                notificationService.create(new NotificationCreateRequest(
+                    1L,
+                    "ALL_ADMINS",
+                    NotificationCategory.FACILITY,
+                    "Facility added successfully",
+                    "Summary: " + dto.getName() + " at " + dto.getLocation() + " capacity: " + dto.getCapacity(),
+                    "FACILITY",
+                    String.valueOf(saved.getId())
+                ));
+            } catch (Exception e) {
+                System.err.println("Failed to send notification: " + e.getMessage());
+            }
+        }
+
         return mapToResponseDTO(saved);
     }
 
