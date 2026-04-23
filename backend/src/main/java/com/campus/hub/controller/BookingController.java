@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -133,9 +134,9 @@ public class BookingController {
     // Verify check-in (called by scanner)
     @PostMapping("/verify-checkin/preview")
     public ResponseEntity<?> previewCheckin(@RequestBody Map<String, String> payload, Authentication authentication) {
+        String qrData = payload.get("qrData");
         try {
             CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
-            String qrData = payload.get("qrData");
             Booking booking = bookingService.validateCheckin(qrData, currentUser.getId(), currentUser.getRole());
             BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
             return ResponseEntity.ok(Map.of(
@@ -147,16 +148,29 @@ public class BookingController {
                     "endTime", booking.getEndTime().toString(),
                     "checkedIn", booking.isCheckedIn()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("message", e.getMessage());
+            try {
+                Booking booking = bookingService.findBookingByQr(qrData);
+                BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
+                errorBody.put("bookingId", booking.getId());
+                errorBody.put("resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()));
+                errorBody.put("bookingDate", booking.getBookingDate().toString());
+                errorBody.put("startTime", booking.getStartTime().toString());
+                errorBody.put("endTime", booking.getEndTime().toString());
+            } catch (Exception ignored) {
+                // Keep message-only response when QR cannot be resolved to any booking.
+            }
+            return ResponseEntity.badRequest().body(errorBody);
         }
     }
 
     // Verify check-in (called by scanner)
     @PostMapping("/verify-checkin")
     public ResponseEntity<?> verifyCheckin(@RequestBody Map<String, String> payload, Authentication authentication) {
+        String qrData = payload.get("qrData");
         try {
             CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
-            String qrData = payload.get("qrData");
             Booking booking = bookingService.verifyAndCheckin(qrData, currentUser.getId(), currentUser.getRole());
             BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
             return ResponseEntity.ok(Map.of(
@@ -166,7 +180,20 @@ public class BookingController {
                     "checkedInAt", booking.getCheckedInAt().toString(),
                     "checkedIn", booking.isCheckedIn()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("message", e.getMessage());
+            try {
+                Booking booking = bookingService.findBookingByQr(qrData);
+                BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
+                errorBody.put("bookingId", booking.getId());
+                errorBody.put("resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()));
+                errorBody.put("bookingDate", booking.getBookingDate().toString());
+                errorBody.put("startTime", booking.getStartTime().toString());
+                errorBody.put("endTime", booking.getEndTime().toString());
+            } catch (Exception ignored) {
+                // Keep message-only response when QR cannot be resolved to any booking.
+            }
+            return ResponseEntity.badRequest().body(errorBody);
         }
     }
 }

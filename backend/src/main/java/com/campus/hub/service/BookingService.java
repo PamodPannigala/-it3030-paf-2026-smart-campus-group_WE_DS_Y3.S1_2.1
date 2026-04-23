@@ -211,6 +211,16 @@ public class BookingService {
         return resolveAndValidateCheckinBooking(qrData, currentUserId, currentUserRole);
     }
 
+    // Resolve booking by QR data without applying check-in validations
+    public Booking findBookingByQr(String qrData) {
+        if (qrData == null || qrData.trim().isEmpty()) {
+            throw new RuntimeException("Invalid QR code");
+        }
+        String normalizedQrData = normalizeQrData(qrData);
+        return bookingRepository.findByQrCode(qrData)
+            .orElseGet(() -> bookingRepository.findByQrCode(normalizedQrData).orElseThrow(() -> new RuntimeException("Invalid QR code")));
+    }
+
     // Verify QR code and check-in with authenticated user context
     public Booking verifyAndCheckin(String qrData, Long currentUserId, Role currentUserRole) {
         Booking booking = resolveAndValidateCheckinBooking(qrData, currentUserId, currentUserRole);
@@ -228,11 +238,8 @@ public class BookingService {
             throw new RuntimeException("Invalid QR code");
         }
 
-        String normalizedQrData = normalizeQrData(qrData);
-
         // Find booking by QR code
-        Booking booking = bookingRepository.findByQrCode(qrData)
-            .orElseGet(() -> bookingRepository.findByQrCode(normalizedQrData).orElseThrow(() -> new RuntimeException("Invalid QR code")));
+        Booking booking = findBookingByQr(qrData);
         
         // Check if booking is approved
         if (booking.getStatus() != BookingStatus.APPROVED) {

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import { CheckCircle, XCircle, QrCode, Camera, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, QrCode, Camera, RefreshCw, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const QRScanner = () => {
+  const navigate = useNavigate();
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [scannerInitialized, setScannerInitialized] = useState(false);
@@ -32,7 +34,7 @@ const QRScanner = () => {
         setScanResult({
           success: false,
           message: "Check-in failed: this is not the right resource.",
-          bookingDetails: null
+          bookingDetails: previewDetails
         });
         return;
       }
@@ -46,10 +48,13 @@ const QRScanner = () => {
         });
       }
     } catch (error) {
+      const fallbackDetails = error?.response?.data && typeof error.response.data === "object"
+        ? error.response.data
+        : null;
       setScanResult({
         success: false,
         message: error.response?.data?.message || "Invalid QR code",
-        bookingDetails: null
+        bookingDetails: fallbackDetails
       });
     } finally {
       setLoading(false);
@@ -111,30 +116,53 @@ const QRScanner = () => {
   };
 
   return (
-    <div className="container py-4">
+    <div className="container py-4 py-lg-5">
       <div className="row justify-content-center">
-        <div className="col-lg-8">
+        <div className="col-xl-8 col-lg-9">
+          <div className="d-flex justify-content-start mb-3">
+            <button
+              onClick={() => navigate("/admin/bookings")}
+              className="btn btn-outline-dark d-flex align-items-center gap-2 px-3 py-2 rounded-pill"
+              style={{ fontWeight: "500" }}
+            >
+              <ArrowLeft size={16} />
+              Back to Dashboard
+            </button>
+          </div>
+
           {/* Header Card */}
-          <div className="card shadow-lg border-0 mb-4" style={{ borderRadius: '20px' }}>
-            <div className="card-body p-4 text-center">
+          <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '20px' }}>
+            <div className="card-body p-4 p-lg-5 text-center">
               <div className="mb-3">
-                <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3">
+                <div
+                  className="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3"
+                  style={{ boxShadow: "inset 0 0 0 1px rgba(13,110,253,0.15)" }}
+                >
                   <QrCode size={48} className="text-primary" />
                 </div>
               </div>
               <h2 className="fw-bold mb-2" style={{ color: '#1a1a2e' }}>QR Code Check-in</h2>
-              <p className="text-muted mb-0">Position the QR code within the frame to scan</p>
+              <p className="text-muted mb-0">Position the QR code within the frame and hold steady for instant verification</p>
             </div>
           </div>
 
           {/* Scanner Card */}
-          <div className="card shadow-lg border-0 mb-4" style={{ borderRadius: '20px', overflow: 'hidden' }}>
-            <div className="card-body p-4">
+          <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '20px', overflow: 'hidden' }}>
+            <div className="card-body p-4 p-lg-5">
               <div className="text-center mb-3">
                 <Camera size={24} className="text-primary me-2" />
                 <span className="fw-semibold">Scanner Active</span>
               </div>
-              <div id="reader" style={{ width: "100%", borderRadius: '16px', overflow: 'hidden' }}></div>
+              <div
+                id="reader"
+                style={{
+                  width: "100%",
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  border: "1px solid #e9ecef",
+                  padding: "6px",
+                }}
+              ></div>
               
               {loading && (
                 <div className="text-center mt-4">
@@ -161,7 +189,7 @@ const QRScanner = () => {
 
           {/* Result Message - Persistent until next scan */}
           {scanResult && (
-            <div className={`card shadow-lg border-0 ${scanResult.success ? 'border-success' : 'border-danger'}`} style={{ borderRadius: '20px' }}>
+            <div className={`card shadow-sm border-0 ${scanResult.success ? 'border-success' : 'border-danger'}`} style={{ borderRadius: '20px' }}>
               <div className={`card-body p-4 ${scanResult.success ? 'bg-success bg-opacity-10' : 'bg-danger bg-opacity-10'}`}>
                 <div className="d-flex align-items-center">
                   <div className="flex-shrink-0">
@@ -204,6 +232,43 @@ const QRScanner = () => {
                         <small className="text-muted">Status</small>
                         <p className="mb-0">
                           <span className="badge bg-success">Checked In</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* More Details on Failure (when available) */}
+                {!scanResult.success && scanResult.bookingDetails && (
+                  <div className="mt-3 pt-3 border-top">
+                    <h6 className="fw-semibold mb-2">Verification Context:</h6>
+                    <div className="row g-2">
+                      <div className="col-sm-6">
+                        <small className="text-muted">Resource</small>
+                        <p className="mb-0 fw-semibold">
+                          {scanResult.bookingDetails.resourceName || 'N/A'}
+                        </p>
+                      </div>
+                      <div className="col-sm-6">
+                        <small className="text-muted">Booking ID</small>
+                        <p className="mb-0 fw-semibold">
+                          {scanResult.bookingDetails.bookingId
+                            ? `#${scanResult.bookingDetails.bookingId}`
+                            : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="col-sm-6">
+                        <small className="text-muted">Scheduled Date</small>
+                        <p className="mb-0 fw-semibold">
+                          {scanResult.bookingDetails.bookingDate || 'N/A'}
+                        </p>
+                      </div>
+                      <div className="col-sm-6">
+                        <small className="text-muted">Scheduled Time</small>
+                        <p className="mb-0 fw-semibold">
+                          {scanResult.bookingDetails.startTime && scanResult.bookingDetails.endTime
+                            ? `${scanResult.bookingDetails.startTime} - ${scanResult.bookingDetails.endTime}`
+                            : 'N/A'}
                         </p>
                       </div>
                     </div>
