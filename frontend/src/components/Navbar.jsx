@@ -98,7 +98,7 @@ const Navbar = () => {
               <NavLink to="/home" className={linkClass}>
                 Home
               </NavLink>
-              <NavLink to="/booking/:id" className={linkClass}>
+              <NavLink to="/my-bookings" className={linkClass}>
                 Booking
               </NavLink>
               <NavLink to="/catalogue" className={linkClass}>

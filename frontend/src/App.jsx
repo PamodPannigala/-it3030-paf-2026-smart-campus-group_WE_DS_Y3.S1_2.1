@@ -80,7 +80,9 @@ function AppContent() {
     pathname === "/notifications" ||
     pathname === "/settings" ||
     pathname === "/booking/:id" ||
-    pathname === "/preferences";
+    pathname === "/my-bookings" ||
+    pathname === "/preferences" ||
+    pathname.startsWith("/resourseDetail");
 
   return (
     <div className="min-vh-100 d-flex flex-column">
@@ -112,8 +114,10 @@ function AppContent() {
             <Route
               path="/admin/facilities"
               element={
-                <ProtectedRoute>
-                  <Dashboard />
+                <ProtectedRoute staffOnly>
+                  <StaffShell>
+                    <Dashboard />
+                  </StaffShell>
                 </ProtectedRoute>
               }
             />
@@ -197,7 +201,16 @@ function AppContent() {
             />
 
             {/* ===== RESOURCE SYSTEM ===== */}
-            <Route path="/admin/inventory" element={<ResourceList />} />
+            <Route
+              path="/admin/inventory"
+              element={
+                <ProtectedRoute staffOnly>
+                  <StaffShell>
+                    <ResourceList />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/catalogue" element={<ResourceCataloguePage />} />
             <Route path="/resource/view/:id" element={<PublicResourceView />} />
             <Route
@@ -209,7 +222,16 @@ function AppContent() {
             <Route path="/booking/:id" element={<BookingForm />} />
             <Route path="/booking-success/:id" element={<BookingSuccess />} />
             <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/admin/bookings" element={<AdminBookings />} />
+            <Route
+              path="/admin/bookings"
+              element={
+                <ProtectedRoute adminOnly>
+                  <StaffShell>
+                    <AdminBookings />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
             <Route path="/admin/checkin" element={<QRScanner />} />
 
             {/* ===== TICKETING ===== */}

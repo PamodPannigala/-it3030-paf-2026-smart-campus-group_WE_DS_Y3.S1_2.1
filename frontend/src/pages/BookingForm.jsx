@@ -471,8 +471,8 @@ const BookingForm = () => {
       <div className="container py-4">
         {/* Back Button */}
         <button
-          onClick={() => navigate(`/resourceDetail/${id}`)}
-          className="btn btn-link text-decoration-none text-dark mb-4"
+          onClick={() => navigate(`/resourseDetail/${id}`)}
+          className="btn btn-link text-decoration-none text-dark mb-4 fw-bold"
         >
           <ArrowLeft size={20} className="me-2" /> Back to Resource
         </button>
