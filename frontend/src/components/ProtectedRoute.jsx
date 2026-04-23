@@ -12,7 +12,7 @@ const ProtectedRoute = ({ children, adminOnly = false, staffOnly = false }) => {
     return <Navigate to="/" replace />;
   }
 
-  if (staffOnly && user.role !== "ADMIN" && user.role !== "TECHNICIAN") {
+  if (staffOnly && user.role !== "ADMIN" && user.role !== "TECHNICIAN" && user.role !== "SECURITY") {
     return <div className="alert alert-warning">Staff access required.</div>;
   }
 

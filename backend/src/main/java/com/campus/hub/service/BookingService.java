@@ -7,6 +7,8 @@ import com.campus.hub.entity.BookingStatus;
 import com.campus.hub.entity.Role;
 import com.campus.hub.repository.BookingRepository;
 import com.campus.hub.repository.ResourceRepository;
+import com.campus.hub.dto.NotificationCreateRequest;
+import com.campus.hub.entity.NotificationCategory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,9 @@ public class BookingService {
     
     @Autowired
     private BookingRepository bookingRepository;
+
+    @Autowired
+    private NotificationService notificationService;
     
     // Convert Booking to DTO with resource details
     public BookingResponseDTO convertToDTO(Booking booking) {
@@ -135,7 +140,23 @@ public class BookingService {
         booking.setQrCode(qrToken);
         booking.setQrCodeGeneratedAt(LocalDateTime.now());
         
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+
+        try {
+            notificationService.create(new NotificationCreateRequest(
+                saved.getUserId(),
+                "SPECIFIC",
+                NotificationCategory.BOOKING,
+                "Booking Approved",
+                "Your booking has been approved.",
+                "BOOKING",
+                String.valueOf(saved.getId())
+            ));
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
+        return saved;
     }
     
     // Method for QR Token Generation 
@@ -152,7 +173,24 @@ public class BookingService {
         booking.setStatus(BookingStatus.REJECTED);
         booking.setRejectionReason(reason);
         booking.setUpdatedAt(LocalDateTime.now());
-        return bookingRepository.save(booking);
+        
+        Booking saved = bookingRepository.save(booking);
+
+        try {
+            notificationService.create(new NotificationCreateRequest(
+                saved.getUserId(),
+                "SPECIFIC",
+                NotificationCategory.BOOKING,
+                "Booking Rejected",
+                "Your booking has been rejected. Reason: " + reason,
+                "BOOKING",
+                String.valueOf(saved.getId())
+            ));
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
+        return saved;
     }
     
     // Get all bookings as DTOs
@@ -166,6 +204,12 @@ public class BookingService {
         Booking booking = bookingRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Booking not found"));
         bookingRepository.delete(booking);
+    }
+
+    public BookingResponseDTO getBookingById(Long id) {
+        return bookingRepository.findById(id)
+                .map(this::convertToDTO)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
     }
 
     // Generate QR code image as byte array

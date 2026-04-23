@@ -20,7 +20,7 @@ const Home = () => {
     },
     {
       image:
-        "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop",
       title: "Unified Digital Environment",
       subtitle:
         "Manage your time, events, and education from one secure portal",
@@ -52,11 +52,11 @@ const Home = () => {
       path: "#booking",
     },
     {
-      title: "EVENT TICKETS",
+      title: "SUPPORT TICKETS",
       description:
-        "Get passes for sports, seminars, and special campus events.",
-      icon: "🎟️",
-      path: "#tickets",
+        "Create and manage support requests for IT issues, maintenance problems, and campus services.",
+      icon: "🛠️",
+      path: "/support-home",
     },
     {
       title: "NOTIFICATIONS",

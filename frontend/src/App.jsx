@@ -80,9 +80,12 @@ function AppContent() {
     pathname === "/notifications" ||
     pathname === "/settings" ||
     pathname === "/booking/:id" ||
+    pathname === "/support-home" ||
+    pathname === "/create-ticket" ||
+    pathname === "/my-reports" ||
+    pathname === "/community-tickets" ||
     pathname === "/my-bookings" ||
-    pathname === "/preferences" ||
-    pathname.startsWith("/resourseDetail");
+    pathname === "/preferences";
 
   return (
     <div className="min-vh-100 d-flex flex-column">
@@ -94,7 +97,7 @@ function AppContent() {
         {!staffConsole && !hideSidebar && <Sidebar />}
 
         {/* MAIN CONTENT */}
-        <div className="flex-grow-1 container-fluid p-4">
+        <div className={staffConsole ? "flex-grow-1" : "flex-grow-1 container-fluid p-4"}>
           <Routes>
             {/* ===== AUTH ===== */}
             <Route path="/" element={<LoginPage />} />
@@ -183,7 +186,9 @@ function AppContent() {
               path="/preferences"
               element={
                 <ProtectedRoute>
-                  <NotificationPreferencesPage />
+                  <GateStaffLayout>
+                    <NotificationPreferencesPage />
+                  </GateStaffLayout>
                 </ProtectedRoute>
               }
             />
@@ -232,7 +237,16 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/admin/checkin" element={<QRScanner />} />
+            <Route
+              path="/admin/checkin"
+              element={
+                <ProtectedRoute staffOnly>
+                  <StaffShell>
+                    <QRScanner />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
 
             {/* ===== TICKETING ===== */}
             <Route path="/support-home" element={<SupportHomePage />} />
@@ -243,10 +257,25 @@ function AppContent() {
             <Route path="/my-reports/:ticketId" element={<TicketDetails />} />
             <Route path="/ticket-success" element={<TicketSuccessPage />} />
 
-            <Route path="/admin/tickets" element={<AdminPage />} />
+            <Route
+              path="/admin/tickets"
+              element={
+                <ProtectedRoute staffOnly>
+                  <StaffShell>
+                    <AdminPage />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/admin/technicians"
-              element={<TechnicianManagementPage />}
+              element={
+                <ProtectedRoute adminOnly>
+                  <StaffShell>
+                    <TechnicianManagementPage />
+                  </StaffShell>
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/technician/portal"

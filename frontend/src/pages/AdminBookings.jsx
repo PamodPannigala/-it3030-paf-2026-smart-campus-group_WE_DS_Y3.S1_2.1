@@ -528,6 +528,21 @@ const AdminBookings = () => {
       pdf.save(
         `CampusHub-Bookings-Report-${new Date().toISOString().split("T")[0]}.pdf`,
       );
+
+      // Trigger notification to admins silently
+      try {
+        await axios.post("http://localhost:8082/api/notifications", {
+          targetGroup: "ALL_ADMINS",
+          category: "BOOKING",
+          title: "Bookings Report Downloaded",
+          message: "An administrator has successfully exported the Bookings Management Report (PDF).",
+          referenceType: "BOOKING",
+          referenceId: "REPORT"
+        }, { withCredentials: true });
+      } catch (err) {
+        console.error("Failed to send download notification", err);
+      }
+      
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Error generating PDF. Please try again.");

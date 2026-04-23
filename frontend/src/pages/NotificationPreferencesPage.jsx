@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../services/api";
 import { Bell, ShieldCheck, Mail, Calendar, Building2, Ticket, CheckCircle2, Loader2, Save, Smartphone } from "lucide-react";
@@ -42,6 +43,7 @@ const PreferenceToggle = ({ id, label, icon: Icon, checked, onChange, descriptio
 };
 
 const NotificationPreferencesPage = () => {
+  const { isStaff } = useAuth();
   const MotionDiv = motion.div;
   const MotionForm = motion.form;
   const [form, setForm] = useState({
@@ -102,11 +104,21 @@ const NotificationPreferencesPage = () => {
   };
 
   return (
-    <div className="container-fluid py-4 min-vh-100 animate-fade-in">
-      <div className="row justify-content-center">
-        <div className="col-xl-8 col-lg-10">
-          
-          <div className="card m4-glass-card border-0 overflow-hidden shadow-lg">
+    <div className="d-grid gap-4 animate-fade-in">
+      {/* Admin Header */}
+      {isStaff && (
+        <header className="m4-staff-header">
+          <div>
+            <div className="kicker">Operator Preferences</div>
+            <h1>Notification Settings</h1>
+            <p className="sub">
+              Configure how you receive system alerts, booking updates, and maintenance notifications.
+            </p>
+          </div>
+        </header>
+      )}
+
+      <div className="card m4-glass-card border-0 overflow-hidden shadow-lg">
             <div className="card-header bg-white p-4 border-0 d-flex align-items-center gap-3">
               <div className="bg-primary-subtle p-3 rounded-circle">
                 <ShieldCheck className="w-6 h-6 text-primary" />
@@ -254,8 +266,6 @@ const NotificationPreferencesPage = () => {
               </AnimatePresence>
             </div>
           </div>
-        </div>
-      </div>
     </div>
   );
 };

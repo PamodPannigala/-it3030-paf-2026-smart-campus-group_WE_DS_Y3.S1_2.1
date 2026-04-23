@@ -62,6 +62,7 @@ const ResourceList = () => {
       closeTime: item.closeTime,
       availableWeekends: item.availableWeekends,
       purchaseYear: item.purchaseYear || "",
+      imageUrl: item.imageUrl || "",
     });
     setShowModal(true);
   };
@@ -903,6 +904,23 @@ const ResourceList = () => {
                       <label className="form-label fw-semibold text-secondary">
                         Resource Image (Optional)
                       </label>
+                      {formData.imageUrl && !selectedFile && (
+                        <div className="mb-3">
+                          <img
+                            src={formData.imageUrl}
+                            alt="Current"
+                            className="rounded-3 shadow-sm border"
+                            style={{
+                              width: "100px",
+                              height: "100px",
+                              objectFit: "cover",
+                            }}
+                          />
+                          <div className="small text-muted mt-1">
+                            Current image
+                          </div>
+                        </div>
+                      )}
                       <input
                         type="file"
                         id="resourceImage"
@@ -930,7 +948,7 @@ const ResourceList = () => {
                         </h6>
                         <div className="qr-container bg-white p-4 d-inline-block rounded-4 shadow-sm border">
                           <QRCodeSVG
-                            value={`http://10.155.45.1:5173/resource/view/${currentId}`}
+                            value={`http://localhost:5173/resource/view/${currentId}`}
                             size={160}
                             level="H"
                             includeMargin

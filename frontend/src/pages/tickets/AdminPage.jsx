@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import SmartAssignmentPanel from './SmartAssignmentPanel';
+import SlaTimer from "../../components/tickets/SlaTimer";
 import {
   getAllTickets,
   updateTicketStatus,
@@ -53,7 +54,7 @@ import {
   Area
 } from 'recharts';
 
-const BACKEND_URL = "http://localhost:8080";
+const BACKEND_URL = "http://localhost:8082";
 
 // Professional color palette
 const COLORS = {
@@ -325,10 +326,39 @@ export default function AdminTicketsPage() {
     setEditExistingImages((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // ✅ NEW: Helper to check if ticket has SLA alert (BREACHED or AT_RISK)
+  const isSlaAlert = (ticket) => {
+    if (!ticket.slaFirstResponseDue && !ticket.slaResolutionDue) return false;
+    
+    const isCompleted = ['closed', 'resolved', 'repaired'].includes(
+      (ticket.status || '').toLowerCase()
+    );
+    if (isCompleted) return false;
+
+    const now = new Date();
+    const created = new Date(ticket.createdAt);
+    const target = ticket.firstResponseAt 
+      ? new Date(ticket.slaResolutionDue) 
+      : new Date(ticket.slaFirstResponseDue);
+    
+    if (now > target) return true; // BREACHED
+    
+    const total = target - created;
+    const elapsed = now - created;
+    const percent = (elapsed / total) * 100;
+    
+    return percent > 80; // AT_RISK
+  };
+
   const filteredTickets = useMemo(() => {
     return tickets.filter((t) => {
       const ticketStatus = t.status?.replace("_", " ") || t.status;
       const filterStatus = statusFilter?.replace("_", " ") || statusFilter;
+      
+      // ✅ NEW: SLA Alert filter logic
+      if (statusFilter === "SLA_ALERT") {
+        return isSlaAlert(t);
+      }
       
       const matchesStatus = filterStatus === "all" ? true : ticketStatus === filterStatus;
       const searchLower = search.toLowerCase().trim();
@@ -1613,6 +1643,29 @@ export default function AdminTicketsPage() {
               {status === "all" ? "All" : status.replace("_", " ")}
             </button>
           ))}
+          
+          {/* ✅ NEW: SLA Alert filter button */}
+          <button
+            onClick={() => setStatusFilter("SLA_ALERT")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "999px",
+              border: "none",
+              fontSize: "12px",
+              fontWeight: "700",
+              cursor: "pointer",
+              background: statusFilter === "SLA_ALERT" ? "#dc2626" : "#fef2f2",
+              color: statusFilter === "SLA_ALERT" ? "#ffffff" : "#dc2626",
+              transition: "all 0.2s",
+              whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px"
+            }}
+          >
+            <AlertCircle size={14} />
+            SLA Alert
+          </button>
         </div>
       </div>
 
@@ -1735,7 +1788,9 @@ export default function AdminTicketsPage() {
                     <div style={{
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "space-between"
+                      justifyContent: "space-between",
+                      gap: "8px",
+                      flexWrap: "wrap"
                     }}>
                       <span style={{
                         display: "inline-flex",
@@ -1752,12 +1807,9 @@ export default function AdminTicketsPage() {
                         {style.label}
                       </span>
                       
-                      <span style={{
-                        fontSize: "12px",
-                        color: COLORS.text.muted
-                      }}>
-                        {formatDateTime(ticket.createdAt)}
-                      </span>
+                      {ticket.slaFirstResponseDue && (
+                        <SlaTimer ticket={ticket} />
+                      )}
                     </div>
                   </div>
                 );
@@ -1831,6 +1883,10 @@ export default function AdminTicketsPage() {
                       }}>
                         {selectedTicket.priority || "Low"} Priority
                       </span>
+                      
+                      {selectedTicket.slaFirstResponseDue && (
+                        <SlaTimer ticket={selectedTicket} />
+                      )}
                     </div>
                     
                     <h2 style={{
@@ -2257,7 +2313,6 @@ export default function AdminTicketsPage() {
                 )}
               </div>
 
-              {/* Technician Assignment */}
               {/* Technician Assignment */}
               <div style={{
                 background: COLORS.surface,
