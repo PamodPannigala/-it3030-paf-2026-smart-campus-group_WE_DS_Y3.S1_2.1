@@ -18,6 +18,7 @@ import toast, { Toaster } from "react-hot-toast";
 import "../styles/MyBookings.css";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
+import { getResourceImageOrCatalogueFallback } from "../utils/resourceImageFallback";
 
 const MyBookings = () => {
   const { user, loading: authLoading } = useAuth();
@@ -360,21 +361,25 @@ const MyBookings = () => {
           {filteredBookings.map((booking) => (
             <div key={booking.id} className="col-md-6 col-lg-3 mb-4">
               <div className="card h-100 shadow-sm booking-card-hover">
-                {booking.resourceImage && (
-                  <img
-                    src={booking.resourceImage}
-                    alt={booking.resourceName}
-                    className="card-img-top"
-                    style={{
-                      height: "160px",
-                      objectFit: "cover",
-                      borderRadius: "8px 8px 0 0",
-                    }}
-                    onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/300x160?text=No+Image";
-                    }}
-                  />
-                )}
+                <img
+                  src={getResourceImageOrCatalogueFallback(
+                    booking.resourceImage,
+                    booking.resourceId,
+                  )}
+                  alt={booking.resourceName}
+                  className="card-img-top"
+                  style={{
+                    height: "160px",
+                    objectFit: "cover",
+                    borderRadius: "8px 8px 0 0",
+                  }}
+                  onError={(e) => {
+                    e.target.src = getResourceImageOrCatalogueFallback(
+                      "",
+                      booking.resourceId,
+                    );
+                  }}
+                />
                 <div className="card-body">
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     <h6 className="card-title mb-0 fw-bold">

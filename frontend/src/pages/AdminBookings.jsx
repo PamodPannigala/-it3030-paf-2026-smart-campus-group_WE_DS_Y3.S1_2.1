@@ -22,6 +22,7 @@ import Chart from "react-apexcharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoImg from "../assets/logo.png";
+import { getResourceImageOrCatalogueFallback } from "../utils/resourceImageFallback";
 
 const AdminBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -1148,36 +1149,25 @@ const AdminBookings = () => {
                     #{booking.id}
                   </td>
                   <td style={{ width: "80px", padding: "12px" }}>
-                    {booking.resourceImage ? (
-                      <img
-                        src={booking.resourceImage}
-                        alt={booking.resourceName}
-                        style={{
-                          width: "50px",
-                          height: "50px",
-                          objectFit: "cover",
-                          borderRadius: "10px",
-                        }}
-                        onError={(e) => {
-                          e.target.src =
-                            "https://via.placeholder.com/50x50?text=No+Image";
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: "50px",
-                          height: "50px",
-                          backgroundColor: "#f3f4f6",
-                          borderRadius: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <span className="text-muted small">No img</span>
-                      </div>
-                    )}
+                    <img
+                      src={getResourceImageOrCatalogueFallback(
+                        booking.resourceImage,
+                        booking.resourceId,
+                      )}
+                      alt={booking.resourceName}
+                      style={{
+                        width: "50px",
+                        height: "50px",
+                        objectFit: "cover",
+                        borderRadius: "10px",
+                      }}
+                      onError={(e) => {
+                        e.target.src = getResourceImageOrCatalogueFallback(
+                          "",
+                          booking.resourceId,
+                        );
+                      }}
+                    />
                   </td>
                   <td
                     className="fw-semibold"
@@ -1375,26 +1365,29 @@ const AdminBookings = () => {
               </div>
               <div className="modal-body">
                 <div className="row">
-                  {viewModal.resourceImage && (
-                    <div className="col-md-4">
-                      <img
-                        src={viewModal.resourceImage}
-                        alt={viewModal.resourceName}
-                        className="img-fluid rounded"
-                        style={{
-                          width: "100%",
-                          height: "150px",
-                          objectFit: "cover",
-                          borderRadius: "12px",
-                        }}
-                      />
-                    </div>
-                  )}
-                  <div
-                    className={
-                      viewModal.resourceImage ? "col-md-8" : "col-md-12"
-                    }
-                  >
+                  <div className="col-md-4">
+                    <img
+                      src={getResourceImageOrCatalogueFallback(
+                        viewModal.resourceImage,
+                        viewModal.resourceId,
+                      )}
+                      alt={viewModal.resourceName}
+                      className="img-fluid rounded"
+                      style={{
+                        width: "100%",
+                        height: "150px",
+                        objectFit: "cover",
+                        borderRadius: "12px",
+                      }}
+                      onError={(e) => {
+                        e.target.src = getResourceImageOrCatalogueFallback(
+                          "",
+                          viewModal.resourceId,
+                        );
+                      }}
+                    />
+                  </div>
+                  <div className="col-md-8">
                     <h6 style={{ color: "#1a1a2e", fontWeight: "600" }}>
                       {viewModal.resourceName}
                     </h6>
@@ -1482,19 +1475,26 @@ const AdminBookings = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                {selectedBooking.resourceImage && (
-                  <img
-                    src={selectedBooking.resourceImage}
-                    alt={selectedBooking.resourceName}
-                    className="img-fluid rounded mb-3"
-                    style={{
-                      width: "100%",
-                      height: "120px",
-                      objectFit: "cover",
-                      borderRadius: "12px",
-                    }}
-                  />
-                )}
+                <img
+                  src={getResourceImageOrCatalogueFallback(
+                    selectedBooking.resourceImage,
+                    selectedBooking.resourceId,
+                  )}
+                  alt={selectedBooking.resourceName}
+                  className="img-fluid rounded mb-3"
+                  style={{
+                    width: "100%",
+                    height: "120px",
+                    objectFit: "cover",
+                    borderRadius: "12px",
+                  }}
+                  onError={(e) => {
+                    e.target.src = getResourceImageOrCatalogueFallback(
+                      "",
+                      selectedBooking.resourceId,
+                    );
+                  }}
+                />
                 <p>
                   <strong>Resource:</strong> {selectedBooking.resourceName}
                 </p>
