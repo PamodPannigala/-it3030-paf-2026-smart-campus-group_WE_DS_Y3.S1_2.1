@@ -1,5 +1,6 @@
 /* =====================================================
    ENTERPRISE SUPPORT HOMEPAGE - Complete Styles
+   Combined: Original + Enterprise Updates + Image Backgrounds
    ===================================================== */
 
 /* General page styling */
@@ -11,7 +12,7 @@
 }
 
 /* =====================================================
-   HERO SLIDER SECTION - FIXED CENTER ALIGNMENT
+   HERO SLIDER SECTION (Enterprise Update with Images)
    ===================================================== */
 .hero-slider-section {
   position: relative;
@@ -62,7 +63,7 @@
   transform: scale(1);
 }
 
-/* Dark Overlay */
+/* Dark Overlay for text readability */
 .slide-overlay {
   position: absolute;
   top: 0;
@@ -78,24 +79,20 @@
   z-index: 1;
 }
 
-/* FIXED: Content centered within available space (sidebar accounted for) */
 .slide-content {
   position: relative;
   z-index: 2;
+  max-width: 1400px;
   width: 100%;
-  height: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 4rem;
   align-items: center;
-  justify-content: center;
-  padding-left: 240px;   /* Sidebar width */
-  padding-right: 2rem;
+  padding: 0 5%;
 }
 
-/* FIXED: Text centered */
 .slide-text {
   color: white;
-  max-width: 700px;
-  text-align: center;
 }
 
 .enterprise-badge {
@@ -127,13 +124,108 @@
   font-size: 1.25rem;
   line-height: 1.7;
   color: #cbd5e1;
+  margin-bottom: 2rem;
   max-width: 600px;
-  margin: 0 auto;   /* Center paragraph block */
 }
 
-/* =====================================================
-   SLIDER CONTROLS - FIXED POSITIONING
-   ===================================================== */
+/* Enterprise Search Form */
+.enterprise-search-form {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 600px;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  padding: 0 1rem;
+  height: 56px;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.search-input-wrapper:focus-within {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.search-input-wrapper input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+}
+
+.search-input-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+.search-btn {
+  height: 56px;
+  padding: 0 2rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+  background: #2563eb;
+  transform: scale(1.05);
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+}
+
+/* Metrics Cards */
+.slide-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 2rem;
+  padding: 1.5rem;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-4px);
+}
+
+.metric-card svg {
+  color: #60a5fa;
+  margin-bottom: 0.75rem;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+/* Slider Controls */
 .slider-btn {
   position: absolute;
   top: 50%;
@@ -157,14 +249,12 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* FIXED: Left arrow at the edge of visible slider area */
 .slider-btn.prev {
-  left: 1rem;   /* Small margin from edge */
+  left: 2rem;
 }
 
-/* Right arrow at right edge */
 .slider-btn.next {
-  right: 1rem;
+  right: 2rem;
 }
 
 .slider-indicators {
@@ -346,7 +436,7 @@
 }
 
 /* =====================================================
-   SERVICE CATEGORIES SECTION
+   SERVICE CATEGORIES SECTION (New)
    ===================================================== */
 .service-categories {
   padding: 4rem 5%;
@@ -404,7 +494,7 @@
 }
 
 /* =====================================================
-   BOTTOM CTA SECTION
+   BOTTOM CTA SECTION (Original - Unchanged)
    ===================================================== */
 .bottom-cta {
   margin-top: 4rem;
@@ -449,8 +539,22 @@
    ===================================================== */
 @media (max-width: 1024px) {
   .slide-content {
-    padding-left: 3rem;
-    padding-right: 3rem;
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  
+  .slide-text p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .enterprise-search-form {
+    margin: 0 auto;
+  }
+  
+  .slide-metrics {
+    max-width: 500px;
+    margin: 0 auto;
   }
   
   .slide-text h1 {
@@ -461,15 +565,11 @@
 @media (max-width: 768px) {
   .hero-slider-section {
     height: auto;
-    min-height: 500px;
+    min-height: 700px;
   }
   
-  .slide-content {
-    padding: 2rem 1.5rem;
-  }
-  
-  .slide-text {
-    max-width: 100%;
+  .slide {
+    padding: 2rem 1rem;
   }
   
   .slide-text h1 {
@@ -478,6 +578,18 @@
   
   .slide-text p {
     font-size: 1rem;
+  }
+  
+  .enterprise-search-form {
+    flex-direction: column;
+  }
+  
+  .search-btn {
+    width: 100%;
+  }
+  
+  .slide-metrics {
+    grid-template-columns: repeat(2, 1fr);
   }
   
   .slider-btn {

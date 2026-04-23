@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import SmartAssignmentPanel from './SmartAssignmentPanel';
 import SlaTimer from "../../components/tickets/SlaTimer";
-import TicketReportGenerator from "../../components/tickets/TicketReportGenerator";
 import {
   getAllTickets,
   updateTicketStatus,
@@ -1140,42 +1139,35 @@ export default function AdminTicketsPage() {
           </p>
         </div>
         
-        {/* Button Group */}
-        <div style={{ display: "flex", gap: "12px" }}>
-          {/* NEW: Generate Report Button */}
-          <TicketReportGenerator tickets={tickets} />
-          
-          {/* Existing: Manage Technicians Button */}
-          <button
-            onClick={() => window.location.href = "/admin/technicians"}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "12px 20px",
-              background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
-              color: "white",
-              border: "none",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: "pointer",
-              boxShadow: "0 4px 6px -1px rgba(124, 58, 237, 0.2)",
-              transition: "all 0.2s"
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = "translateY(-1px)";
-              e.target.style.boxShadow = "0 6px 8px -1px rgba(124, 58, 237, 0.3)";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0 4px 6px -1px rgba(124, 58, 237, 0.2)";
-            }}
-          >
-            <Wrench size={18} />
-            Manage Technicians
-          </button>
-        </div>
+        <button
+          onClick={() => window.location.href = "/admin/technicians"}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "12px 20px",
+            background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)",
+            color: "white",
+            border: "none",
+            borderRadius: "10px",
+            fontSize: "14px",
+            fontWeight: "600",
+            cursor: "pointer",
+            boxShadow: "0 4px 6px -1px rgba(124, 58, 237, 0.2)",
+            transition: "all 0.2s"
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = "translateY(-1px)";
+            e.target.style.boxShadow = "0 6px 8px -1px rgba(124, 58, 237, 0.3)";
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = "translateY(0)";
+            e.target.style.boxShadow = "0 4px 6px -1px rgba(124, 58, 237, 0.2)";
+          }}
+        >
+          <Wrench size={18} />
+          Manage Technicians
+        </button>
       </div>
 
       {/* ==================== ANALYTICS DASHBOARD ==================== */}
@@ -2119,7 +2111,7 @@ export default function AdminTicketsPage() {
                 </div>
               </div>
 
-                            {/* Comments Section */}
+              {/* Comments Section */}
               <div style={{
                 background: COLORS.surface,
                 border: "1px solid #e2e8f0",
@@ -2417,6 +2409,8 @@ export default function AdminTicketsPage() {
                       <span>OR MANUAL SELECTION</span>
                       <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
                     </div>
+
+                  
 
                     {/* EXISTING MANUAL ASSIGNMENT - UNCHANGED */}
                     <p style={{
