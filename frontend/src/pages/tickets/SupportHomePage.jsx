@@ -40,21 +40,21 @@ export default function SupportHomePage() {
     {
       badge: "Campus IT Support",
       title: "Smart Campus Help Desk",
-      desc: "Your centralized hub for all campus technology needs. From classroom equipment to dorm Wi-Fi, we provide fast, reliable support for students, faculty, and staff across all departments.",
+      desc: "                                                                                          ",
       icon: GraduationCap,
       image: "https://sptel.com/wp-content/uploads/2024/03/4.-How-Can-Schools-Get-Started-with-Smart-Campuses_.jpg"
     },
     {
       badge: "24/7 Student Support",
       title: "Always Here When You Need Us",
-      desc: "Round-the-clock technical assistance for residence halls, labs, and library systems. Our support team ensures uninterrupted access to campus resources and learning tools.",
+      desc: " ",
       icon: HeadphonesIcon,
       image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1920&q=80"
     },
     {
       badge: "Smart Campus Analytics",
       title: "Data-Driven Campus Operations",
-      desc: "Real-time tracking of campus maintenance requests, equipment status, and resolution metrics. We continuously improve our services based on student and faculty feedback.",
+      desc: " ",
       icon: BarChart3,
       image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1920&q=80"
     }
@@ -102,7 +102,7 @@ export default function SupportHomePage() {
 
   return (
     <div className="support-homepage">
-      {/* Campus Slider Hero Section with Background Images */}
+      {/* Campus Slider Hero Section with Background Images - Full Width */}
       <section className="hero-slider-section">
         <div className="slider-container">
           {slides.map((slide, index) => (
@@ -126,31 +126,6 @@ export default function SupportHomePage() {
                   </div>
                   <h1>{slide.title}</h1>
                   <p>{slide.desc}</p>
-                  
-                  <form onSubmit={handleSearch} className="enterprise-search-form">
-                    <div className="search-input-wrapper">
-                      <Search size={20} />
-                      <input 
-                        type="text" 
-                        value={searchTerm} 
-                        onChange={(e) => setSearchTerm(e.target.value)} 
-                        placeholder="Search by issue, building, room, or category..." 
-                      />
-                    </div>
-                    <button type="submit" className="search-btn">
-                      Search
-                    </button>
-                  </form>
-                </div>
-
-                <div className="slide-metrics">
-                  {metrics.map((metric, idx) => (
-                    <div key={idx} className="metric-card">
-                      <metric.icon size={24} />
-                      <div className="metric-value">{metric.value}</div>
-                      <div className="metric-label">{metric.label}</div>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>

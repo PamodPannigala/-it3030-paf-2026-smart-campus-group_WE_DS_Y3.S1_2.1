@@ -17,7 +17,7 @@ import {
   Loader2,
   Inbox,
 } from "lucide-react";
-import SlaTimer from "../../components/tickets/SlaTimer"; // ✅ NEW
+import SlaTimer from "../../components/tickets/SlaTimer";
 
 export default function PublicTickets() {
   const [tickets, setTickets] = useState([]);
@@ -37,6 +37,11 @@ export default function PublicTickets() {
     try {
       setLoading(true);
       const res = await axios.get("http://localhost:8082/api/tickets");
+      // Debug: log what statuses are actually coming from API
+      console.log("API Tickets:", res.data);
+      if (res.data && res.data.length > 0) {
+        console.log("Sample ticket status:", res.data[0].status);
+      }
       setTickets(res.data || []);
     } catch (error) {
       console.error("Error fetching public tickets", error);
@@ -95,16 +100,37 @@ export default function PublicTickets() {
     return map[c] || map.general;
   };
 
+  // ✅ FIXED: Added support for "completed" and "done" statuses
+  // Maps various resolved statuses to a unified display
   const getStatusConfig = (status) => {
-    const s = (status || "open").toLowerCase();
+    const s = (status || "open").toLowerCase().trim();
+    
+    // Handle different variations of resolved/completed status
+    const resolvedStatuses = ["solved", "completed", "done", "resolved", "repaired"];
+    const isResolved = resolvedStatuses.includes(s);
+    
     const configs = {
       open: { icon: AlertCircle, color: "#f59e0b", bg: "#fffbeb", label: "Open" },
-      repaired: { icon: CheckCircle2, color: "#10b981", bg: "#ecfdf5", label: "Repaired" },
-      rejected: { icon: XCircle, color: "#ef4444", bg: "#fef2f2", label: "Rejected" },
       "in progress": { icon: TrendingUp, color: "#3b82f6", bg: "#eff6ff", label: "In Progress" },
+      pending: { icon: Clock3, color: "#f97316", bg: "#fff7ed", label: "Pending" },
+      rejected: { icon: XCircle, color: "#ef4444", bg: "#fef2f2", label: "Rejected" },
       closed: { icon: CheckCircle2, color: "#6b7280", bg: "#f3f4f6", label: "Closed" },
     };
+
+    // If status is a resolved type (solved, completed, done, etc.)
+    if (isResolved) {
+      return { icon: CheckCircle2, color: "#10b981", bg: "#ecfdf5", label: "Solved" };
+    }
+
     return configs[s] || configs.open;
+  };
+
+  // ✅ NEW: Helper to normalize status for filtering
+  const getNormalizedStatus = (status) => {
+    const s = (status || "").toLowerCase().trim();
+    const resolvedStatuses = ["solved", "completed", "done", "resolved", "repaired"];
+    if (resolvedStatuses.includes(s)) return "solved";
+    return s;
   };
 
   const formatDate = (dateString) => {
@@ -121,11 +147,15 @@ export default function PublicTickets() {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
+  // ✅ FIXED: Count all resolved variations as "solved"
   const stats = useMemo(() => {
     return {
       total: tickets.length,
       open: tickets.filter(t => (t.status || "").toLowerCase() === "open").length,
-      repaired: tickets.filter(t => (t.status || "").toLowerCase() === "repaired").length,
+      solved: tickets.filter(t => {
+        const s = (t.status || "").toLowerCase();
+        return ["solved", "completed", "done", "resolved", "repaired"].includes(s);
+      }).length,
     };
   }, [tickets]);
 
@@ -496,7 +526,6 @@ export default function PublicTickets() {
       fontSize: "15px",
       maxWidth: "400px",
     },
-    // ✅ NEW: SLA Timer container style
     slaContainer: {
       marginLeft: "auto",
       display: "flex",
@@ -549,12 +578,12 @@ export default function PublicTickets() {
             <div style={styles.statLabel}>Open Issues</div>
           </div>
           <div style={styles.statCard}>
-            <div style={{...styles.statValue, color: "#10b981"}}>{stats.repaired}</div>
+            <div style={{...styles.statValue, color: "#10b981"}}>{stats.solved}</div>
             <div style={styles.statLabel}>Resolved</div>
           </div>
           <div style={styles.statCard}>
             <div style={{...styles.statValue, color: "#8b5cf6"}}>
-              {Math.round((stats.repaired / (stats.total || 1)) * 100)}%
+              {Math.round((stats.solved / (stats.total || 1)) * 100)}%
             </div>
             <div style={styles.statLabel}>Resolution Rate</div>
           </div>
@@ -601,7 +630,7 @@ export default function PublicTickets() {
               <option value="all">All Statuses</option>
               <option value="open">Open</option>
               <option value="in progress">In Progress</option>
-              <option value="repaired">Repaired</option>
+              <option value="solved">Solved</option>
               <option value="rejected">Rejected</option>
               <option value="closed">Closed</option>
             </select>
@@ -671,7 +700,6 @@ export default function PublicTickets() {
                           <span>Ticket #{ticket.id}</span>
                         </div>
                       </div>
-                      {/* ✅ NEW: SLA Timer in header */}
                       <div style={styles.slaContainer}>
                         <SlaTimer ticket={ticket} />
                       </div>
@@ -756,13 +784,11 @@ export default function PublicTickets() {
             <div style={{display: "flex", gap: "8px"}}>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter(page => {
-                  // Show first, last, current, and neighbors
                   return page === 1 || 
                          page === totalPages || 
                          Math.abs(page - currentPage) <= 1;
                 })
                 .map((page, index, array) => {
-                  // Add ellipsis
                   if (index > 0 && page - array[index - 1] > 1) {
                     return (
                       <React.Fragment key={`ellipsis-${page}`}>
