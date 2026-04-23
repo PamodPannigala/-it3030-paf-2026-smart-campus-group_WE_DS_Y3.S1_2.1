@@ -131,16 +131,38 @@ public class BookingController {
     }
 
     // Verify check-in (called by scanner)
+    @PostMapping("/verify-checkin/preview")
+    public ResponseEntity<?> previewCheckin(@RequestBody Map<String, String> payload, Authentication authentication) {
+        try {
+            CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+            String qrData = payload.get("qrData");
+            Booking booking = bookingService.validateCheckin(qrData, currentUser.getId(), currentUser.getRole());
+            BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Booking validation successful",
+                    "bookingId", booking.getId(),
+                    "resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()),
+                    "bookingDate", booking.getBookingDate().toString(),
+                    "startTime", booking.getStartTime().toString(),
+                    "endTime", booking.getEndTime().toString(),
+                    "checkedIn", booking.isCheckedIn()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Verify check-in (called by scanner)
     @PostMapping("/verify-checkin")
     public ResponseEntity<?> verifyCheckin(@RequestBody Map<String, String> payload, Authentication authentication) {
         try {
             CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
             String qrData = payload.get("qrData");
             Booking booking = bookingService.verifyAndCheckin(qrData, currentUser.getId(), currentUser.getRole());
+            BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
             return ResponseEntity.ok(Map.of(
                     "message", "Check-in successful",
                     "bookingId", booking.getId(),
-                    "resourceName", booking.getResourceId(),
+                    "resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()),
                     "checkedInAt", booking.getCheckedInAt().toString(),
                     "checkedIn", booking.isCheckedIn()));
         } catch (Exception e) {

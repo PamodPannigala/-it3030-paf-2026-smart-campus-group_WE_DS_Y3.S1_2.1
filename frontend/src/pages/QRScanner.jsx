@@ -14,6 +14,49 @@ const QRScanner = () => {
     return api.post('/bookings/verify-checkin', { qrData });
   };
 
+  const previewScannedCode = async (decodedText) => {
+    const qrData = typeof decodedText === 'string' ? decodedText.trim() : decodedText;
+    return api.post('/bookings/verify-checkin/preview', { qrData });
+  };
+
+  const processScan = async (decodedText) => {
+    try {
+      setLoading(true);
+      const previewResponse = await previewScannedCode(decodedText);
+      const previewDetails = previewResponse.data || {};
+      const resourceName = previewDetails.resourceName || "Unknown resource";
+
+      const confirmed = window.confirm(`Is this the resource (${resourceName}) ?`);
+
+      if (!confirmed) {
+        setScanResult({
+          success: false,
+          message: "Check-in failed: this is not the right resource.",
+          bookingDetails: null
+        });
+        return;
+      }
+
+      const verifyResponse = await verifyScannedCode(decodedText);
+      if (verifyResponse.data) {
+        setScanResult({
+          success: true,
+          message: verifyResponse.data.message || "✓ Checked in successfully!",
+          bookingDetails: verifyResponse.data
+        });
+      }
+    } catch (error) {
+      setScanResult({
+        success: false,
+        message: error.response?.data?.message || "Invalid QR code",
+        bookingDetails: null
+      });
+    } finally {
+      setLoading(false);
+      // Message stays until next scan - no auto-clear
+    }
+  };
+
   useEffect(() => {
     // Initialize scanner only once
     if (!scannerInitialized) {
@@ -24,27 +67,7 @@ const QRScanner = () => {
       });
 
       const onScanSuccess = async (decodedText) => {
-        try {
-          setLoading(true);
-          const response = await verifyScannedCode(decodedText);
-          
-          if (response.data) {
-            setScanResult({
-              success: true,
-              message: response.data.message || "✓ Checked in successfully!",
-              bookingDetails: response.data
-            });
-          }
-        } catch (error) {
-          setScanResult({
-            success: false,
-            message: error.response?.data?.message || "Invalid QR code",
-            bookingDetails: null
-          });
-        } finally {
-          setLoading(false);
-          // Message stays until next scan - no auto-clear
-        }
+        await processScan(decodedText);
       };
 
       const onScanError = (error) => {
@@ -77,26 +100,7 @@ const QRScanner = () => {
         });
         
         const onScanSuccess = async (decodedText) => {
-          try {
-            setLoading(true);
-            const response = await verifyScannedCode(decodedText);
-            
-            if (response.data) {
-              setScanResult({
-                success: true,
-                message: response.data.message || "✓ Checked in successfully!",
-                bookingDetails: response.data
-              });
-            }
-          } catch (error) {
-            setScanResult({
-              success: false,
-              message: error.response?.data?.message || "Invalid QR code",
-              bookingDetails: null
-            });
-          } finally {
-            setLoading(false);
-          }
+          await processScan(decodedText);
         };
         
         newScanner.render(onScanSuccess, () => {});

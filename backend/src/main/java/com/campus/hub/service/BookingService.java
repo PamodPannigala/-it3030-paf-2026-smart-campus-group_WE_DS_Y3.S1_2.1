@@ -206,8 +206,24 @@ public class BookingService {
         return verifyAndCheckin(qrData, getCurrentUserId(), null);
     }
 
+    // Validate QR and booking rules without checking in
+    public Booking validateCheckin(String qrData, Long currentUserId, Role currentUserRole) {
+        return resolveAndValidateCheckinBooking(qrData, currentUserId, currentUserRole);
+    }
+
     // Verify QR code and check-in with authenticated user context
     public Booking verifyAndCheckin(String qrData, Long currentUserId, Role currentUserRole) {
+        Booking booking = resolveAndValidateCheckinBooking(qrData, currentUserId, currentUserRole);
+        
+        // Mark as checked in
+        booking.setCheckedIn(true);
+        booking.setCheckedInAt(LocalDateTime.now());
+        booking.setUpdatedAt(LocalDateTime.now());
+        
+        return bookingRepository.save(booking);
+    }
+
+    private Booking resolveAndValidateCheckinBooking(String qrData, Long currentUserId, Role currentUserRole) {
         if (qrData == null || qrData.trim().isEmpty()) {
             throw new RuntimeException("Invalid QR code");
         }
@@ -260,13 +276,8 @@ public class BookingService {
         if (!isStaffScanner && currentUserId != null && !booking.getUserId().equals(currentUserId)) {
             throw new RuntimeException("You are not authorized to check in for this booking");
         }
-        
-        // Mark as checked in
-        booking.setCheckedIn(true);
-        booking.setCheckedInAt(LocalDateTime.now());
-        booking.setUpdatedAt(LocalDateTime.now());
-        
-        return bookingRepository.save(booking);
+
+        return booking;
     }
 
     // Normalize scanner input to reduce false "invalid QR" mismatches
