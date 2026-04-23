@@ -62,7 +62,7 @@ const ProfileSettingsPage = () => {
     try {
       await api.delete("/profile");
       await axios.post(`${API_ORIGIN}/logout`, {}, { withCredentials: true });
-      navigate("/?mode=signup", { replace: true });
+      navigate("/", { replace: true });
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to delete account");
     }

@@ -12,10 +12,14 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import "../styles/BookingForm.css";
+import { useAuth } from "../context/AuthContext";
+import { getResourceImageOrCatalogueFallback } from "../utils/resourceImageFallback";
+import api from "../services/api";
 
 const BookingForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -396,6 +400,11 @@ const BookingForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!user?.id) {
+      setError("Please sign in to create a booking.");
+      return;
+    }
+
     // Validate all fields before submit
     const isValid = validateAllFields();
     if (!isValid) {
@@ -422,7 +431,6 @@ const BookingForm = () => {
     try {
       const bookingRequest = {
         resourceId: parseInt(id),
-        userId: localStorage.getItem("userId") || 1,
         bookingDate: formData.bookingDate,
         startTime: formData.startTime,
         endTime: formData.endTime,
@@ -435,10 +443,7 @@ const BookingForm = () => {
         status: "PENDING",
       };
 
-      const response = await axios.post(
-        "http://localhost:8082/api/bookings",
-        bookingRequest,
-      );
+      const response = await api.post("/bookings", bookingRequest);
 
       if (response.data) {
         navigate(`/booking-success/${response.data.id}`, {
@@ -471,8 +476,8 @@ const BookingForm = () => {
       <div className="container py-4">
         {/* Back Button */}
         <button
-          onClick={() => navigate(`/resourceDetail/${id}`)}
-          className="btn btn-link text-decoration-none text-dark mb-4"
+          onClick={() => navigate(`/resourseDetail/${id}`)}
+          className="btn btn-link text-decoration-none text-dark mb-4 fw-bold"
         >
           <ArrowLeft size={20} className="me-2" /> Back to Resource
         </button>
@@ -483,14 +488,30 @@ const BookingForm = () => {
               <div className="card-body p-4 p-lg-5">
                 <h2 className="mb-4">Book This Resource</h2>
 
-                {/* Resource Summary */}
-                <div className="resource-summary mb-4 p-3 bg-light rounded">
-                  <h5>{resource?.name}</h5>
-                  <p className="text-muted mb-0">
-                    {resource?.type} •{" "}
-                    {resource?.type !== "EQUIPMENT" &&
-                      `Capacity: ${resource?.capacity} people`}
-                  </p>
+                {/* Resource Summary with Image */}
+                <div className="resource-summary mb-4 p-3 bg-light rounded d-flex align-items-center gap-3">
+                  {/* Resource Image */}
+                  <img
+                    src={getResourceImageOrCatalogueFallback(resource?.imageUrl || resource?.image, resource?.id)}
+                    alt={resource?.name}
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      objectFit: "cover",
+                      borderRadius: "12px",
+                    }}
+                    onError={(e) => {
+                      e.target.src = getResourceImageOrCatalogueFallback(null, resource?.id);
+                    }}
+                  />
+                  <div>
+                    <h5 className="mb-1">{resource?.name}</h5>
+                    <p className="text-muted mb-0">
+                      {resource?.type} •{" "}
+                      {resource?.type !== "EQUIPMENT" &&
+                        `Capacity: ${resource?.capacity} people`}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Operating Hours Info Box */}

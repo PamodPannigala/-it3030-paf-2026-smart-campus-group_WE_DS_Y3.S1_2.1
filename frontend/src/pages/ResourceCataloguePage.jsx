@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { Search, LayoutGrid, CalendarCheck } from "lucide-react"; // ADD CalendarCheck here
 import { useNavigate } from "react-router-dom";
+import { getCatalogueFallbackImage } from "../utils/resourceImageFallback";
 
 import "../styles/ResourceCataloguePage.css";
 
@@ -100,12 +101,6 @@ const ResourceCataloguePage = () => {
     if (upper === "NEW ARRIVAL") return "bg-primary";
     return "bg-success";
   };
-
-  const fallbackImages = [
-    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426",
-    "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2340",
-    "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2301",
-  ];
 
   return (
     <div
@@ -266,7 +261,7 @@ const ResourceCataloguePage = () => {
                 ? rawImageData.startsWith("http")
                   ? rawImageData
                   : `${BACKEND_BASE_URL}${rawImageData.startsWith("/") ? "" : "/"}${rawImageData}`
-                : fallbackImages[asset.id % fallbackImages.length || 0];
+                : getCatalogueFallbackImage(asset.id);
 
               const badgeClass = getStatusBadgeClass(asset.status);
               const isOutOfService = (asset.status || "")

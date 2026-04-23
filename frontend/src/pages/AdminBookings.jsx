@@ -22,6 +22,7 @@ import Chart from "react-apexcharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoImg from "../assets/logo.png";
+import { getResourceImageOrCatalogueFallback } from "../utils/resourceImageFallback";
 
 const AdminBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -138,6 +139,13 @@ const AdminBookings = () => {
         <Clock size={10} className="me-1" /> Pending
       </span>
     );
+  };
+
+    // ========== CHECK IF BOOKING IS EXPIRED ==========
+  const isBookingExpired = (booking) => {
+    const bookingDateTime = new Date(`${booking.bookingDate}T${booking.endTime}`);
+    const now = new Date();
+    return now > bookingDateTime;
   };
 
   // ========== CHECKED-IN STATISTICS FOR CHART (MOVED OUTSIDE) ==========
@@ -348,7 +356,6 @@ const AdminBookings = () => {
   );
 
   // PDF Download Function (Adapted for Bookings)
-  // PDF Download Function (Adapted for Bookings)
   const downloadPDF = async () => {
     try {
       const pdf = new jsPDF("p", "mm", "a4");
@@ -398,7 +405,7 @@ const AdminBookings = () => {
       pdf.setFontSize(18);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(0, 0, 0);
-      pdf.text("CampusHub", 35, 23);
+      pdf.text("Adeline University", 35, 23);
 
       // Tagline
       pdf.setFontSize(8);
@@ -408,9 +415,9 @@ const AdminBookings = () => {
       // Company Info
       pdf.setFontSize(8);
       pdf.setTextColor(0);
-      pdf.text("Email: info@campus_hub.org", 130, 17);
+      pdf.text("Email: info@adelineuniversity.org", 130, 17);
       pdf.text("Phone: +94 71 920 7688", 130, 21);
-      pdf.text("Web: www.CampusHub.org", 130, 25);
+      pdf.text("Web: www.AdelineUniversity.org", 130, 25);
       pdf.text("Address: Colombo, Sri Lanka", 130, 29);
 
       // Separator
@@ -446,7 +453,8 @@ const AdminBookings = () => {
 
       pdf.line(20, 105, 190, 105);
 
-      // Table
+      
+       // Table
       const tableColumn = [
         "ID",
         "Resource",
@@ -465,7 +473,6 @@ const AdminBookings = () => {
         b.purpose?.substring(0, 40) || "",
         b.status,
       ]);
-
       autoTable(pdf, {
         head: [tableColumn],
         body: tableRows,
@@ -509,7 +516,7 @@ const AdminBookings = () => {
 
         pdf.setFontSize(8);
         pdf.setTextColor(100);
-        pdf.text("CampusHub - Bookings Report", 20, footerY + 5);
+        pdf.text("Adeline University - Bookings Report", 20, footerY + 5);
         pdf.text(`Page ${i} of ${pageCount}`, 160, footerY + 5);
         pdf.text(
           `Generated on ${new Date().toLocaleDateString()}`,
@@ -521,6 +528,21 @@ const AdminBookings = () => {
       pdf.save(
         `CampusHub-Bookings-Report-${new Date().toISOString().split("T")[0]}.pdf`,
       );
+
+      // Trigger notification to admins silently
+      try {
+        await axios.post("http://localhost:8082/api/notifications", {
+          targetGroup: "ALL_ADMINS",
+          category: "BOOKING",
+          title: "Bookings Report Downloaded",
+          message: "An administrator has successfully exported the Bookings Management Report (PDF).",
+          referenceType: "BOOKING",
+          referenceId: "REPORT"
+        }, { withCredentials: true });
+      } catch (err) {
+        console.error("Failed to send download notification", err);
+      }
+      
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert("Error generating PDF. Please try again.");
@@ -605,8 +627,8 @@ const AdminBookings = () => {
         }}
       />
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 style={{ color: "#1a1a2e", fontWeight: "600" }}>
-          Manage Bookings (Admin)
+        <h2 style={{ color: "#1a1a2e", fontWeight: "800", fontSize: "2.50rem" }}>
+          Booking Management
         </h2>
         <div className="d-flex gap-2">
           <button
@@ -879,16 +901,17 @@ const AdminBookings = () => {
             >
               <span
                 className="input-group-text bg-white border-end-0"
-                style={{ borderRadius: "12px 0 0 12px" }}
+                style={{ borderRadius: "12px 0 0 12px", borderColor: '#3b82f6' }}
               >
-                <Search size={18} className="text-muted" />
+                <Search size={18} className="text-primary" />
               </span>
               <input
                 type="text"
                 className="form-control border-start-0"
                 style={{
                   borderRadius: "0 12px 12px 0",
-                  borderColor: "#dee2e6",
+                  borderColor: "#3b82f6",
+                  borderLeft: "none",
                 }}
                 placeholder="Search by resource name..."
                 value={searchTerm}
@@ -897,13 +920,14 @@ const AdminBookings = () => {
             </div>
 
             {/* Date Filter */}
+                        {/* Date Filter */}
             <input
               type="date"
               className="form-control"
               style={{
                 width: "180px",
                 borderRadius: "12px",
-                borderColor: "#dee2e6",
+                borderColor: "#3b82f6",
               }}
               placeholder="Filter by date"
               value={dateFilter}
@@ -911,18 +935,21 @@ const AdminBookings = () => {
             />
 
             {/* Checked-in Status Filter */}
+                        {/* Checked-in Status Filter */}
+                        {/* Checked-in Status Filter */}
             <select
               className="form-select"
               style={{
                 width: "200px",
                 borderRadius: "12px",
-                borderColor: "#dee2e6",
+                borderColor: "#3b82f6",
               }}
               value={checkedInFilter}
               onChange={(e) => setCheckedInFilter(e.target.value)}
             >
               <option value="ALL">All Check-in Status</option>
               <option value="CHECKED_IN">Checked In</option>
+              <option value="NOT_CHECKED_IN">Not Checked In</option>
               <option value="PENDING">Pending Check-in</option>
               <option value="MISSED">Missed</option>
             </select>
@@ -1148,36 +1175,25 @@ const AdminBookings = () => {
                     #{booking.id}
                   </td>
                   <td style={{ width: "80px", padding: "12px" }}>
-                    {booking.resourceImage ? (
-                      <img
-                        src={booking.resourceImage}
-                        alt={booking.resourceName}
-                        style={{
-                          width: "50px",
-                          height: "50px",
-                          objectFit: "cover",
-                          borderRadius: "10px",
-                        }}
-                        onError={(e) => {
-                          e.target.src =
-                            "https://via.placeholder.com/50x50?text=No+Image";
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: "50px",
-                          height: "50px",
-                          backgroundColor: "#f3f4f6",
-                          borderRadius: "10px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <span className="text-muted small">No img</span>
-                      </div>
-                    )}
+                    <img
+                      src={getResourceImageOrCatalogueFallback(
+                        booking.resourceImage,
+                        booking.resourceId,
+                      )}
+                      alt={booking.resourceName}
+                      style={{
+                        width: "50px",
+                        height: "50px",
+                        objectFit: "cover",
+                        borderRadius: "10px",
+                      }}
+                      onError={(e) => {
+                        e.target.src = getResourceImageOrCatalogueFallback(
+                          "",
+                          booking.resourceId,
+                        );
+                      }}
+                    />
                   </td>
                   <td
                     className="fw-semibold"
@@ -1212,8 +1228,9 @@ const AdminBookings = () => {
                   <td style={{ padding: "12px", verticalAlign: "middle" }}>
                     {getCheckedInStatus(booking)}
                   </td>
-                  <td style={{ padding: "12px", verticalAlign: "middle" }}>
+                                    <td style={{ padding: "12px", verticalAlign: "middle" }}>
                     <div className="d-flex gap-2 justify-content-center">
+                      {/* View Button - Always visible */}
                       <button
                         className="btn btn-sm btn-outline-info"
                         onClick={() => setViewModal(booking)}
@@ -1223,75 +1240,112 @@ const AdminBookings = () => {
                         <Eye size={14} />
                       </button>
 
-                      {booking.status === "PENDING" && (
+                      {/* If booking is expired, only show View and Delete buttons */}
+                      {isBookingExpired(booking) ? (
                         <>
+                          {/* Delete Button - Visible for expired bookings */}
                           <button
-                            className="btn btn-sm btn-outline-success"
-                            onClick={() => approveBooking(booking.id)}
-                            title="Approve"
+                            className="btn btn-sm btn-outline-dark"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "Are you sure you want to permanently delete this booking?",
+                                )
+                              ) {
+                                axios
+                                  .delete(
+                                    `http://localhost:8082/api/bookings/${booking.id}`,
+                                  )
+                                  .then(() => {
+                                    toast.success("Booking deleted successfully");
+                                    fetchAllBookings();
+                                  })
+                                  .catch((err) =>
+                                    toast.error("Failed to delete booking"),
+                                  );
+                              }
+                            }}
+                            title="Delete Permanently"
                             style={{ borderRadius: "8px" }}
                           >
-                            <CheckCircle size={14} />
+                            <Trash2 size={14} />
                           </button>
+                        </>
+                      ) : (
+                        <>
+                          {/* Non-expired bookings show all action buttons */}
+                          {booking.status === "PENDING" && (
+                            <>
+                              <button
+                                className="btn btn-sm btn-outline-success"
+                                onClick={() => approveBooking(booking.id)}
+                                title="Approve"
+                                style={{ borderRadius: "8px" }}
+                              >
+                                <CheckCircle size={14} />
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => setSelectedBooking(booking)}
+                                title="Reject"
+                                style={{ borderRadius: "8px" }}
+                              >
+                                <XCircle size={14} />
+                              </button>
+                            </>
+                          )}
+
+                          {booking.status === "APPROVED" && (
+                            <button
+                              className="btn btn-sm btn-outline-danger"
+                              onClick={() => setSelectedBooking(booking)}
+                              title="Reject"
+                              style={{ borderRadius: "8px" }}
+                            >
+                              <XCircle size={14} />
+                            </button>
+                          )}
+
+                          {booking.status === "REJECTED" && (
+                            <button
+                              className="btn btn-sm btn-outline-success"
+                              onClick={() => approveBooking(booking.id)}
+                              title="Approve"
+                              style={{ borderRadius: "8px" }}
+                            >
+                              <CheckCircle size={14} />
+                            </button>
+                          )}
+
+                          {/* Delete Button - Also visible for non-expired */}
                           <button
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => setSelectedBooking(booking)}
-                            title="Reject"
+                            className="btn btn-sm btn-outline-dark"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "Are you sure you want to permanently delete this booking?",
+                                )
+                              ) {
+                                axios
+                                  .delete(
+                                    `http://localhost:8082/api/bookings/${booking.id}`,
+                                  )
+                                  .then(() => {
+                                    toast.success("Booking deleted successfully");
+                                    fetchAllBookings();
+                                  })
+                                  .catch((err) =>
+                                    toast.error("Failed to delete booking"),
+                                  );
+                              }
+                            }}
+                            title="Delete Permanently"
                             style={{ borderRadius: "8px" }}
                           >
-                            <XCircle size={14} />
+                            <Trash2 size={14} />
                           </button>
                         </>
                       )}
-
-                      {booking.status === "APPROVED" && (
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => setSelectedBooking(booking)}
-                          title="Reject"
-                          style={{ borderRadius: "8px" }}
-                        >
-                          <XCircle size={14} />
-                        </button>
-                      )}
-
-                      {booking.status === "REJECTED" && (
-                        <button
-                          className="btn btn-sm btn-outline-success"
-                          onClick={() => approveBooking(booking.id)}
-                          title="Approve"
-                          style={{ borderRadius: "8px" }}
-                        >
-                          <CheckCircle size={14} />
-                        </button>
-                      )}
-
-                      <button
-                        className="btn btn-sm btn-outline-dark"
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Are you sure you want to permanently delete this booking?",
-                            )
-                          ) {
-                            axios
-                              .delete(
-                                `http://localhost:8082/api/bookings/${booking.id}`,
-                              )
-                              .then(() => {
-                                toast.success("Booking deleted successfully");
-                                fetchAllBookings();
-                              })
-                              .catch((err) =>
-                                toast.error("Failed to delete booking"),
-                              );
-                          }
-                        }}
-                        title="Delete Permanently"
-                        style={{ borderRadius: "8px" }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -1375,26 +1429,29 @@ const AdminBookings = () => {
               </div>
               <div className="modal-body">
                 <div className="row">
-                  {viewModal.resourceImage && (
-                    <div className="col-md-4">
-                      <img
-                        src={viewModal.resourceImage}
-                        alt={viewModal.resourceName}
-                        className="img-fluid rounded"
-                        style={{
-                          width: "100%",
-                          height: "150px",
-                          objectFit: "cover",
-                          borderRadius: "12px",
-                        }}
-                      />
-                    </div>
-                  )}
-                  <div
-                    className={
-                      viewModal.resourceImage ? "col-md-8" : "col-md-12"
-                    }
-                  >
+                  <div className="col-md-4">
+                    <img
+                      src={getResourceImageOrCatalogueFallback(
+                        viewModal.resourceImage,
+                        viewModal.resourceId,
+                      )}
+                      alt={viewModal.resourceName}
+                      className="img-fluid rounded"
+                      style={{
+                        width: "100%",
+                        height: "150px",
+                        objectFit: "cover",
+                        borderRadius: "12px",
+                      }}
+                      onError={(e) => {
+                        e.target.src = getResourceImageOrCatalogueFallback(
+                          "",
+                          viewModal.resourceId,
+                        );
+                      }}
+                    />
+                  </div>
+                  <div className="col-md-8">
                     <h6 style={{ color: "#1a1a2e", fontWeight: "600" }}>
                       {viewModal.resourceName}
                     </h6>
@@ -1427,9 +1484,24 @@ const AdminBookings = () => {
                         {viewModal.specialRequests}
                       </p>
                     )}
-                    <p>
+                                        <p>
                       <strong>Status:</strong> {viewModal.status}
                     </p>
+                    {/* Check-in Status Display in Modal */}
+                    {viewModal.status === "APPROVED" && (
+                      <p>
+                        <strong>Check-in Status:</strong>{" "}
+                        {viewModal.checkedIn ? (
+                          <span className="badge bg-success">
+                            Checked In on {new Date(viewModal.checkedInAt).toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="badge bg-warning text-dark">
+                            Not Checked In
+                          </span>
+                        )}
+                      </p>
+                    )}
                     {viewModal.rejectionReason && (
                       <p>
                         <strong>Rejection Reason:</strong>{" "}
@@ -1482,19 +1554,26 @@ const AdminBookings = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                {selectedBooking.resourceImage && (
-                  <img
-                    src={selectedBooking.resourceImage}
-                    alt={selectedBooking.resourceName}
-                    className="img-fluid rounded mb-3"
-                    style={{
-                      width: "100%",
-                      height: "120px",
-                      objectFit: "cover",
-                      borderRadius: "12px",
-                    }}
-                  />
-                )}
+                <img
+                  src={getResourceImageOrCatalogueFallback(
+                    selectedBooking.resourceImage,
+                    selectedBooking.resourceId,
+                  )}
+                  alt={selectedBooking.resourceName}
+                  className="img-fluid rounded mb-3"
+                  style={{
+                    width: "100%",
+                    height: "120px",
+                    objectFit: "cover",
+                    borderRadius: "12px",
+                  }}
+                  onError={(e) => {
+                    e.target.src = getResourceImageOrCatalogueFallback(
+                      "",
+                      selectedBooking.resourceId,
+                    );
+                  }}
+                />
                 <p>
                   <strong>Resource:</strong> {selectedBooking.resourceName}
                 </p>

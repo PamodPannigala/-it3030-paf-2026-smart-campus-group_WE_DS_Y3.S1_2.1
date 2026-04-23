@@ -22,8 +22,14 @@ export const AuthProvider = ({ children }) => {
   const refreshUser = async () => {
     try {
       const response = await api.get("/auth/me");
-      setUser(response.data);
-      return response.data;
+      const userData = response.data;
+      setUser(userData);
+      if (userData) {
+        localStorage.setItem("userId", userData.id);
+        localStorage.setItem("userEmail", userData.email);
+        localStorage.setItem("userName", userData.fullName || userData.username);
+      }
+      return userData;
     } catch (error) {
       if (error?.response?.status === 401) {
         setUser(null);
@@ -59,8 +65,14 @@ export const AuthProvider = ({ children }) => {
       usernameOrEmail: usernameOrEmail.trim(),
       password,
     });
-    setUser(response.data);
-    return response.data;
+    const userData = response.data;
+    setUser(userData);
+    if (userData) {
+      localStorage.setItem("userId", userData.id);
+      localStorage.setItem("userEmail", userData.email);
+      localStorage.setItem("userName", userData.fullName || userData.username);
+    }
+    return userData;
   };
 
   const signup = async ({ fullName, username, email, password }) => {
@@ -84,6 +96,9 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     await axios.post(`${API_ORIGIN}/logout`, {}, { withCredentials: true });
     setUser(null);
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userName");
   };
 
   const value = {
@@ -99,7 +114,8 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     logout,
     isAdmin: user?.role === "ADMIN",
-    isStaff: user?.role === "ADMIN" || user?.role === "TECHNICIAN",
+    isSecurity: user?.role === "SECURITY",
+    isStaff: user?.role === "ADMIN" || user?.role === "TECHNICIAN" || user?.role === "SECURITY",
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
