@@ -243,30 +243,6 @@ const PublicResourceView = () => {
                 top: "20px",
               }}
             >
-              <div className="d-grid gap-3 mb-4">
-                <button
-                  className="btn py-3 border-0 text-white fw-bold shadow-sm"
-                  style={{
-                    backgroundColor: "#004B87",
-                    fontSize: "15px",
-                    borderRadius: "8px",
-                  }}
-                >
-                  Book This Resource
-                </button>
-                <button
-                  className="btn py-3 border-0 fw-bold"
-                  style={{
-                    backgroundColor: "#F2F3FF",
-                    color: "#004B87",
-                    fontSize: "15px",
-                    borderRadius: "8px",
-                  }}
-                >
-                  Report a Technical Issue
-                </button>
-              </div>
-
               {/* Map Section */}
               <div className="mb-4">
                 <p
@@ -293,8 +269,8 @@ const PublicResourceView = () => {
                   style={{ fontSize: "13px", color: "#515F74" }}
                 >
                   <span>
-                    ℹ️ {resource.location} is located on the North Mezzanine
-                    floor.
+                    ℹ️ <b>{resource.location} </b>is located on Campus
+                    Inventory.
                   </span>
                 </div>
               </div>
