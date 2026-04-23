@@ -12,7 +12,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 
 const StaffShell = ({ children }) => {
-  const { logout, isAdmin } = useAuth();
+  const { logout, isAdmin, isSecurity } = useAuth();
   const navigate = useNavigate();
 
   const linkClass = ({ isActive }) => (isActive ? "active" : "");
@@ -37,52 +37,58 @@ const StaffShell = ({ children }) => {
               <span className="label">Dashboard</span>
             </NavLink>
           </li>
-          {isAdmin ? (
-            <li>
-              <NavLink to="/users" className={linkClass}>
-                <Users className="staff-menu-icon" aria-hidden />
-                <span className="label">User management</span>
-              </NavLink>
-            </li>
-          ) : (
-            <li className="disabled" title="Administrators only">
-              <span>
-                <Users className="staff-menu-icon" aria-hidden />
-                <span className="label">User management</span>
-              </span>
-            </li>
+          {!isSecurity && (
+            isAdmin ? (
+              <li>
+                <NavLink to="/users" className={linkClass}>
+                  <Users className="staff-menu-icon" aria-hidden />
+                  <span className="label">User management</span>
+                </NavLink>
+              </li>
+            ) : (
+              <li className="disabled" title="Administrators only">
+                <span>
+                  <Users className="staff-menu-icon" aria-hidden />
+                  <span className="label">User management</span>
+                </span>
+              </li>
+            )
           )}
-          {isAdmin ? (
-            <li>
-              <NavLink to="/admin/facilities" className={linkClass}>
-                <Building className="staff-menu-icon" aria-hidden />
-                <span className="label">Facility management</span>
-              </NavLink>
-            </li>
-          ) : (
-            <li className="disabled" title="Administrators only">
-              <span>
-                <Building className="staff-menu-icon" aria-hidden />
-                <span className="label">Facility management</span>
-              </span>
-            </li>
+          {!isSecurity && (
+            isAdmin ? (
+              <li>
+                <NavLink to="/admin/facilities" className={linkClass}>
+                  <Building className="staff-menu-icon" aria-hidden />
+                  <span className="label">Facility management</span>
+                </NavLink>
+              </li>
+            ) : (
+              <li className="disabled" title="Administrators only">
+                <span>
+                  <Building className="staff-menu-icon" aria-hidden />
+                  <span className="label">Facility management</span>
+                </span>
+              </li>
+            )
           )}
-          {isAdmin ? (
-            <li>
-              <NavLink to="/admin/inventory" className={linkClass}>
-                <Building className="staff-menu-icon" aria-hidden />
-                <span className="label">Inventory management</span>
-              </NavLink>
-            </li>
-          ) : (
-            <li className="disabled" title="Administrators only">
-              <span>
-                <Building className="staff-menu-icon" aria-hidden />
-                <span className="label">Inventory management</span>
-              </span>
-            </li>
+          {!isSecurity && (
+            isAdmin ? (
+              <li>
+                <NavLink to="/admin/inventory" className={linkClass}>
+                  <Building className="staff-menu-icon" aria-hidden />
+                  <span className="label">Inventory management</span>
+                </NavLink>
+              </li>
+            ) : (
+              <li className="disabled" title="Administrators only">
+                <span>
+                  <Building className="staff-menu-icon" aria-hidden />
+                  <span className="label">Inventory management</span>
+                </span>
+              </li>
+            )
           )}
-          {isAdmin ? (
+          {(isAdmin || isSecurity) ? (
             <li>
               <NavLink to="/admin/bookings" className={linkClass}>
                 <Calendar className="staff-menu-icon" aria-hidden />
@@ -97,20 +103,22 @@ const StaffShell = ({ children }) => {
               </span>
             </li>
           )}
-          {isAdmin ? (
-            <li>
-              <NavLink to="/admin/tickets" className={linkClass}>
-                <Ticket className="staff-menu-icon" aria-hidden />
-                <span className="label">Ticket management</span>
-              </NavLink>
-            </li>
-          ) : (
-            <li className="disabled" title="Administrators only">
-              <span>
-                <Ticket className="staff-menu-icon" aria-hidden />
-                <span className="label">Ticket management</span>
-              </span>
-            </li>
+          {!isSecurity && (
+            isAdmin ? (
+              <li>
+                <NavLink to="/admin/tickets" className={linkClass}>
+                  <Ticket className="staff-menu-icon" aria-hidden />
+                  <span className="label">Ticket management</span>
+                </NavLink>
+              </li>
+            ) : (
+              <li className="disabled" title="Administrators only">
+                <span>
+                  <Ticket className="staff-menu-icon" aria-hidden />
+                  <span className="label">Ticket management</span>
+                </span>
+              </li>
+            )
           )}
           <li>
             <NavLink to="/notifications" className={linkClass}>

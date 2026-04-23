@@ -41,9 +41,9 @@ public class UserManagementServiceImpl implements UserManagementService {
     public UserSummaryResponse createUser(AdminCreateUserRequest request) {
         // Changed to .getRole() from .role()
         Role role = request.getRole();
-        if (role != Role.ADMIN && role != Role.TECHNICIAN) {
+        if (role != Role.ADMIN && role != Role.TECHNICIAN && role != Role.SECURITY) {
             throw new IllegalArgumentException(
-                    "Only ADMIN or TECHNICIAN accounts can be created here. Regular users sign up on the public form.");
+                    "Only ADMIN, TECHNICIAN, or SECURITY accounts can be created here. Regular users sign up on the public form.");
         }
 
         // Changed all record-style accessors to .get...()

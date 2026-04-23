@@ -56,12 +56,12 @@ const AdminDashboardPage = () => {
             <p>{stats.users ?? "—"}</p>
           </div>
         )}
-        {!isAdmin && (
-          <div className="staff-stat-card dark">
-            <h3>Your role</h3>
-            <p style={{ fontSize: "1.1rem" }}>Technician</p>
-          </div>
-        )}
+        <div className="staff-stat-card dark">
+          <h3>Your role</h3>
+          <p style={{ fontSize: "1.1rem", textTransform: "capitalize" }}>
+            {user?.role?.toLowerCase() || "Staff"}
+          </p>
+        </div>
       </section>
 
       <section className="staff-action-grid" aria-label="Quick links">

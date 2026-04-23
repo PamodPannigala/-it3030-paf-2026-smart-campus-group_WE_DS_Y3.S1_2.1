@@ -4,7 +4,7 @@ import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import NotificationItem from "../components/NotificationItem";
 import NotificationFilter from "../components/NotificationFilter";
-import { Bell, Send, Inbox, ShieldAlert } from "lucide-react";
+import { Bell, Send, Inbox, ShieldAlert, Building2, Clock, Calendar, Info } from "lucide-react";
 import usePushNotifications from "../hooks/usePushNotifications";
 
 const NotificationsPage = () => {
@@ -20,6 +20,8 @@ const NotificationsPage = () => {
   const [search, setSearch] = useState("");
   const [targetGroup, setTargetGroup] = useState("SPECIFIC");
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [details, setDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [form, setForm] = useState({
     userId: "",
     category: "SYSTEM",
@@ -108,6 +110,34 @@ const NotificationsPage = () => {
     }
   };
 
+  const fetchDetails = useCallback(async (notification) => {
+    if (!notification.referenceType || !notification.referenceId) return;
+    
+    setDetailsLoading(true);
+    setDetails(null);
+    try {
+      let endpoint = "";
+      switch (notification.referenceType) {
+        case "BOOKING": endpoint = `/bookings/${notification.referenceId}`; break;
+        case "FACILITY": endpoint = `/resources/${notification.referenceId}`; break;
+        case "TICKET": endpoint = `/tickets/${notification.referenceId}`; break;
+        default: return;
+      }
+      const response = await api.get(endpoint);
+      setDetails(response.data);
+    } catch (err) {
+      console.error("Failed to fetch notification details:", err);
+    } finally {
+      setDetailsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedNotification) {
+      fetchDetails(selectedNotification);
+    }
+  }, [selectedNotification, fetchDetails]);
+
   const filteredNotifications = useMemo(() => {
     return notifications.filter((n) => {
       const categoryMatch = filter === "ALL" || 
@@ -119,41 +149,81 @@ const NotificationsPage = () => {
   }, [notifications, filter, search]);
 
   return (
-    <div className="container-fluid py-4 min-vh-100 animate-fade-in">
-      <div className="row justify-content-center">
-        <div className="col-xl-10">
-          
-          {/* Header Section */}
-          <header className="d-flex justify-content-between align-items-end mb-5">
-            <MotionDiv initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
-              <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill mb-3 fw-bold tracking-wider fs-xs">
-                {isStaff ? "ADMINISTRATION PANEL" : "MESSAGING HUB"}
-              </span>
-              <h1 className="display-5 fw-bold mb-2">Notifications</h1>
-              <p className="text-muted lead fs-6">
-                {isAdmin 
-                  ? "Manage system-wide broadcasts and targeted user alerts." 
-                  : "Stay updated with campus events, bookings, and support."}
-              </p>
-            </MotionDiv>
+    <div className="d-grid gap-4 animate-fade-in">
+      {/* Admin Banner */}
+      {isStaff && (
+        <header className="m4-staff-header">
+          <div>
+            <div className="kicker">Management Console</div>
+            <h1>Notification Hub</h1>
+            <p className="sub">
+              Broadcast system-wide alerts or send targeted communications to specific campus users.
+            </p>
+          </div>
+        </header>
+      )}
 
-            <MotionDiv
-               whileHover={{ scale: 1.05 }}
-               whileTap={{ scale: 0.95 }}
-               className="form-check form-switch bg-white p-3 rounded-pill shadow-sm border px-4 d-flex align-items-center gap-2 cursor-pointer"
-            >
-              <input
-                id="unreadOnly"
-                className="form-check-input ms-0"
-                type="checkbox"
-                checked={unreadOnly}
-                onChange={(e) => setUnreadOnly(e.target.checked)}
-              />
-              <label htmlFor="unreadOnly" className="form-check-label text-muted fw-medium small mb-0">
-                Unread only
-              </label>
-            </MotionDiv>
-          </header>
+          {/* User Side Picture Banner */}
+          {!isStaff && (
+            <div className="card border-0 rounded-4 overflow-hidden mb-5 shadow-sm" style={{ 
+              height: "220px",
+              background: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://images.unsplash.com/photo-1577563908411-5077b6dc7624?q=80&w=2070&auto=format&fit=crop') center/cover`
+            }}>
+              <div className="card-body d-flex flex-column justify-content-center px-5 text-white">
+                <h2 className="display-6 fw-bold mb-1 text-white text-start">Your Messaging Hub</h2>
+                <p className="lead fs-6 mb-0 opacity-90 text-start">Stay updated with the latest campus announcements and booking alerts.</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Header Section (Original, modified for staff) */}
+          {!isStaff && (
+            <header className="d-flex justify-content-between align-items-end mb-4">
+              <MotionDiv initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}>
+                <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill mb-2 fw-bold tracking-wider fs-xs">
+                  INBOX & ALERTS
+                </span>
+              </MotionDiv>
+
+              <MotionDiv
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="form-check form-switch bg-white p-3 rounded-pill shadow-sm border px-4 d-flex align-items-center gap-2 cursor-pointer"
+              >
+                <input
+                  id="unreadOnly"
+                  className="form-check-input ms-0"
+                  type="checkbox"
+                  checked={unreadOnly}
+                  onChange={(e) => setUnreadOnly(e.target.checked)}
+                />
+                <label htmlFor="unreadOnly" className="form-check-label text-muted fw-medium small mb-0">
+                  Unread only
+                </label>
+              </MotionDiv>
+            </header>
+          )}
+
+          {isStaff && (
+             <header className="d-flex justify-content-end mb-4">
+                <MotionDiv
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="form-check form-switch bg-white p-3 rounded-pill shadow-sm border px-4 d-flex align-items-center gap-2 cursor-pointer"
+                >
+                  <input
+                    id="unreadOnlyStaff"
+                    className="form-check-input ms-0"
+                    type="checkbox"
+                    checked={unreadOnly}
+                    onChange={(e) => setUnreadOnly(e.target.checked)}
+                  />
+                  <label htmlFor="unreadOnlyStaff" className="form-check-label text-muted fw-medium small mb-0">
+                    Filter Unread
+                  </label>
+                </MotionDiv>
+             </header>
+          )}
 
           {error && (
             <MotionDiv initial={{ height: 0 }} animate={{ height: "auto" }} className="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-2 mb-4">
@@ -166,7 +236,7 @@ const NotificationsPage = () => {
             
             {/* Main Notifications List */}
             <div className={isAdmin ? "col-lg-8" : "col-12"}>
-              <div className="card m4-glass-card border-0 overflow-hidden h-100">
+              <div className="card m4-glass-card border-0 overflow-hidden">
                 
                 <NotificationFilter 
                   filter={filter}
@@ -177,14 +247,14 @@ const NotificationsPage = () => {
                   unreadCount={unreadCount}
                 />
 
-                <div className="card-body p-4 bg-transparent" style={{ minHeight: "400px" }}>
+                <div className="card-body px-4 pb-4 pt-0 bg-transparent">
                   {loading ? (
                     <div className="d-flex flex-column align-items-center justify-content-center py-5">
                       <div className="spinner-border text-primary mb-3" role="status"></div>
                       <span className="text-muted">Fetching your messages...</span>
                     </div>
                   ) : filteredNotifications.length === 0 ? (
-                    <div className="d-flex flex-column align-items-center justify-content-center py-5 opacity-50">
+                    <div className="d-flex flex-column align-items-center py-5 opacity-50">
                       <Inbox className="w-16 h-16 mb-3 text-muted" />
                       <h5>No notifications found</h5>
                       <p className="text-muted small">Try adjusting your filters or search terms</p>
@@ -212,7 +282,7 @@ const NotificationsPage = () => {
                 <MotionDiv
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="card m4-glass-card border-0 h-100"
+                  className="card m4-glass-card border-0"
                 >
                   <div className="card-body p-4">
                     <div className="d-flex align-items-center gap-2 mb-4">
@@ -296,57 +366,150 @@ const NotificationsPage = () => {
               </div>
             )}
             
-          </div>
-        </div>
-      </div>
 
-      {/* Notification Detail Modal */}
-      <AnimatePresence>
-        {selectedNotification && (
+
+    </div>
+    {/* Notification Detail Modal - Moved outside main container to fix viewport positioning */}
+    <AnimatePresence>
+      {selectedNotification && (
+        <MotionDiv
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="m4-modal-overlay"
+          onClick={() => { setSelectedNotification(null); setDetails(null); }}
+        >
           <MotionDiv
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="modal-overlay"
-            onClick={() => setSelectedNotification(null)}
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            className="m4-modal-content m4-glass-card p-4"
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: "600px", width: "95%" }}
           >
-            <MotionDiv
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="modal-content m4-glass-card p-4"
-              onClick={e => e.stopPropagation()}
-              style={{ maxWidth: "500px", width: "90%" }}
-            >
-              <div className="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                  <span className="badge bg-primary-subtle text-primary mb-2">{selectedNotification.category}</span>
-                  <h3 className="fw-bold mb-0">{selectedNotification.title}</h3>
-                </div>
-                <button className="btn-close" onClick={() => setSelectedNotification(null)}></button>
-              </div>
-              
-              <div className="mb-4">
-                <p className="text-muted" style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
-                  {selectedNotification.message}
-                </p>
-              </div>
-
-              <div className="d-flex justify-content-between align-items-center border-top pt-3">
-                <span className="text-muted small">
-                  {new Date(selectedNotification.createdAt).toLocaleString()}
+            <div className="d-flex justify-content-between align-items-start mb-4">
+              <div>
+                <span className="badge bg-primary-subtle text-primary mb-2 px-3 py-2 rounded-pill fw-bold">
+                  {selectedNotification.category?.replace(/_/g, ' ') || 'GENERAL'}
                 </span>
-                <button 
-                  className="btn btn-primary px-4 rounded-pill fw-bold" 
-                  onClick={() => setSelectedNotification(null)}
-                >
-                  Done
-                </button>
+                <h3 className="fw-bold mb-0 display-6">{selectedNotification.title}</h3>
               </div>
-            </MotionDiv>
+              <button className="btn-close shadow-none" onClick={() => { setSelectedNotification(null); setDetails(null); }}></button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-muted lead fs-6" style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
+                {selectedNotification.message}
+              </p>
+            </div>
+
+            {/* Dynamic Details Section */}
+            <AnimatePresence mode="wait">
+              {detailsLoading ? (
+                <div className="d-flex justify-content-center py-4">
+                  <div className="spinner-border spinner-border-sm text-primary"></div>
+                </div>
+              ) : details ? (
+                <MotionDiv
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 rounded-4 bg-light border shadow-inner mb-4"
+                >
+                  <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <Info className="w-4 h-4 text-primary" /> Related Information
+                  </h6>
+                  
+                  <div className="row g-3">
+                    {selectedNotification.referenceType === "BOOKING" && (
+                      <>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Resource</label>
+                          <div className="fw-semibold d-flex align-items-center gap-2">
+                            <Building2 className="w-4 h-4" /> {details.resourceName || `ID: ${details.resourceId}`}
+                          </div>
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Time Slot</label>
+                          <div className="fw-semibold d-flex align-items-center gap-2">
+                            <Clock className="w-4 h-4" /> {details.startTime} - {details.endTime}
+                          </div>
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Date</label>
+                          <div className="fw-semibold d-flex align-items-center gap-2">
+                            <Calendar className="w-4 h-4" /> {details.bookingDate}
+                          </div>
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Status</label>
+                          <span className={`badge rounded-pill ${details.status === 'APPROVED' ? 'bg-success' : 'bg-warning'}`}>
+                            {details.status}
+                          </span>
+                        </div>
+                      </>
+                    )}
+
+                    {selectedNotification.referenceType === "FACILITY" && (
+                      <>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Facility Name</label>
+                          <div className="fw-semibold">{details.name}</div>
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Location</label>
+                          <div className="fw-semibold">{details.location}</div>
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Capacity</label>
+                          <div className="fw-semibold">{details.capacity} People</div>
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Status</label>
+                          <span className="badge bg-success rounded-pill">{details.status}</span>
+                        </div>
+                      </>
+                    )}
+
+                    {selectedNotification.referenceType === "TICKET" && (
+                      <>
+                        <div className="col-12">
+                          <label className="small text-muted d-block mb-1">Ticket Title</label>
+                          <div className="fw-semibold">{details.title}</div>
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Priority</label>
+                          <span className="badge bg-danger rounded-pill">{details.priority}</span>
+                        </div>
+                        <div className="col-sm-6">
+                          <label className="small text-muted d-block mb-1">Current Status</label>
+                          <span className="badge bg-info text-dark rounded-pill">{details.status}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </MotionDiv>
+              ) : selectedNotification.referenceId && !detailsLoading && (
+                <div className="alert alert-light border small text-muted text-center py-3 rounded-4 mb-4">
+                  The related record is no longer available.
+                </div>
+              )}
+            </AnimatePresence>
+
+            <div className="d-flex justify-content-between align-items-center border-top pt-4">
+              <span className="text-muted small d-flex align-items-center gap-2">
+                <Clock className="w-3 h-3" /> Received {new Date(selectedNotification.createdAt).toLocaleString()}
+              </span>
+              <button 
+                className="btn btn-primary px-5 rounded-pill fw-bold shadow-sm" 
+                onClick={() => { setSelectedNotification(null); setDetails(null); }}
+              >
+                Close
+              </button>
+            </div>
           </MotionDiv>
-        )}
-      </AnimatePresence>
+        </MotionDiv>
+      )}
+    </AnimatePresence>
     </div>
   );
 };

@@ -29,16 +29,20 @@ public class EmailService {
      */
     @Async
     public void sendEmail(String to, String subject, String body) {
+        log.info("Attempting to send email to: {}", to);
         try {
             SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom("no-reply@campushub.local");
+            // Using the configured username as the from address for Gmail compatibility
+            message.setFrom(mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl ? ((org.springframework.mail.javamail.JavaMailSenderImpl) mailSender).getUsername() : "campushub-notifications@gmail.com");
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
+            
             mailSender.send(message);
-            log.info("Email sent successfully to {}", to);
+            log.info("SUCCESS: Email sent to {}", to);
         } catch (Exception e) {
-            log.error("Failed to send email to {}", to, e);
+            log.error("CRITICAL ERROR: Failed to send email to {}", to);
+            log.error("Error type: {}, Message: {}", e.getClass().getName(), e.getMessage());
         }
     }
 }

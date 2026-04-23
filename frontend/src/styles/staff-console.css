@@ -140,11 +140,12 @@
   flex: 1;
   min-width: 0;
   padding: clamp(1.25rem, 3vw, 2.25rem);
+  overflow-x: auto;
 }
 
 .staff-main-inner {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .staff-page-header {

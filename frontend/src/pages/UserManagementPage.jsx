@@ -46,6 +46,15 @@ const UserManagementPage = () => {
     setCreating(true);
     setError("");
     setMessage("");
+
+    // Email validation: must have @ and .
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(createForm.email.trim())) {
+      setError("Please provide a valid email address containing both '@' and '.' (e.g., user@example.com).");
+      setCreating(false);
+      return;
+    }
+
     try {
       await api.post("/users", {
         fullName: createForm.fullName.trim(),
@@ -145,6 +154,7 @@ const UserManagementPage = () => {
                 onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
               >
                 <option value="TECHNICIAN">Technician</option>
+                <option value="SECURITY">Security</option>
                 <option value="ADMIN">Administrator</option>
               </select>
             </div>
@@ -206,6 +216,7 @@ const UserManagementPage = () => {
                           >
                             <option value="USER">USER</option>
                             <option value="TECHNICIAN">TECHNICIAN</option>
+                            <option value="SECURITY">SECURITY</option>
                             <option value="ADMIN">ADMIN</option>
                           </select>
                         </td>

@@ -87,6 +87,15 @@ public class BookingController {
         return ResponseEntity.ok(bookings);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getBookingById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(bookingService.getBookingById(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     // Delete booking (Admin only - permanent deletion)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteBooking(@PathVariable Long id) {
