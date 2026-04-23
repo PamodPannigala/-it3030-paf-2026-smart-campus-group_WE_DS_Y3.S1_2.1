@@ -80,7 +80,11 @@ function AppContent() {
     pathname === "/notifications" ||
     pathname === "/settings" ||
     pathname === "/booking/:id" ||
-    pathname === "/preferences";
+    pathname === "/preferences" ||
+    pathname === "/support-home" ||
+    pathname === "/create-ticket" ||
+    pathname === "/my-reports" ||
+    pathname === "/community-tickets";
 
   return (
     <div className="min-vh-100 d-flex flex-column">

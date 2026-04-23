@@ -8,7 +8,7 @@ const PublicResourceView = () => {
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE = "http://10.155.45.1:8082";
+  const API_BASE = "http://10.155.14.36:8082";
 
   useEffect(() => {
     axios
