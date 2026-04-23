@@ -107,9 +107,9 @@ public class SecurityConfig {
                                         .filter(value -> !value.isBlank())
                                         .toList());
                 }
+                originPatterns.add("http://10.105.228.1:5173");
                 originPatterns.add("http://localhost:*");
                 originPatterns.add("http://127.0.0.1:*");
-                originPatterns.add("http://10.155.45.1:5173");
                 configuration.setAllowedOriginPatterns(originPatterns);
                 configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(List.of("*"));

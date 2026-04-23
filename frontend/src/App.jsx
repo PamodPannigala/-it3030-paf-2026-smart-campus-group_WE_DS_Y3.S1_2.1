@@ -80,7 +80,9 @@ function AppContent() {
     pathname === "/notifications" ||
     pathname === "/settings" ||
     pathname === "/booking/:id" ||
-    pathname === "/preferences";
+    pathname === "/preferences" ||
+    pathname === "/admin/inventory" ||
+    pathname.startsWith("/resourseDetail");
 
   return (
     <div className="min-vh-100 d-flex flex-column">
@@ -113,7 +115,9 @@ function AppContent() {
               path="/admin/facilities"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <GateStaffLayout>
+                    <Dashboard />
+                  </GateStaffLayout>
                 </ProtectedRoute>
               }
             />
@@ -197,7 +201,14 @@ function AppContent() {
             />
 
             {/* ===== RESOURCE SYSTEM ===== */}
-            <Route path="/admin/inventory" element={<ResourceList />} />
+            <Route
+              path="/admin/inventory"
+              element={
+                <GateStaffLayout>
+                  <ResourceList />
+                </GateStaffLayout>
+              }
+            />
             <Route path="/catalogue" element={<ResourceCataloguePage />} />
             <Route path="/resource/view/:id" element={<PublicResourceView />} />
             <Route
@@ -209,7 +220,14 @@ function AppContent() {
             <Route path="/booking/:id" element={<BookingForm />} />
             <Route path="/booking-success/:id" element={<BookingSuccess />} />
             <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/admin/bookings" element={<AdminBookings />} />
+            <Route
+              path="/admin/bookings"
+              element={
+                <GateStaffLayout>
+                  <AdminBookings />
+                </GateStaffLayout>
+              }
+            />
             <Route path="/admin/checkin" element={<QRScanner />} />
 
             {/* ===== TICKETING ===== */}
@@ -221,7 +239,14 @@ function AppContent() {
             <Route path="/my-reports/:ticketId" element={<TicketDetails />} />
             <Route path="/ticket-success" element={<TicketSuccessPage />} />
 
-            <Route path="/admin/tickets" element={<AdminPage />} />
+            <Route
+              path="/admin/tickets"
+              element={
+                <GateStaffLayout>
+                  <AdminPage />
+                </GateStaffLayout>
+              }
+            />
             <Route
               path="/admin/technicians"
               element={<TechnicianManagementPage />}
