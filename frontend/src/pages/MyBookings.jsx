@@ -284,7 +284,7 @@ const MyBookings = () => {
           {/* Checked-in Status Filter Dropdown */}
           <select
             className="form-select"
-            style={{ width: "180px", borderRadius: '12px', borderColor: '#3b82f6' }}
+            style={{ width: "200px", borderRadius: '12px', borderColor: '#3b82f6' }}
             value={checkedInFilter}
             onChange={(e) => setCheckedInFilter(e.target.value)}
           >
