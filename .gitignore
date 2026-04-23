@@ -1,5 +1,12 @@
-﻿################################################################################
+################################################################################
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
 /.vs
+/backend/.m2repo/
+/backend/target/
+/frontend/node_modules/
+.idea/
+*.log
+*.class
+.DS_Store

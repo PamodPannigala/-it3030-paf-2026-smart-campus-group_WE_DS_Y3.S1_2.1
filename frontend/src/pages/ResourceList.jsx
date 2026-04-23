@@ -41,7 +41,7 @@ const ResourceList = () => {
   const fetchResources = async () => {
     try {
       const response = await axios.get(
-        "http://192.168.1.100:8080/api/resources",
+        "http://10.105.228.1:8080/api/resources",
       );
       setResources(response.data);
     } catch (err) {
@@ -307,13 +307,13 @@ const ResourceList = () => {
     try {
       if (isEdit) {
         await axios.put(
-          `http://192.168.1.100:8080/api/resources/${currentId}`,
+          `http://10.105.228.1:8080/api/resources/${currentId}`,
           resourceData,
         );
         toast.success("Resource updated successfully!");
       } else {
         await axios.post(
-          "http://192.168.1.100:8080/api/resources",
+          "http://10.105.228.1:8080/api/resources",
           resourceData,
         );
         toast.success("Resource added successfully!");
@@ -349,7 +349,7 @@ const ResourceList = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this resource?")) {
       try {
-        await axios.delete(`http://192.168.1.100:8080/api/resources/${id}`);
+        await axios.delete(`http://10.105.228.1:8080/api/resources/${id}`);
         toast.success("Resource deleted successfully!");
         fetchResources();
       } catch (err) {
@@ -935,7 +935,7 @@ const ResourceList = () => {
                         </h6>
                         <div className="qr-container bg-white p-4 d-inline-block rounded-4 shadow-sm border">
                           <QRCodeSVG
-                            value={`http://192.168.1.100:5173/resource/view/${currentId}`}
+                            value={`http://10.105.228.1:5173/resource/view/${currentId}`}
                             size={160}
                             level="H"
                             includeMargin
