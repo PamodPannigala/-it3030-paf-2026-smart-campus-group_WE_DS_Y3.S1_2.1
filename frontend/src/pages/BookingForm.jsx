@@ -12,10 +12,13 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import "../styles/BookingForm.css";
+import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
 
 const BookingForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -396,6 +399,11 @@ const BookingForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!user?.id) {
+      setError("Please sign in to create a booking.");
+      return;
+    }
+
     // Validate all fields before submit
     const isValid = validateAllFields();
     if (!isValid) {
@@ -422,7 +430,6 @@ const BookingForm = () => {
     try {
       const bookingRequest = {
         resourceId: parseInt(id),
-        userId: localStorage.getItem("userId") || 1,
         bookingDate: formData.bookingDate,
         startTime: formData.startTime,
         endTime: formData.endTime,
@@ -435,10 +442,7 @@ const BookingForm = () => {
         status: "PENDING",
       };
 
-      const response = await axios.post(
-        "http://localhost:8082/api/bookings",
-        bookingRequest,
-      );
+      const response = await api.post("/bookings", bookingRequest);
 
       if (response.data) {
         navigate(`/booking-success/${response.data.id}`, {

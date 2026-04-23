@@ -4,11 +4,14 @@ import com.campus.hub.dto.BookingResponseDTO;
 import com.campus.hub.dto.BookingRequest;
 import com.campus.hub.entity.Booking;
 import com.campus.hub.entity.BookingStatus;
+import com.campus.hub.entity.Role;
 import com.campus.hub.repository.BookingRepository;
 import com.campus.hub.repository.ResourceRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -54,7 +57,7 @@ public class BookingService {
     }
     
     // Create booking and return DTO
-    public BookingResponseDTO createBooking(BookingRequest request) {
+    public BookingResponseDTO createBooking(BookingRequest request, Long authenticatedUserId) {
         // Check for conflicts before creating
         boolean hasConflict = checkConflict(
             request.getResourceId(),
@@ -69,7 +72,7 @@ public class BookingService {
         
         Booking booking = new Booking();
         booking.setResourceId(request.getResourceId());
-        booking.setUserId(request.getUserId() != null ? request.getUserId() : 1L);
+        booking.setUserId(authenticatedUserId);
         booking.setBookingDate(LocalDate.parse(request.getBookingDate()));
         booking.setStartTime(LocalTime.parse(request.getStartTime()));
         booking.setEndTime(LocalTime.parse(request.getEndTime()));
@@ -139,7 +142,7 @@ public class BookingService {
     private String generateQRToken(Booking booking) {
         // Simple approach: encode booking ID + timestamp + secret
         String data = booking.getId() + "-" + System.currentTimeMillis() + "-CAMPUSHUB";
-        return java.util.Base64.getEncoder().encodeToString(data.getBytes());
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(data.getBytes(StandardCharsets.UTF_8));
     }
 
     // Reject booking
@@ -200,9 +203,20 @@ public class BookingService {
     
     // Verify QR code and check-in with full validation
     public Booking verifyAndCheckin(String qrData) {
+        return verifyAndCheckin(qrData, getCurrentUserId(), null);
+    }
+
+    // Verify QR code and check-in with authenticated user context
+    public Booking verifyAndCheckin(String qrData, Long currentUserId, Role currentUserRole) {
+        if (qrData == null || qrData.trim().isEmpty()) {
+            throw new RuntimeException("Invalid QR code");
+        }
+
+        String normalizedQrData = normalizeQrData(qrData);
+
         // Find booking by QR code
         Booking booking = bookingRepository.findByQrCode(qrData)
-            .orElseThrow(() -> new RuntimeException("Invalid QR code"));
+            .orElseGet(() -> bookingRepository.findByQrCode(normalizedQrData).orElseThrow(() -> new RuntimeException("Invalid QR code")));
         
         // Check if booking is approved
         if (booking.getStatus() != BookingStatus.APPROVED) {
@@ -241,9 +255,9 @@ public class BookingService {
             }
         }
         
-        // VALIDATION 3: Check if user is the one who made the booking
-        Long currentUserId = getCurrentUserId();
-        if (currentUserId != null && !booking.getUserId().equals(currentUserId)) {
+        // VALIDATION 3: Allow staff/admin scanners; enforce ownership for end users
+        boolean isStaffScanner = currentUserRole == Role.ADMIN || currentUserRole == Role.TECHNICIAN;
+        if (!isStaffScanner && currentUserId != null && !booking.getUserId().equals(currentUserId)) {
             throw new RuntimeException("You are not authorized to check in for this booking");
         }
         
@@ -254,9 +268,26 @@ public class BookingService {
         
         return bookingRepository.save(booking);
     }
+
+    // Normalize scanner input to reduce false "invalid QR" mismatches
+    private String normalizeQrData(String qrData) {
+        String normalized = qrData.trim();
+
+        if (normalized.contains("%")) {
+            try {
+                normalized = URLDecoder.decode(normalized, StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException ignored) {
+                // Keep raw value when scanner output is not URL-encoded.
+            }
+        }
+
+        // Some scanner/transport layers can convert '+' into spaces.
+        normalized = normalized.replace(" ", "+");
+        return normalized;
+    }
     
     // Helper method to get current logged-in user ID
     private Long getCurrentUserId() {
-        return 1L;
+        return null;
     }
 }

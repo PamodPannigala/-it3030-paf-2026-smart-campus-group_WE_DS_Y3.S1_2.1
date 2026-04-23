@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { CheckCircle, XCircle, QrCode, Camera, RefreshCw } from 'lucide-react';
+import api from '../services/api';
 
 const QRScanner = () => {
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [scannerInitialized, setScannerInitialized] = useState(false);
   const scannerRef = useRef(null);
+
+  const verifyScannedCode = async (decodedText) => {
+    const qrData = typeof decodedText === 'string' ? decodedText.trim() : decodedText;
+    return api.post('/bookings/verify-checkin', { qrData });
+  };
 
   useEffect(() => {
     // Initialize scanner only once
@@ -21,9 +26,7 @@ const QRScanner = () => {
       const onScanSuccess = async (decodedText) => {
         try {
           setLoading(true);
-          const response = await axios.post('http://localhost:8080/api/bookings/verify-checkin', {
-            qrData: decodedText
-          });
+          const response = await verifyScannedCode(decodedText);
           
           if (response.data) {
             setScanResult({
@@ -76,9 +79,7 @@ const QRScanner = () => {
         const onScanSuccess = async (decodedText) => {
           try {
             setLoading(true);
-            const response = await axios.post('http://localhost:8080/api/bookings/verify-checkin', {
-              qrData: decodedText
-            });
+            const response = await verifyScannedCode(decodedText);
             
             if (response.data) {
               setScanResult({

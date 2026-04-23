@@ -2,10 +2,13 @@ package com.campus.hub.controller;
 
 import com.campus.hub.dto.BookingRequest;
 import com.campus.hub.dto.BookingResponseDTO;
+import com.campus.hub.entity.CampusUser;
 import com.campus.hub.entity.Booking;
+import com.campus.hub.security.AuthenticatedUserResolver;
 import com.campus.hub.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -18,11 +21,15 @@ public class BookingController {
     @Autowired
     private BookingService bookingService;
 
+    @Autowired
+    private AuthenticatedUserResolver authenticatedUserResolver;
+
     // Create a new booking
     @PostMapping
-    public ResponseEntity<?> createBooking(@RequestBody BookingRequest request) {
+    public ResponseEntity<?> createBooking(@RequestBody BookingRequest request, Authentication authentication) {
         try {
-            BookingResponseDTO booking = bookingService.createBooking(request);
+            CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+            BookingResponseDTO booking = bookingService.createBooking(request, currentUser.getId());
             return ResponseEntity.ok(booking);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
@@ -41,8 +48,20 @@ public class BookingController {
 
     // Get user's bookings
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<BookingResponseDTO>> getUserBookings(@PathVariable Long userId) {
-        List<BookingResponseDTO> bookings = bookingService.getUserBookings(userId);
+    public ResponseEntity<List<BookingResponseDTO>> getUserBookings(@PathVariable Long userId, Authentication authentication) {
+        CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+        if (!currentUser.getId().equals(userId)) {
+            return ResponseEntity.status(403).build();
+        }
+        List<BookingResponseDTO> bookings = bookingService.getUserBookings(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
+    // Get current session user's bookings
+    @GetMapping("/my")
+    public ResponseEntity<List<BookingResponseDTO>> getMyBookings(Authentication authentication) {
+        CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+        List<BookingResponseDTO> bookings = bookingService.getUserBookings(currentUser.getId());
         return ResponseEntity.ok(bookings);
     }
 
@@ -113,10 +132,11 @@ public class BookingController {
 
     // Verify check-in (called by scanner)
     @PostMapping("/verify-checkin")
-    public ResponseEntity<?> verifyCheckin(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> verifyCheckin(@RequestBody Map<String, String> payload, Authentication authentication) {
         try {
+            CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
             String qrData = payload.get("qrData");
-            Booking booking = bookingService.verifyAndCheckin(qrData);
+            Booking booking = bookingService.verifyAndCheckin(qrData, currentUser.getId(), currentUser.getRole());
             return ResponseEntity.ok(Map.of(
                     "message", "Check-in successful",
                     "bookingId", booking.getId(),
