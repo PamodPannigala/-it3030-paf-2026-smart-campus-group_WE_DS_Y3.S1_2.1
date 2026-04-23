@@ -40,7 +40,7 @@ const ResourceList = () => {
 
   const fetchResources = async () => {
     try {
-      const response = await axios.get("http://localhost:8082/api/resources");
+      const response = await axios.get("http://172.26.224.1:8082/api/resources");
       setResources(response.data);
     } catch (err) {
       setError("Unable to fetch data. Check backend.");
@@ -306,12 +306,12 @@ const ResourceList = () => {
     try {
       if (isEdit) {
         await axios.put(
-          `http://localhost:8082/api/resources/${currentId}`,
+          `http://172.26.224.1:8082/api/resources/${currentId}`,
           resourceData,
         );
         toast.success("Resource updated successfully!");
       } else {
-        await axios.post("http://localhost:8082/api/resources", resourceData);
+        await axios.post("http://172.26.224.1:8082/api/resources", resourceData);
         toast.success("Resource added successfully!");
       }
 
@@ -345,7 +345,7 @@ const ResourceList = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this resource?")) {
       try {
-        await axios.delete(`http://localhost:8082/api/resources/${id}`);
+        await axios.delete(`http://172.26.224.1:8082/api/resources/${id}`);
         toast.success("Resource deleted successfully!");
         fetchResources();
       } catch (err) {
