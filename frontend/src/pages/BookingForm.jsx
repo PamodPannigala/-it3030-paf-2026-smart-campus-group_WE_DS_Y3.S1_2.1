@@ -13,6 +13,7 @@ import {
 import axios from "axios";
 import "../styles/BookingForm.css";
 import { useAuth } from "../context/AuthContext";
+import { getResourceImageOrCatalogueFallback } from "../utils/resourceImageFallback";
 import api from "../services/api";
 
 const BookingForm = () => {
@@ -487,14 +488,30 @@ const BookingForm = () => {
               <div className="card-body p-4 p-lg-5">
                 <h2 className="mb-4">Book This Resource</h2>
 
-                {/* Resource Summary */}
-                <div className="resource-summary mb-4 p-3 bg-light rounded">
-                  <h5>{resource?.name}</h5>
-                  <p className="text-muted mb-0">
-                    {resource?.type} •{" "}
-                    {resource?.type !== "EQUIPMENT" &&
-                      `Capacity: ${resource?.capacity} people`}
-                  </p>
+                {/* Resource Summary with Image */}
+                <div className="resource-summary mb-4 p-3 bg-light rounded d-flex align-items-center gap-3">
+                  {/* Resource Image */}
+                  <img
+                    src={getResourceImageOrCatalogueFallback(resource?.imageUrl || resource?.image, resource?.id)}
+                    alt={resource?.name}
+                    style={{
+                      width: "80px",
+                      height: "80px",
+                      objectFit: "cover",
+                      borderRadius: "12px",
+                    }}
+                    onError={(e) => {
+                      e.target.src = getResourceImageOrCatalogueFallback(null, resource?.id);
+                    }}
+                  />
+                  <div>
+                    <h5 className="mb-1">{resource?.name}</h5>
+                    <p className="text-muted mb-0">
+                      {resource?.type} •{" "}
+                      {resource?.type !== "EQUIPMENT" &&
+                        `Capacity: ${resource?.capacity} people`}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Operating Hours Info Box */}
