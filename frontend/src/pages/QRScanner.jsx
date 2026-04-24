@@ -221,6 +221,12 @@ const QRScanner = () => {
                         <p className="mb-0 fw-semibold">{scanResult.bookingDetails.resourceName || 'N/A'}</p>
                       </div>
                       <div className="col-sm-6">
+                        <small className="text-muted">Booked By</small>
+                        <p className="mb-0 fw-semibold">
+                          {scanResult.bookingDetails.bookedByName || 'N/A'}
+                        </p>
+                      </div>
+                      <div className="col-sm-6">
                         <small className="text-muted">Checked In At</small>
                         <p className="mb-0 fw-semibold">
                           {scanResult.bookingDetails.checkedInAt 
@@ -255,6 +261,12 @@ const QRScanner = () => {
                           {scanResult.bookingDetails.bookingId
                             ? `#${scanResult.bookingDetails.bookingId}`
                             : 'N/A'}
+                        </p>
+                      </div>
+                      <div className="col-sm-6">
+                        <small className="text-muted">Booked By</small>
+                        <p className="mb-0 fw-semibold">
+                          {scanResult.bookingDetails.bookedByName || 'N/A'}
                         </p>
                       </div>
                       <div className="col-sm-6">

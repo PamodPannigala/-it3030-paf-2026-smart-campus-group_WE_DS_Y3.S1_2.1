@@ -1,7 +1,6 @@
 package com.campus.hub.dto;
 
 import jakarta.validation.constraints.*;
-import org.hibernate.validator.constraints.Length;
 
 public class BookingRequest {
     
@@ -31,6 +30,19 @@ public class BookingRequest {
     
     @Size(max = 250, message = "Special requests must not exceed 250 characters")
     private String specialRequests;
+
+    @NotBlank(message = "Booked by name is required")
+    @Size(max = 255, message = "Booked by name must not exceed 255 characters")
+    private String bookedByName;
+
+    @NotBlank(message = "Booked by email is required")
+    @Email(message = "Please provide a valid email address")
+    @Size(max = 255, message = "Booked by email must not exceed 255 characters")
+    private String bookedByEmail;
+
+    @NotBlank(message = "Contact number is required")
+    @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Contact number must be 10 to 15 digits and may start with +")
+    private String contactNumber;
     
     private String status;
     
@@ -105,5 +117,29 @@ public class BookingRequest {
     
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getBookedByName() {
+        return bookedByName;
+    }
+
+    public void setBookedByName(String bookedByName) {
+        this.bookedByName = bookedByName;
+    }
+
+    public String getBookedByEmail() {
+        return bookedByEmail;
+    }
+
+    public void setBookedByEmail(String bookedByEmail) {
+        this.bookedByEmail = bookedByEmail;
+    }
+
+    public String getContactNumber() {
+        return contactNumber;
+    }
+
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
     }
 }

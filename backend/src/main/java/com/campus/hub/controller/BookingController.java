@@ -153,6 +153,7 @@ public class BookingController {
                     "message", "Booking validation successful",
                     "bookingId", booking.getId(),
                     "resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()),
+                    "bookedByName", bookingDto.getBookedByName(),
                     "bookingDate", booking.getBookingDate().toString(),
                     "startTime", booking.getStartTime().toString(),
                     "endTime", booking.getEndTime().toString(),
@@ -165,6 +166,7 @@ public class BookingController {
                 BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
                 errorBody.put("bookingId", booking.getId());
                 errorBody.put("resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()));
+                errorBody.put("bookedByName", bookingDto.getBookedByName());
                 errorBody.put("bookingDate", booking.getBookingDate().toString());
                 errorBody.put("startTime", booking.getStartTime().toString());
                 errorBody.put("endTime", booking.getEndTime().toString());
@@ -187,6 +189,7 @@ public class BookingController {
                     "message", "Check-in successful",
                     "bookingId", booking.getId(),
                     "resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()),
+                    "bookedByName", bookingDto.getBookedByName(),
                     "checkedInAt", booking.getCheckedInAt().toString(),
                     "checkedIn", booking.isCheckedIn()));
         } catch (Exception e) {
@@ -197,6 +200,7 @@ public class BookingController {
                 BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
                 errorBody.put("bookingId", booking.getId());
                 errorBody.put("resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()));
+                errorBody.put("bookedByName", bookingDto.getBookedByName());
                 errorBody.put("bookingDate", booking.getBookingDate().toString());
                 errorBody.put("startTime", booking.getStartTime().toString());
                 errorBody.put("endTime", booking.getEndTime().toString());

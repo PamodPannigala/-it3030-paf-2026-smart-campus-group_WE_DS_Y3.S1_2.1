@@ -4,9 +4,11 @@ import com.campus.hub.dto.BookingResponseDTO;
 import com.campus.hub.dto.BookingRequest;
 import com.campus.hub.entity.Booking;
 import com.campus.hub.entity.BookingStatus;
+import com.campus.hub.entity.CampusUser;
 import com.campus.hub.entity.Role;
 import com.campus.hub.entity.Resource;
 import com.campus.hub.repository.BookingRepository;
+import com.campus.hub.repository.CampusUserRepository;
 import com.campus.hub.repository.ResourceRepository;
 import com.campus.hub.dto.NotificationCreateRequest;
 import com.campus.hub.entity.NotificationCategory;
@@ -33,6 +35,9 @@ public class BookingService {
     private BookingRepository bookingRepository;
 
     @Autowired
+    private CampusUserRepository campusUserRepository;
+
+    @Autowired
     private NotificationService notificationService;
     
     // Convert Booking to DTO with resource details
@@ -41,6 +46,9 @@ public class BookingService {
         dto.setId(booking.getId());
         dto.setResourceId(booking.getResourceId());
         dto.setUserId(booking.getUserId());
+        dto.setBookedByName(booking.getBookedByName());
+        dto.setBookedByEmail(booking.getBookedByEmail());
+        dto.setContactNumber(booking.getContactNumber());
         dto.setBookingDate(booking.getBookingDate());
         dto.setStartTime(booking.getStartTime());
         dto.setEndTime(booking.getEndTime());
@@ -58,8 +66,15 @@ public class BookingService {
         // Get resource details
         resourceRepository.findById(booking.getResourceId()).ifPresent(resource -> {
             dto.setResourceName(resource.getName());
+            dto.setResourceLocation(resource.getLocation());
             dto.setResourceImage(resource.getImageUrl());
         });
+
+        if (booking.getBookedByEmail() != null && !booking.getBookedByEmail().isBlank()) {
+            dto.setUserEmail(booking.getBookedByEmail());
+        } else {
+            campusUserRepository.findById(booking.getUserId()).map(CampusUser::getEmail).ifPresent(dto::setUserEmail);
+        }
         
         return dto;
     }
@@ -168,6 +183,9 @@ public class BookingService {
         Booking booking = new Booking();
         booking.setResourceId(request.getResourceId());
         booking.setUserId(authenticatedUserId);
+        booking.setBookedByName(request.getBookedByName() == null ? null : request.getBookedByName().trim());
+        booking.setBookedByEmail(request.getBookedByEmail() == null ? null : request.getBookedByEmail().trim().toLowerCase());
+        booking.setContactNumber(request.getContactNumber() == null ? null : request.getContactNumber().trim());
         booking.setBookingDate(bookingDate);
         booking.setStartTime(startTime);
         booking.setEndTime(endTime);
