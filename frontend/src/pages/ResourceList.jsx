@@ -167,12 +167,13 @@ const ResourceList = () => {
     const capValue = parseInt(formData.capacity);
     if (formData.capacity !== "") {
       if (capValue < 1) {
-        errors.capacity = "Capacity must be at least 1.";
+        errors.capacity = "Capacity must be at least 1."; //negative values
       } else if (capValue > 500) {
-        errors.capacity = "Maximum capacity cannot exceed 500.";
+        errors.capacity = "Maximum capacity cannot exceed 500."; //max is 500
       }
     }
 
+    //purchase year validation only for equipment, not for facilities
     if (formData.type === "EQUIPMENT") {
       const yearVal = parseInt(formData.purchaseYear);
       if (!formData.purchaseYear) {
@@ -188,6 +189,7 @@ const ResourceList = () => {
       errors.capacity = "Capacity must be at least 1.";
     }
 
+    //open time and close time validation
     if (formData.openTime && formData.closeTime) {
       if (formData.closeTime <= formData.openTime) {
         errors.closeTime = "Close time must be later than open time.";
@@ -218,6 +220,7 @@ const ResourceList = () => {
           "This facility is already booked for this time slot!";
       }
 
+      //location validation
       if (formData.type === "FACILITY" && formData.location) {
         const isLocationTaken = resources.some((res) => {
           if (isEdit && res.id === currentId) return false;
@@ -231,6 +234,7 @@ const ResourceList = () => {
       }
     }
 
+    //image validation
     if (selectedFile) {
       const maxSize = 5 * 1024 * 1024;
       if (selectedFile.size > maxSize) {

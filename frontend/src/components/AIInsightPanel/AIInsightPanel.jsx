@@ -129,7 +129,7 @@ ${JSON.stringify(resources)}
           {/* Header */}
           <div className="ai-card-header">
             <span className="fw-bold">
-              <i className="bi bi-stars"></i> AI Facility Assistant
+              <i className="bi bi-stars"></i> AI EQUIPMENT Health Checker
             </span>
             <button
               className="btn btn-sm text-white"
@@ -161,7 +161,7 @@ ${JSON.stringify(resources)}
             )}
           </div>
 
-          {/* Footer (Input Area) */}
+          {/* (Input Area) */}
           <div className="ai-card-footer">
             <div className="input-group mb-2">
               <input
