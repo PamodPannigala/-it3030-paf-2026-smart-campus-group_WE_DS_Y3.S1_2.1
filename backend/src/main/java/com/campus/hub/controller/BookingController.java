@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class BookingController {
 
     // Create a new booking
     @PostMapping
-    public ResponseEntity<?> createBooking(@RequestBody BookingRequest request, Authentication authentication) {
+    public ResponseEntity<?> createBooking(@Valid @RequestBody BookingRequest request, Authentication authentication) {
         try {
             CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
             BookingResponseDTO booking = bookingService.createBooking(request, currentUser.getId());
