@@ -235,7 +235,7 @@ function AppContent() {
             <Route
               path="/admin/bookings"
               element={
-                <ProtectedRoute adminOnly>
+                <ProtectedRoute staffOnly>
                   <StaffShell>
                     <AdminBookings />
                   </StaffShell>
