@@ -82,7 +82,7 @@ function AppContent() {
     pathname === "/booking/:id" ||
     pathname === "/preferences" ||
     pathname === "/admin/inventory" ||
-    pathname.startsWith("/resourseDetail");
+    pathname.startsWith("/resourseDetail") ||
     pathname === "/support-home" ||
     pathname === "/create-ticket" ||
     pathname === "/my-reports" ||
