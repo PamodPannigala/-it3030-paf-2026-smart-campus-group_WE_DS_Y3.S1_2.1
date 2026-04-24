@@ -12,6 +12,9 @@ import com.campus.hub.repository.TicketRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.annotation.Transactional;
+import com.campus.hub.repository.CampusUserRepository;
+import com.campus.hub.dto.NotificationCreateRequest;
+import com.campus.hub.entity.NotificationCategory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,15 +34,21 @@ public class TicketService {
     private final CommentRepository commentRepository;
     // ✅ NEW: Inject SLA Service
     private final SlaService slaService;
+    private final CampusUserRepository campusUserRepository;
+    private final NotificationService notificationService;
 
     public TicketService(TicketRepository ticketRepository,
             TechnicianRepository technicianRepository,
             CommentRepository commentRepository,
-            SlaService slaService) { // ✅ NEW parameter
+            SlaService slaService,
+            CampusUserRepository campusUserRepository,
+            NotificationService notificationService) { // ✅ NEW parameter
         this.ticketRepository = ticketRepository;
         this.technicianRepository = technicianRepository;
         this.commentRepository = commentRepository;
         this.slaService = slaService; // ✅ NEW
+        this.campusUserRepository = campusUserRepository;
+        this.notificationService = notificationService;
     }
 
     // =========================
@@ -157,6 +166,20 @@ public class TicketService {
         // ✅ NEW: Record first response (technician assignment)
         slaService.recordFirstResponse(ticket);
 
+        // Notify Admins about the assignment
+        try {
+            NotificationCreateRequest notifyAdmin = new NotificationCreateRequest();
+            notifyAdmin.setTargetGroup("ALL_ADMINS");
+            notifyAdmin.setCategory(NotificationCategory.TICKET_STATUS);
+            notifyAdmin.setTitle("Technician Assigned to Ticket");
+            notifyAdmin.setMessage(String.format("Technician '%s' has been assigned to Ticket #%d.", tech.getName(), ticket.getId()));
+            notifyAdmin.setReferenceType("TICKET");
+            notifyAdmin.setReferenceId(ticket.getId().toString());
+            notificationService.create(notifyAdmin);
+        } catch (Exception e) {
+            // Silently fail notification
+        }
+
         return convertToDTO(ticketRepository.save(ticket));
     }
 
@@ -196,7 +219,25 @@ public class TicketService {
         // ✅ NEW: Calculate SLA deadlines
         slaService.calculateSlaDeadlines(ticket);
 
-        return convertToDTO(ticketRepository.save(ticket));
+        Ticket saved = ticketRepository.save(ticket);
+
+        campusUserRepository.findByEmailIgnoreCase(saved.getReporterEmail()).ifPresent(user -> {
+            try {
+                notificationService.create(new NotificationCreateRequest(
+                    user.getId(),
+                    "SPECIFIC",
+                    NotificationCategory.TICKET_STATUS,
+                    "Ticket Created",
+                    "Your ticket '" + saved.getTitle() + "' has been submitted successfully.",
+                    "TICKET",
+                    String.valueOf(saved.getId())
+                ));
+            } catch (Exception e) {
+                System.err.println("Failed to send notification: " + e.getMessage());
+            }
+        });
+
+        return convertToDTO(saved);
     }
 
     // =========================
@@ -236,7 +277,25 @@ public class TicketService {
         // ✅ NEW: Calculate SLA deadlines
         slaService.calculateSlaDeadlines(ticket);
 
-        return convertToDTO(ticketRepository.save(ticket));
+        Ticket saved = ticketRepository.save(ticket);
+
+        campusUserRepository.findByEmailIgnoreCase(saved.getReporterEmail()).ifPresent(user -> {
+            try {
+                notificationService.create(new NotificationCreateRequest(
+                    user.getId(),
+                    "SPECIFIC",
+                    NotificationCategory.TICKET_STATUS,
+                    "Ticket Created",
+                    "Your ticket '" + saved.getTitle() + "' with attachments has been submitted.",
+                    "TICKET",
+                    String.valueOf(saved.getId())
+                ));
+            } catch (Exception e) {
+                System.err.println("Failed to send notification: " + e.getMessage());
+            }
+        });
+
+        return convertToDTO(saved);
     }
 
     // =========================
@@ -358,7 +417,25 @@ public class TicketService {
             slaService.recordResolution(ticket);
         }
 
-        return convertToDTO(ticketRepository.save(ticket));
+        Ticket saved = ticketRepository.save(ticket);
+
+        campusUserRepository.findByEmailIgnoreCase(saved.getReporterEmail()).ifPresent(user -> {
+            try {
+                notificationService.create(new NotificationCreateRequest(
+                    user.getId(),
+                    "SPECIFIC",
+                    NotificationCategory.TICKET_STATUS,
+                    "Ticket Status Updated",
+                    "Your ticket '" + saved.getTitle() + "' status is now: " + saved.getStatus().name(),
+                    "TICKET",
+                    String.valueOf(saved.getId())
+                ));
+            } catch (Exception e) {
+                System.err.println("Failed to send notification: " + e.getMessage());
+            }
+        });
+
+        return convertToDTO(saved);
     }
 
     // =========================
