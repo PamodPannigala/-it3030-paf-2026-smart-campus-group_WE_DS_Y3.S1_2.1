@@ -128,7 +128,7 @@ const PublicResourceView = () => {
                     Model Alpha-V4
                   </p>
                   <h4 style={{ fontSize: "20px", fontWeight: "500" }}>
-                    4K Ultra HD Cinema Grade
+                    Optimized For Campus Use
                   </h4>
                 </div>
               </div>
@@ -209,26 +209,23 @@ const PublicResourceView = () => {
                   " A versatile, high-quality resource available within , designed to support and enhance your academic and professional activities."}
               </p>
               <div className="d-flex flex-wrap gap-2 mt-2">
-                {[
-                  "4K Ultra HD",
-                  "Wireless Connectivity",
-                  "5000 Lumens",
-                  "Dual HDMI",
-                ].map((f) => (
-                  <span
-                    key={f}
-                    className="badge"
-                    style={{
-                      backgroundColor: "#F2F3FF",
-                      color: "#515F74",
-                      padding: "7px 10px",
-                      fontSize: "12px",
-                      fontWeight: "400",
-                    }}
-                  >
-                    {f}
-                  </span>
-                ))}
+                {["Free Support", "Heavy Duty", "Versatile", "Essential"].map(
+                  (f) => (
+                    <span
+                      key={f}
+                      className="badge"
+                      style={{
+                        backgroundColor: "#F2F3FF",
+                        color: "#515F74",
+                        padding: "7px 10px",
+                        fontSize: "12px",
+                        fontWeight: "400",
+                      }}
+                    >
+                      {f}
+                    </span>
+                  ),
+                )}
               </div>
             </div>
           </div>

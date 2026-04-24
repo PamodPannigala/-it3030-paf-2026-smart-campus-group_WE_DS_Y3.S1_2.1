@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertCircle } from "lucide-react"; // AlertCircle අලුතින් ගත්තා
+import { ArrowLeft, AlertCircle } from "lucide-react"; // AlertCircle for error state, ArrowLeft for back button
 import axios from "axios";
 
 // Components
@@ -14,7 +14,7 @@ const DetailedResourceView = () => {
   const navigate = useNavigate();
   const [resource, setResource] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // Backend වැඩ නැත්නම් පෙන්වන්න
+  const [error, setError] = useState(null); // if error occurs during fetch, store message here
 
   useEffect(() => {
     const fetchResourceDetails = async () => {
@@ -25,8 +25,7 @@ const DetailedResourceView = () => {
         );
         const data = response.data;
 
-        // Backend එකෙන් එන්නේ එක පින්තූරයක් (imageUrl) නම්, ඒක ImageGallery එකට සෙට් වෙන්න Array එකකට දානවා.
-        // පින්තූරයක් නැත්නම් Default එකක් පෙන්වනවා.
+        // If backend doesn't provide images, use placeholders. Otherwise, use the provided image URL(s).
         const formattedData = {
           ...data,
           images: data.imageUrl
@@ -53,7 +52,7 @@ const DetailedResourceView = () => {
     fetchResourceDetails();
   }, [id]);
 
-  // Loading Screen එක ලස්සනට සෙන්ටර් කරලා
+  //Loading spinner while fetching data
   if (loading)
     return (
       <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
@@ -65,7 +64,7 @@ const DetailedResourceView = () => {
       </div>
     );
 
-  // Backend එකෙන් Error එකක් ආවොත් පෙන්වන තිරය
+  //If error occurs from backend, show error message with a back button
   if (error)
     return (
       <div className="container py-5 text-center mt-5">
