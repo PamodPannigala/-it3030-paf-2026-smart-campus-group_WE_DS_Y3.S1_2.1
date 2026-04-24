@@ -5,6 +5,7 @@ import com.campus.hub.dto.BookingRequest;
 import com.campus.hub.entity.Booking;
 import com.campus.hub.entity.BookingStatus;
 import com.campus.hub.entity.Role;
+import com.campus.hub.entity.Resource;
 import com.campus.hub.repository.BookingRepository;
 import com.campus.hub.repository.ResourceRepository;
 import com.campus.hub.dto.NotificationCreateRequest;
@@ -17,7 +18,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.DayOfWeek;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -61,9 +64,94 @@ public class BookingService {
         return dto;
     }
     
-    // Create booking and return DTO
+    // Create booking and return DTO with full backend validations
     public BookingResponseDTO createBooking(BookingRequest request, Long authenticatedUserId) {
-        // Check for conflicts before creating
+        // ========== BACKEND VALIDATIONS ==========
+        
+        // 1. Validate authenticated user ID is not null
+        Objects.requireNonNull(authenticatedUserId, "Authenticated user ID cannot be null");
+        
+        // 2. Validate request is not null
+        Objects.requireNonNull(request, "Booking request cannot be null");
+        
+        // 3. Get and validate resource exists
+        Resource resource = resourceRepository.findById(request.getResourceId())
+            .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + request.getResourceId()));
+        
+        // 4. Date range validation (present to 2031 / 5 years from now)
+        LocalDate bookingDate = LocalDate.parse(request.getBookingDate());
+        LocalDate today = LocalDate.now();
+        LocalDate maxDate = today.plusYears(5);
+        
+        if (bookingDate.isBefore(today)) {
+            throw new RuntimeException("Booking date cannot be in the past");
+        }
+        if (bookingDate.isAfter(maxDate)) {
+            throw new RuntimeException("Booking date cannot be more than 5 years from now (maximum: " + maxDate + ")");
+        }
+        
+        // 5. Weekend validation (if resource doesn't allow weekends)
+        if (!resource.isAvailableWeekends()) {
+            DayOfWeek dayOfWeek = bookingDate.getDayOfWeek();
+            if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
+                throw new RuntimeException("This resource is not available on weekends");
+            }
+        }
+        
+        // 6. Operating hours validation
+        LocalTime startTime = LocalTime.parse(request.getStartTime());
+        LocalTime endTime = LocalTime.parse(request.getEndTime());
+        LocalTime openTime = resource.getOpenTime();
+        LocalTime closeTime = resource.getCloseTime();
+        
+        // Check for overnight hours (e.g., 17:00 to 05:00)
+        boolean crossesMidnight = closeTime.isBefore(openTime);
+        
+        if (crossesMidnight) {
+            // Overnight operating hours
+            if (startTime.isBefore(openTime) && startTime.isAfter(closeTime)) {
+                throw new RuntimeException("Start time must be between " + openTime + " and " + closeTime + " (overnight)");
+            }
+            if (endTime.isBefore(openTime) && endTime.isAfter(closeTime)) {
+                throw new RuntimeException("End time must be between " + openTime + " and " + closeTime + " (overnight)");
+            }
+        } else {
+            // Normal operating hours
+            if (startTime.isBefore(openTime) || startTime.isAfter(closeTime)) {
+                throw new RuntimeException("Start time must be between " + openTime + " and " + closeTime);
+            }
+            if (endTime.isBefore(openTime) || endTime.isAfter(closeTime)) {
+                throw new RuntimeException("End time must be between " + openTime + " and " + closeTime);
+            }
+        }
+        
+        // 7. Character limit validation
+        if (request.getPurpose() != null && request.getPurpose().length() > 250) {
+            throw new RuntimeException("Purpose must not exceed 250 characters (current: " + request.getPurpose().length() + ")");
+        }
+        if (request.getSpecialRequests() != null && request.getSpecialRequests().length() > 250) {
+            throw new RuntimeException("Special requests must not exceed 250 characters (current: " + request.getSpecialRequests().length() + ")");
+        }
+        
+        // 8. Capacity validation (for non-EQUIPMENT resources)
+        if (!"EQUIPMENT".equals(resource.getType())) {
+            if (request.getExpectedAttendees() == null) {
+                throw new RuntimeException("Expected attendees is required");
+            }
+            if (request.getExpectedAttendees() <= 0) {
+                throw new RuntimeException("Expected attendees must be at least 1");
+            }
+            if (request.getExpectedAttendees() > resource.getCapacity()) {
+                throw new RuntimeException("Expected attendees cannot exceed resource capacity of " + resource.getCapacity());
+            }
+        }
+        
+        // 9. Validate start time is before end time
+        if (startTime.equals(endTime)) {
+            throw new RuntimeException("Start time and end time cannot be the same");
+        }
+        
+        // 10. Check for conflicts before creating
         boolean hasConflict = checkConflict(
             request.getResourceId(),
             request.getBookingDate(),
@@ -75,12 +163,14 @@ public class BookingService {
             throw new RuntimeException("Time slot conflict! This resource is already booked during the selected time.");
         }
         
+        // ========== END OF BACKEND VALIDATIONS ==========
+        
         Booking booking = new Booking();
         booking.setResourceId(request.getResourceId());
         booking.setUserId(authenticatedUserId);
-        booking.setBookingDate(LocalDate.parse(request.getBookingDate()));
-        booking.setStartTime(LocalTime.parse(request.getStartTime()));
-        booking.setEndTime(LocalTime.parse(request.getEndTime()));
+        booking.setBookingDate(bookingDate);
+        booking.setStartTime(startTime);
+        booking.setEndTime(endTime);
         booking.setPurpose(request.getPurpose());
         booking.setExpectedAttendees(request.getExpectedAttendees());
         booking.setSpecialRequests(request.getSpecialRequests());
@@ -121,8 +211,9 @@ public class BookingService {
     
     // Cancel booking
     public Booking cancelBooking(Long id) {
+        Objects.requireNonNull(id, "Booking ID cannot be null");
         Booking booking = bookingRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
+            .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + id));
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setUpdatedAt(LocalDateTime.now());
         return bookingRepository.save(booking);
@@ -130,8 +221,9 @@ public class BookingService {
     
     // Approve booking - Also generate QR code
     public Booking approveBooking(Long id) {
+        Objects.requireNonNull(id, "Booking ID cannot be null");
         Booking booking = bookingRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
+            .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + id));
         booking.setStatus(BookingStatus.APPROVED);
         booking.setUpdatedAt(LocalDateTime.now());
         
@@ -168,8 +260,9 @@ public class BookingService {
 
     // Reject booking
     public Booking rejectBooking(Long id, String reason) {
+        Objects.requireNonNull(id, "Booking ID cannot be null");
         Booking booking = bookingRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
+            .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + id));
         booking.setStatus(BookingStatus.REJECTED);
         booking.setRejectionReason(reason);
         booking.setUpdatedAt(LocalDateTime.now());
@@ -201,21 +294,24 @@ public class BookingService {
 
     // Delete booking permanently
     public void deleteBooking(Long id) {
+        Objects.requireNonNull(id, "Booking ID cannot be null");
         Booking booking = bookingRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
+            .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + id));
         bookingRepository.delete(booking);
     }
 
     public BookingResponseDTO getBookingById(Long id) {
+        Objects.requireNonNull(id, "Booking ID cannot be null");
         return bookingRepository.findById(id)
                 .map(this::convertToDTO)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
+                .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + id));
     }
 
     // Generate QR code image as byte array
     public byte[] generateQRCodeImage(Long bookingId) {
+        Objects.requireNonNull(bookingId, "Booking ID cannot be null");
         Booking booking = bookingRepository.findById(bookingId)
-            .orElseThrow(() -> new RuntimeException("Booking not found"));
+            .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + bookingId));
         
         if (booking.getQrCode() == null) {
             throw new RuntimeException("QR code not generated for this booking");
@@ -323,10 +419,10 @@ public class BookingService {
         }
         
         // VALIDATION 3: Allow staff/admin scanners; enforce ownership for end users
-        boolean isStaffScanner =
+        boolean isStaffScanner = currentUserRole != null && (
                 currentUserRole == Role.ADMIN
                         || currentUserRole == Role.TECHNICIAN
-                        || currentUserRole == Role.SECURITY;
+                        || currentUserRole == Role.SECURITY);
         if (!isStaffScanner && currentUserId != null && !booking.getUserId().equals(currentUserId)) {
             throw new RuntimeException("You are not authorized to check in for this booking");
         }
