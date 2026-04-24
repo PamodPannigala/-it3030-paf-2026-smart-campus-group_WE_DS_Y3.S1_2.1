@@ -82,7 +82,7 @@ function AppContent() {
     pathname === "/booking/:id" ||
     pathname === "/preferences" ||
     pathname === "/admin/inventory" ||
-    pathname.startsWith("/resourseDetail");
+    pathname.startsWith("/resourseDetail") ||
     pathname === "/support-home" ||
     pathname === "/create-ticket" ||
     pathname === "/my-reports" ||
@@ -100,7 +100,11 @@ function AppContent() {
         {!staffConsole && !hideSidebar && <Sidebar />}
 
         {/* MAIN CONTENT */}
-        <div className={staffConsole ? "flex-grow-1" : "flex-grow-1 container-fluid p-4"}>
+        <div
+          className={
+            staffConsole ? "flex-grow-1" : "flex-grow-1 container-fluid p-4"
+          }
+        >
           <Routes>
             {/* ===== AUTH ===== */}
             <Route path="/" element={<LoginPage />} />
