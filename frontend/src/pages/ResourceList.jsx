@@ -388,7 +388,7 @@ const ResourceList = () => {
             className="fw-bold text-dark mb-1"
             style={{ letterSpacing: "-0.8px", fontSize: "2.25rem" }}
           >
-            Resource Inventory
+            Resource Inventory ⚙️
           </h1>
           <p className="text-muted mb-0 fs-5">
             System Overview & Resource Management Portal
@@ -426,7 +426,7 @@ const ResourceList = () => {
               <div className="d-flex justify-content-between align-items-start">
                 <i className="bi bi-tools text-primary fs-1"></i>
                 <span className="badge bg-success-subtle text-success px-3 py-2 rounded-pill">
-                  Optimal
+                  Active
                 </span>
               </div>
               <h2 className="fw-bold text-dark mt-3 mb-1">
@@ -443,7 +443,7 @@ const ResourceList = () => {
               <div className="d-flex justify-content-between align-items-start">
                 <i className="bi bi-building text-primary fs-1"></i>
                 <span className="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
-                  High
+                  Active
                 </span>
               </div>
               <h2 className="fw-bold text-dark mt-3 mb-1">
@@ -460,7 +460,7 @@ const ResourceList = () => {
               <div className="d-flex justify-content-between align-items-start">
                 <i className="bi bi-exclamation-triangle text-danger fs-1"></i>
                 <span className="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill">
-                  Critical
+                  OutOfService
                 </span>
               </div>
               <h2 className="fw-bold text-dark mt-3 mb-1">
@@ -477,7 +477,7 @@ const ResourceList = () => {
               <div className="d-flex justify-content-between align-items-start">
                 <i className="bi bi-clock-history text-warning fs-1"></i>
                 <span className="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill">
-                  Action Req.
+                  OutOfService
                 </span>
               </div>
               <h2 className="fw-bold text-dark mt-3 mb-1">

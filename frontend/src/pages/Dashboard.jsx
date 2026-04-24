@@ -48,7 +48,7 @@ const Dashboard = () => {
         setAvailable(analyticsResponse.data.availableResources);
         setUnderMaintenance(analyticsResponse.data.maintenanceResources);
 
-        //New Resources API එක (for Charts)
+        //New Resources API  (for Charts)
         const resourcesResponse = await axios.get(
           "http://localhost:8082/api/resources",
         );
@@ -215,14 +215,19 @@ const Dashboard = () => {
 
     // Trigger notification to admins silently
     try {
-      axios.post("http://localhost:8082/api/notifications", {
-        targetGroup: "ALL_ADMINS",
-        category: "FACILITY",
-        title: "Facility Report Exported",
-        message: "An administrator has exported the Infrastructure Dashboard Report (XLSX).",
-        referenceType: "FACILITY",
-        referenceId: "DASHBOARD"
-      }, { withCredentials: true });
+      axios.post(
+        "http://localhost:8082/api/notifications",
+        {
+          targetGroup: "ALL_ADMINS",
+          category: "FACILITY",
+          title: "Facility Report Exported",
+          message:
+            "An administrator has exported the Infrastructure Dashboard Report (XLSX).",
+          referenceType: "FACILITY",
+          referenceId: "DASHBOARD",
+        },
+        { withCredentials: true },
+      );
     } catch (err) {
       console.error("Failed to send download notification", err);
     }
