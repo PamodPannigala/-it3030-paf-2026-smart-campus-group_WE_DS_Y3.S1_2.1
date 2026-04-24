@@ -323,7 +323,10 @@ public class BookingService {
         }
         
         // VALIDATION 3: Allow staff/admin scanners; enforce ownership for end users
-        boolean isStaffScanner = currentUserRole == Role.ADMIN || currentUserRole == Role.TECHNICIAN;
+        boolean isStaffScanner =
+                currentUserRole == Role.ADMIN
+                        || currentUserRole == Role.TECHNICIAN
+                        || currentUserRole == Role.SECURITY;
         if (!isStaffScanner && currentUserId != null && !booking.getUserId().equals(currentUserId)) {
             throw new RuntimeException("You are not authorized to check in for this booking");
         }
