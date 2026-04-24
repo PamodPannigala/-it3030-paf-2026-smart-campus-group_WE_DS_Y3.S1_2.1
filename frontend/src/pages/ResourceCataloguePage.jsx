@@ -373,7 +373,6 @@ const ResourceCataloguePage = () => {
           </div>
         )}
       </main>
-      //footer can be added here if needed in the future
     </div>
   );
 };

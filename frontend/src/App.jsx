@@ -80,6 +80,9 @@ function AppContent() {
     pathname === "/notifications" ||
     pathname === "/settings" ||
     pathname === "/booking/:id" ||
+    pathname === "/preferences" ||
+    pathname === "/admin/inventory" ||
+    pathname.startsWith("/resourseDetail");
     pathname === "/support-home" ||
     pathname === "/create-ticket" ||
     pathname === "/my-reports" ||
@@ -209,11 +212,9 @@ function AppContent() {
             <Route
               path="/admin/inventory"
               element={
-                <ProtectedRoute staffOnly>
-                  <StaffShell>
-                    <ResourceList />
-                  </StaffShell>
-                </ProtectedRoute>
+                <GateStaffLayout>
+                  <ResourceList />
+                </GateStaffLayout>
               }
             />
             <Route path="/catalogue" element={<ResourceCataloguePage />} />

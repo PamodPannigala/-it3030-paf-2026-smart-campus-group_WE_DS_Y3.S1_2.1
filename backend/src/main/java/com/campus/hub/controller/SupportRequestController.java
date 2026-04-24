@@ -27,18 +27,17 @@ public class SupportRequestController {
     private final SupportRequestService supportRequestService;
     private final AuthenticatedUserResolver authenticatedUserResolver;
 
-    public SupportRequestController(SupportRequestService supportRequestService, AuthenticatedUserResolver authenticatedUserResolver) {
+    public SupportRequestController(SupportRequestService supportRequestService,
+            AuthenticatedUserResolver authenticatedUserResolver) {
         this.supportRequestService = supportRequestService;
         this.authenticatedUserResolver = authenticatedUserResolver;
     }
-
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public SupportRequestResponse create(
             @Valid @RequestBody SupportRequestCreateRequest request,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
         CampusUser user = authenticatedUserResolver.resolve(authentication);
         return supportRequestService.create(user.getId(), request);
     }
@@ -59,8 +58,7 @@ public class SupportRequestController {
     @PreAuthorize("hasRole('ADMIN')")
     public SupportRequestResponse update(
             @PathVariable Long id,
-            @Valid @RequestBody SupportRequestAdminUpdateRequest request
-    ) {
+            @Valid @RequestBody SupportRequestAdminUpdateRequest request) {
         return supportRequestService.updateByAdmin(id, request);
     }
 }
