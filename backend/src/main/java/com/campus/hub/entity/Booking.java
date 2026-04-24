@@ -16,6 +16,15 @@ public class Booking {
     private Long resourceId;
     
     private Long userId;
+
+    @Column(length = 255)
+    private String bookedByName;
+
+    @Column(length = 255)
+    private String bookedByEmail;
+
+    @Column(length = 20)
+    private String contactNumber;
     
     private LocalDate bookingDate;
     
@@ -80,6 +89,30 @@ public class Booking {
     
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public String getBookedByName() {
+        return bookedByName;
+    }
+
+    public void setBookedByName(String bookedByName) {
+        this.bookedByName = bookedByName;
+    }
+
+    public String getBookedByEmail() {
+        return bookedByEmail;
+    }
+
+    public void setBookedByEmail(String bookedByEmail) {
+        this.bookedByEmail = bookedByEmail;
+    }
+
+    public String getContactNumber() {
+        return contactNumber;
+    }
+
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
     }
     
     public LocalDate getBookingDate() {

@@ -8,9 +8,13 @@ public class BookingResponseDTO {
     private Long id;
     private Long resourceId;
     private String resourceName;
+    private String resourceLocation;
     private String resourceImage;
     private Long userId;
     private String userEmail;
+    private String bookedByName;
+    private String bookedByEmail;
+    private String contactNumber;
     private LocalDate bookingDate;
     private LocalTime startTime;
     private LocalTime endTime;
@@ -34,6 +38,9 @@ public class BookingResponseDTO {
     
     public String getResourceName() { return resourceName; }
     public void setResourceName(String resourceName) { this.resourceName = resourceName; }
+
+    public String getResourceLocation() { return resourceLocation; }
+    public void setResourceLocation(String resourceLocation) { this.resourceLocation = resourceLocation; }
     
     public String getResourceImage() { return resourceImage; }
     public void setResourceImage(String resourceImage) { this.resourceImage = resourceImage; }
@@ -43,6 +50,15 @@ public class BookingResponseDTO {
     
     public String getUserEmail() { return userEmail; }
     public void setUserEmail(String userEmail) { this.userEmail = userEmail; }
+
+    public String getBookedByName() { return bookedByName; }
+    public void setBookedByName(String bookedByName) { this.bookedByName = bookedByName; }
+
+    public String getBookedByEmail() { return bookedByEmail; }
+    public void setBookedByEmail(String bookedByEmail) { this.bookedByEmail = bookedByEmail; }
+
+    public String getContactNumber() { return contactNumber; }
+    public void setContactNumber(String contactNumber) { this.contactNumber = contactNumber; }
     
     public LocalDate getBookingDate() { return bookingDate; }
     public void setBookingDate(LocalDate bookingDate) { this.bookingDate = bookingDate; }

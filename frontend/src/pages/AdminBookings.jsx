@@ -1204,7 +1204,9 @@ const AdminBookings = () => {
                     {booking.resourceName || `Resource #${booking.resourceId}`}
                   </td>
                   <td style={{ padding: "12px", verticalAlign: "middle" }}>
-                    {booking.userEmail || `User ${booking.userId}`}
+                    {booking.userId
+                      ? `User #${booking.userId}`
+                      : "User details unavailable"}
                   </td>
                   <td style={{ padding: "12px", verticalAlign: "middle" }}>
                     {booking.bookingDate}
@@ -1297,7 +1299,8 @@ const AdminBookings = () => {
                               </>
                             )}
 
-                            {booking.status === "APPROVED" && (
+                            {booking.status === "APPROVED" &&
+                              !booking.checkedIn && (
                               <button
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => setSelectedBooking(booking)}
@@ -1457,13 +1460,36 @@ const AdminBookings = () => {
                     <h6 style={{ color: "#1a1a2e", fontWeight: "600" }}>
                       {viewModal.resourceName}
                     </h6>
+                    {viewModal.resourceLocation && (
+                      <p>
+                        <strong>Resource Location:</strong>{" "}
+                        {viewModal.resourceLocation}
+                      </p>
+                    )}
                     <p>
                       <strong>Resource ID:</strong> {viewModal.resourceId}
                     </p>
                     <p>
                       <strong>User:</strong>{" "}
-                      {viewModal.userEmail || `User ${viewModal.userId}`}
+                      {viewModal.userId
+                        ? `User #${viewModal.userId}`
+                        : "User details unavailable"}
                     </p>
+                    {viewModal.bookedByName && (
+                      <p>
+                        <strong>Booked By Name:</strong> {viewModal.bookedByName}
+                      </p>
+                    )}
+                    {viewModal.bookedByEmail && (
+                      <p>
+                        <strong>Booked By Email:</strong> {viewModal.bookedByEmail}
+                      </p>
+                    )}
+                    {viewModal.contactNumber && (
+                      <p>
+                        <strong>Contact Number:</strong> {viewModal.contactNumber}
+                      </p>
+                    )}
                     <p>
                       <strong>Date:</strong> {viewModal.bookingDate}
                     </p>

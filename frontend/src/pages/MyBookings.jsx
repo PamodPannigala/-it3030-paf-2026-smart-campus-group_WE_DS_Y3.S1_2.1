@@ -423,9 +423,16 @@ const MyBookings = () => {
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h5 className="modal-title">
-                {selectedBooking.resourceName || `Resource #${selectedBooking.resourceId}`}
-              </h5>
+              <div>
+                <h5 className="modal-title">
+                  {selectedBooking.resourceName || `Resource #${selectedBooking.resourceId}`}
+                </h5>
+                {selectedBooking.resourceLocation && (
+                  <small className="text-muted d-block mt-1">
+                    {selectedBooking.resourceLocation}
+                  </small>
+                )}
+              </div>
               <button className="modal-close-btn" onClick={closeModal}>
                 <X size={20} />
               </button>
@@ -452,6 +459,27 @@ const MyBookings = () => {
                 <span className="fw-bold">Purpose:</span>
                 <div>{selectedBooking.purpose || "Not specified"}</div>
               </div>
+
+              {selectedBooking.bookedByName && (
+                <div className="mb-3">
+                  <span className="fw-bold">Booked By Name:</span>
+                  <div>{selectedBooking.bookedByName}</div>
+                </div>
+              )}
+
+              {selectedBooking.bookedByEmail && (
+                <div className="mb-3">
+                  <span className="fw-bold">Booked By Email:</span>
+                  <div>{selectedBooking.bookedByEmail}</div>
+                </div>
+              )}
+
+              {selectedBooking.contactNumber && (
+                <div className="mb-3">
+                  <span className="fw-bold">Contact Number:</span>
+                  <div>{selectedBooking.contactNumber}</div>
+                </div>
+              )}
 
               {selectedBooking.expectedAttendees > 0 && (
                 <div className="mb-3">

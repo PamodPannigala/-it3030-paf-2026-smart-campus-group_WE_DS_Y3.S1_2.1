@@ -26,6 +26,9 @@ const BookingForm = () => {
   const [error, setError] = useState(null);
 
   const [formData, setFormData] = useState({
+    bookedByName: "",
+    bookedByEmail: "",
+    contactNumber: "",
     bookingDate: "",
     startTime: "",
     endTime: "",
@@ -36,6 +39,9 @@ const BookingForm = () => {
 
   const [conflicts, setConflicts] = useState([]);
   const [validationErrors, setValidationErrors] = useState({
+    bookedByName: "",
+    bookedByEmail: "",
+    contactNumber: "",
     date: "",
     startTime: "",
     endTime: "",
@@ -371,8 +377,107 @@ const BookingForm = () => {
     return true;
   };
 
+  // Validate Name - Only letters and spaces, no numbers or special characters
+    // Validate Name - Only letters and spaces, no numbers or special characters, cannot start with space
+  const validateBookedByName = (bookedByName) => {
+    // Don't trim here - we need to check for leading space
+    if (!bookedByName || bookedByName.trim() === "") {
+      setValidationErrors((prev) => ({ ...prev, bookedByName: "Name is required" }));
+      return false;
+    }
+    // Check if name starts with a space
+    if (bookedByName.startsWith(" ")) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        bookedByName: "Name cannot start with a space",
+      }));
+      return false;
+    }
+    if (bookedByName.length > 255) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        bookedByName: "Name must not exceed 255 characters",
+      }));
+      return false;
+    }
+    // Allow only letters and spaces (no numbers, no special characters)
+    // Also ensure no multiple consecutive spaces (optional but good practice)
+    const nameRegex = /^[A-Za-z]+(?:\s[A-Za-z]+)*$/;
+    if (!nameRegex.test(bookedByName)) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        bookedByName: "Name must contain only letters and single spaces (no numbers, no special characters, no double spaces)",
+      }));
+      return false;
+    }
+    setValidationErrors((prev) => ({ ...prev, bookedByName: "" }));
+    return true;
+  };
+
+  // Validate Email - Convert to lowercase, no capital letters allowed
+  const validateBookedByEmail = (bookedByEmail) => {
+    const value = bookedByEmail?.trim() || "";
+    if (!value) {
+      setValidationErrors((prev) => ({ ...prev, bookedByEmail: "Email is required" }));
+      return false;
+    }
+    // Check if email contains capital letters
+    if (/[A-Z]/.test(value)) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        bookedByEmail: "Email cannot contain capital letters. Please use lowercase only.",
+      }));
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        bookedByEmail: "Please enter a valid email address",
+      }));
+      return false;
+    }
+    setValidationErrors((prev) => ({ ...prev, bookedByEmail: "" }));
+    return true;
+  };
+
+  // Validate Contact Number - Must start with 07, exactly 10 digits, only numbers allowed
+  const validateContactNumber = (contactNumber) => {
+    const value = contactNumber?.trim() || "";
+    if (!value) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        contactNumber: "Contact number is required",
+      }));
+      return false;
+    }
+    // Check if only digits are entered (no letters, no symbols, no +)
+    const digitsOnlyRegex = /^\d+$/;
+    if (!digitsOnlyRegex.test(value)) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        contactNumber: "Contact number must contain only digits (0-9)",
+      }));
+      return false;
+    }
+    // Check if starts with 07 and is exactly 10 digits
+    const contactRegex = /^07[0-9]{8}$/;
+    if (!contactRegex.test(value)) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        contactNumber: "Contact number must start with '07' and contain exactly 10 digits (e.g., 0712345678)",
+      }));
+      return false;
+    }
+    setValidationErrors((prev) => ({ ...prev, contactNumber: "" }));
+    return true;
+  };
+
   // Check all validations before submit
   const validateAllFields = () => {
+    const isBookedByNameOk = validateBookedByName(formData.bookedByName);
+    const isBookedByEmailOk = validateBookedByEmail(formData.bookedByEmail);
+    const isContactNumberOk = validateContactNumber(formData.contactNumber);
     const isDateOk = validateDate(formData.bookingDate);
     const isStartTimeOk = validateStartTime(formData.startTime);
     const isEndTimeOk = validateEndTime(formData.endTime);
@@ -380,8 +485,19 @@ const BookingForm = () => {
     const isPurposeOk = validatePurpose(formData.purpose);
     const isSpecialRequestsOk = validateSpecialRequests(formData.specialRequests);
 
-    return isDateOk && isStartTimeOk && isEndTimeOk && isAttendeesOk && isPurposeOk && isSpecialRequestsOk;
+    return isBookedByNameOk && isBookedByEmailOk && isContactNumberOk && isDateOk && isStartTimeOk && isEndTimeOk && isAttendeesOk && isPurposeOk && isSpecialRequestsOk;
   };
+
+  useEffect(() => {
+    if (!user) return;
+    // Convert email to lowercase when setting from user
+    const userEmail = (user.email || "").toLowerCase();
+    setFormData((prev) => ({
+      ...prev,
+      bookedByName: prev.bookedByName || user.fullName || user.username || "",
+      bookedByEmail: prev.bookedByEmail || userEmail,
+    }));
+  }, [user]);
 
   useEffect(() => {
     const fetchResource = async () => {
@@ -399,12 +515,116 @@ const BookingForm = () => {
     fetchResource();
   }, [id]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+   const handleChange = (e) => {
+    let { name, value } = e.target;
+    let errorMessage = "";
+    let isValid = true;
+    
+    // Special handling for name: remove numbers and special characters (allow only letters and spaces)
+    if (name === "bookedByName") {
+      // Check if user is trying to enter invalid characters
+      const invalidChars = value.replace(/[A-Za-z\s]/g, '');
+      if (invalidChars && invalidChars.length > 0) {
+        errorMessage = `Invalid character(s) "${invalidChars}" - only letters and spaces allowed`;
+        isValid = false;
+      }
+      // Allow only letters and spaces, remove everything else as user types
+      let cleaned = value.replace(/[^A-Za-z\s]/g, '');
+      // Prevent leading space
+      if (cleaned.startsWith(" ")) {
+        cleaned = cleaned.substring(1);
+        if (!errorMessage) {
+          errorMessage = "Name cannot start with a space";
+          isValid = false;
+        }
+      }
+      // Prevent multiple consecutive spaces
+      const hadMultipleSpaces = /\s{2,}/.test(cleaned);
+      if (hadMultipleSpaces) {
+        if (!errorMessage) {
+          errorMessage = "Name cannot contain multiple consecutive spaces";
+          isValid = false;
+        }
+      }
+      cleaned = cleaned.replace(/\s+/g, ' ');
+      value = cleaned;
+      
+      if (isValid && value && value.length > 0) {
+        // Check if it starts with space again
+        if (value.startsWith(" ")) {
+          errorMessage = "Name cannot start with a space";
+          isValid = false;
+        } else {
+          errorMessage = "";
+        }
+      }
+      setValidationErrors((prev) => ({ ...prev, bookedByName: errorMessage }));
+    }
+    
+    // Special handling for email: convert to lowercase immediately and validate
+    if (name === "bookedByEmail") {
+      value = value.toLowerCase();
+      // Check for capital letters (should not happen due to toLowerCase, but just in case)
+      if (/[A-Z]/.test(value)) {
+        errorMessage = "Email cannot contain capital letters";
+        isValid = false;
+      }
+      // Check email format in real-time (basic check)
+      if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        errorMessage = "Please enter a valid email address";
+        isValid = false;
+      } else if (value && !errorMessage) {
+        errorMessage = "";
+      }
+      setValidationErrors((prev) => ({ ...prev, bookedByEmail: errorMessage }));
+    }
+    
+    // Special handling for contact number: allow only digits
+    if (name === "contactNumber") {
+      // Check if user entered non-digit characters
+      const nonDigits = value.replace(/\d/g, '');
+      if (nonDigits && nonDigits.length > 0) {
+        errorMessage = `Invalid character(s) "${nonDigits}" - only digits allowed`;
+        isValid = false;
+      }
+      // Remove everything except digits
+      let cleaned = value.replace(/\D/g, '');
+      // Check length
+      if (cleaned.length > 0 && cleaned.length < 10 && !errorMessage) {
+        errorMessage = `Need ${10 - cleaned.length} more digit(s)`;
+        isValid = false;
+      } else if (cleaned.length === 10 && !errorMessage) {
+        // Check if starts with 07
+        if (!cleaned.startsWith("07")) {
+          errorMessage = "Contact number must start with '07'";
+          isValid = false;
+        } else {
+          errorMessage = "";
+          isValid = true;
+        }
+      } else if (cleaned.length > 10) {
+        errorMessage = "Contact number cannot exceed 10 digits";
+        isValid = false;
+        cleaned = cleaned.slice(0, 10);
+      }
+      // Limit to 10 digits
+      if (cleaned.length > 10) {
+        cleaned = cleaned.slice(0, 10);
+      }
+      value = cleaned;
+      setValidationErrors((prev) => ({ ...prev, contactNumber: errorMessage }));
+    }
+    
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Validate individual fields
-    if (name === "bookingDate") {
+    // Validate individual fields with real-time feedback
+    if (name === "bookedByName") {
+      // Already handled above
+    } else if (name === "bookedByEmail") {
+      // Already handled above
+    } else if (name === "contactNumber") {
+      // Already handled above
+    } else if (name === "bookingDate") {
       validateDate(value);
     } else if (name === "startTime") {
       validateStartTime(value);
@@ -447,7 +667,6 @@ const BookingForm = () => {
       }
     }
   };
-
   const checkConflicts = async () => {
     if (!formData.bookingDate || !formData.startTime || !formData.endTime)
       return;
@@ -505,6 +724,9 @@ const BookingForm = () => {
     try {
       const bookingRequest = {
         resourceId: parseInt(id),
+        bookedByName: formData.bookedByName.trim(),
+        bookedByEmail: formData.bookedByEmail.trim(),
+        contactNumber: formData.contactNumber.trim(),
         bookingDate: formData.bookingDate,
         startTime: formData.startTime,
         endTime: formData.endTime,
@@ -581,6 +803,9 @@ const BookingForm = () => {
                   <div>
                     <h5 className="mb-1">{resource?.name}</h5>
                     <p className="text-muted mb-0">
+                      {resource?.location || "Location not available"}
+                    </p>
+                    <p className="text-muted mb-0">
                       {resource?.type} •{" "}
                       {resource?.type !== "EQUIPMENT" &&
                         `Capacity: ${resource?.capacity} people`}
@@ -612,6 +837,91 @@ const BookingForm = () => {
                 )}
 
                 <form onSubmit={handleSubmit}>
+                  <div className="row mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Name *</label>
+                      <input
+                        type="text"
+                        name="bookedByName"
+                        value={formData.bookedByName}
+                        onChange={handleChange}
+                        className={`form-control ${validationErrors.bookedByName ? "is-invalid" : formData.bookedByName ? "is-valid" : ""}`}
+                        placeholder="Enter your name (letters and spaces only)"
+                        maxLength={255}
+                        required
+                      />
+                      {validationErrors.bookedByName && (
+                        <div className="invalid-feedback" style={{ display: 'block' }}>
+                          {validationErrors.bookedByName}
+                        </div>
+                      )}
+                      {!validationErrors.bookedByName && formData.bookedByName && (
+                        <div className="valid-feedback" style={{ display: 'block' }}>
+                          ✓ Looks good!
+                        </div>
+                      )}
+                      <small className="text-muted">
+                        Only letters and spaces allowed
+                      </small>
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label fw-semibold">Email *</label>
+                      <input
+                        type="email"
+                        name="bookedByEmail"
+                        value={formData.bookedByEmail}
+                        onChange={handleChange}
+                        className={`form-control ${validationErrors.bookedByEmail ? "is-invalid" : formData.bookedByEmail && !validationErrors.bookedByEmail ? "is-valid" : ""}`}
+                        placeholder="Enter your email (lowercase only)"
+                        maxLength={255}
+                        required
+                      />
+                      {validationErrors.bookedByEmail && (
+                        <div className="invalid-feedback" style={{ display: 'block' }}>
+                          {validationErrors.bookedByEmail}
+                        </div>
+                      )}
+                      {!validationErrors.bookedByEmail && formData.bookedByEmail && (
+                        <div className="valid-feedback" style={{ display: 'block' }}>
+                          ✓ Looks good!
+                        </div>
+                      )}
+                      <small className="text-muted">
+                        Only lowercase letters allowed
+                      </small>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">
+                      Contact Number *
+                    </label>
+                    <input
+                      type="tel"
+                      name="contactNumber"
+                      value={formData.contactNumber}
+                      onChange={handleChange}
+                      className={`form-control ${validationErrors.contactNumber ? "is-invalid" : formData.contactNumber && !validationErrors.contactNumber ? "is-valid" : ""}`}
+                      placeholder="e.g., 0712345678"
+                      inputMode="numeric"
+                      maxLength={10}
+                      required
+                    />
+                    {validationErrors.contactNumber && (
+                      <div className="invalid-feedback" style={{ display: 'block' }}>
+                        {validationErrors.contactNumber}
+                      </div>
+                    )}
+                    {!validationErrors.contactNumber && formData.contactNumber && formData.contactNumber.length === 10 && (
+                      <div className="valid-feedback" style={{ display: 'block' }}>
+                        ✓ Valid number!
+                      </div>
+                    )}
+                    <small className="text-muted">
+                      Must start with '07' and contain exactly 10 digits
+                    </small>
+                  </div>
+
                   {/* Booking Date */}
                   <div className="mb-3">
                     <label className="form-label fw-semibold">
@@ -637,9 +947,6 @@ const BookingForm = () => {
                         Note: Weekends are not available for booking
                       </small>
                     )}
-                    <small className="text-muted d-block">
-                      You can book up to 5 years in advance (maximum until {getMaxDate()})
-                    </small>
                   </div>
 
                   {/* Time Range */}
