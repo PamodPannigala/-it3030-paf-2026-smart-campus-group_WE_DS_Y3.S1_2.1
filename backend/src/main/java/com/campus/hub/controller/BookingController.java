@@ -32,9 +32,9 @@ public class BookingController {
         try {
             CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
             BookingResponseDTO booking = bookingService.createBooking(request, currentUser.getId());
-            return ResponseEntity.ok(booking);
+            return ResponseEntity.ok(booking);  // Return HTTP 200 OK with the created booking data
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));  // Return HTTP 400 Bad Request with error message
         }
     }
 
@@ -53,10 +53,10 @@ public class BookingController {
     public ResponseEntity<List<BookingResponseDTO>> getUserBookings(@PathVariable Long userId, Authentication authentication) {
         CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
         if (!currentUser.getId().equals(userId)) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(403).build();  // Return HTTP 403 Forbidden if trying to access another user's bookings
         }
         List<BookingResponseDTO> bookings = bookingService.getUserBookings(currentUser.getId());
-        return ResponseEntity.ok(bookings);
+        return ResponseEntity.ok(bookings);   // Return HTTP 200 OK with the list of bookings
     }
 
     // Get current session user's bookings
@@ -72,7 +72,7 @@ public class BookingController {
     public ResponseEntity<?> cancelBooking(@PathVariable Long id) {
         try {
             Booking booking = bookingService.cancelBooking(id);
-            return ResponseEntity.ok(booking);
+            return ResponseEntity.ok(booking);   // Return HTTP 200 OK with updated booking
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
@@ -104,7 +104,7 @@ public class BookingController {
     // Get all bookings (Admin only)
     @GetMapping("/all")
     public ResponseEntity<List<BookingResponseDTO>> getAllBookings() {
-        List<BookingResponseDTO> bookings = bookingService.getAllBookings();
+        List<BookingResponseDTO> bookings = bookingService.getAllBookings();  // Get all bookings from database
         return ResponseEntity.ok(bookings);
     }
 
@@ -130,14 +130,14 @@ public class BookingController {
 
     // Get QR code image for a booking
     @GetMapping("/{id}/qrcode")
-    public ResponseEntity<byte[]> getQRCode(@PathVariable Long id) {
+    public ResponseEntity<byte[]> getQRCode(@PathVariable Long id) {    // Returns image as byte array
         try {
-            byte[] qrImage = bookingService.generateQRCodeImage(id);
+            byte[] qrImage = bookingService.generateQRCodeImage(id);   // Generate QR code image for the booking
             return ResponseEntity.ok()
-                    .contentType(org.springframework.http.MediaType.IMAGE_PNG)
+                    .contentType(org.springframework.http.MediaType.IMAGE_PNG)   // Set content type as PNG image
                     .body(qrImage);
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.notFound().build();  // Return HTTP 404 Not Found if something fails
         }
     }
 
@@ -147,9 +147,9 @@ public class BookingController {
         String qrData = payload.get("qrData");
         try {
             CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
-            Booking booking = bookingService.validateCheckin(qrData, currentUser.getId(), currentUser.getRole());
+            Booking booking = bookingService.validateCheckin(qrData, currentUser.getId(), currentUser.getRole());  // Validate QR code without checking in
             BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
-            return ResponseEntity.ok(Map.of(
+            return ResponseEntity.ok(Map.of(   // Return validation success with booking details
                     "message", "Booking validation successful",
                     "bookingId", booking.getId(),
                     "resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()),
