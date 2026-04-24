@@ -528,7 +528,7 @@ const AdminBookings = () => {
       }
 
       pdf.save(
-        `CampusHub-Bookings-Report-${new Date().toISOString().split("T")[0]}.pdf`,
+        `Adeline-University-Bookings-Report-${new Date().toISOString().split("T")[0]}.pdf`,
       );
 
       // Trigger notification to admins silently
