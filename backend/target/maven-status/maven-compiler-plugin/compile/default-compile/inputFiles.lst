@@ -72,6 +72,10 @@ D:\PAF_Project\-it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1\backend\src\m
 D:\PAF_Project\-it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1\backend\src\main\java\com\campus\hub\security\DatabaseSeeder.java
 D:\PAF_Project\-it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1\backend\src\main\java\com\campus\hub\security\LocalUserDetailsService.java
 D:\PAF_Project\-it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1\backend\src\main\java\com\campus\hub\security\OAuth2LoginSuccessHandler.java
+<<<<<<< HEAD
+=======
+D:\PAF_Project\-it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1\backend\src\main\java\com\campus\hub\security\RoleColumnSchemaFixer.java
+>>>>>>> ab6db57ee6c7bb0d4449d0f90e121f3722b38eab
 D:\PAF_Project\-it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1\backend\src\main\java\com\campus\hub\security\SecurityConfig.java
 D:\PAF_Project\-it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1\backend\src\main\java\com\campus\hub\service\AccountDeletionService.java
 D:\PAF_Project\-it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1\backend\src\main\java\com\campus\hub\service\AccountDeletionServiceImpl.java

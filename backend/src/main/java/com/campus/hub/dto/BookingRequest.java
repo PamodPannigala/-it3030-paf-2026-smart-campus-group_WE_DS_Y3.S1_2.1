@@ -1,14 +1,37 @@
 package com.campus.hub.dto;
 
+import jakarta.validation.constraints.*;
+import org.hibernate.validator.constraints.Length;
+
 public class BookingRequest {
+    
+    @NotNull(message = "Resource ID is required")
     private Long resourceId;
+    
     private Long userId;
+    
+    @NotBlank(message = "Booking date is required")
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "Booking date must be in format YYYY-MM-DD")
     private String bookingDate;
+    
+    @NotBlank(message = "Start time is required")
+    @Pattern(regexp = "^([01]\\d|2[0-3]):([0-5]\\d)$", message = "Start time must be in format HH:MM")
     private String startTime;
+    
+    @NotBlank(message = "End time is required")
+    @Pattern(regexp = "^([01]\\d|2[0-3]):([0-5]\\d)$", message = "End time must be in format HH:MM")
     private String endTime;
+    
+    @NotBlank(message = "Purpose is required")
+    @Size(max = 250, message = "Purpose must not exceed 250 characters")
     private String purpose;
+    
+    @Min(value = 0, message = "Expected attendees must be 0 or greater")
     private Integer expectedAttendees;
+    
+    @Size(max = 250, message = "Special requests must not exceed 250 characters")
     private String specialRequests;
+    
     private String status;
     
     // Getters and Setters

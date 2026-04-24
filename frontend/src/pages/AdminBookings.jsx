@@ -23,8 +23,10 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoImg from "../assets/logo.png";
 import { getResourceImageOrCatalogueFallback } from "../utils/resourceImageFallback";
+import { useAuth } from "../context/AuthContext";
 
 const AdminBookings = () => {
+  const { isSecurity } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL");
@@ -1228,7 +1230,7 @@ const AdminBookings = () => {
                   <td style={{ padding: "12px", verticalAlign: "middle" }}>
                     {getCheckedInStatus(booking)}
                   </td>
-                                    <td style={{ padding: "12px", verticalAlign: "middle" }}>
+                  <td style={{ padding: "12px", verticalAlign: "middle" }}>
                     <div className="d-flex gap-2 justify-content-center">
                       {/* View Button - Always visible */}
                       <button
@@ -1240,50 +1242,62 @@ const AdminBookings = () => {
                         <Eye size={14} />
                       </button>
 
-                      {/* If booking is expired, only show View and Delete buttons */}
-                      {isBookingExpired(booking) ? (
-                        <>
-                          {/* Delete Button - Visible for expired bookings */}
-                          <button
-                            className="btn btn-sm btn-outline-dark"
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  "Are you sure you want to permanently delete this booking?",
-                                )
-                              ) {
-                                axios
-                                  .delete(
-                                    `http://localhost:8082/api/bookings/${booking.id}`,
+                      {!isSecurity &&
+                        (isBookingExpired(booking) ? (
+                          <>
+                            {/* Delete Button - Visible for expired bookings */}
+                            <button
+                              className="btn btn-sm btn-outline-dark"
+                              onClick={() => {
+                                if (
+                                  window.confirm(
+                                    "Are you sure you want to permanently delete this booking?",
                                   )
-                                  .then(() => {
-                                    toast.success("Booking deleted successfully");
-                                    fetchAllBookings();
-                                  })
-                                  .catch((err) =>
-                                    toast.error("Failed to delete booking"),
-                                  );
-                              }
-                            }}
-                            title="Delete Permanently"
-                            style={{ borderRadius: "8px" }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          {/* Non-expired bookings show all action buttons */}
-                          {booking.status === "PENDING" && (
-                            <>
-                              <button
-                                className="btn btn-sm btn-outline-success"
-                                onClick={() => approveBooking(booking.id)}
-                                title="Approve"
-                                style={{ borderRadius: "8px" }}
-                              >
-                                <CheckCircle size={14} />
-                              </button>
+                                ) {
+                                  axios
+                                    .delete(
+                                      `http://localhost:8082/api/bookings/${booking.id}`,
+                                    )
+                                    .then(() => {
+                                      toast.success("Booking deleted successfully");
+                                      fetchAllBookings();
+                                    })
+                                    .catch((err) =>
+                                      toast.error("Failed to delete booking"),
+                                    );
+                                }
+                              }}
+                              title="Delete Permanently"
+                              style={{ borderRadius: "8px" }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {/* Non-expired bookings show all action buttons */}
+                            {booking.status === "PENDING" && (
+                              <>
+                                <button
+                                  className="btn btn-sm btn-outline-success"
+                                  onClick={() => approveBooking(booking.id)}
+                                  title="Approve"
+                                  style={{ borderRadius: "8px" }}
+                                >
+                                  <CheckCircle size={14} />
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => setSelectedBooking(booking)}
+                                  title="Reject"
+                                  style={{ borderRadius: "8px" }}
+                                >
+                                  <XCircle size={14} />
+                                </button>
+                              </>
+                            )}
+
+                            {booking.status === "APPROVED" && (
                               <button
                                 className="btn btn-sm btn-outline-danger"
                                 onClick={() => setSelectedBooking(booking)}
@@ -1292,60 +1306,48 @@ const AdminBookings = () => {
                               >
                                 <XCircle size={14} />
                               </button>
-                            </>
-                          )}
+                            )}
 
-                          {booking.status === "APPROVED" && (
+                            {booking.status === "REJECTED" && (
+                              <button
+                                className="btn btn-sm btn-outline-success"
+                                onClick={() => approveBooking(booking.id)}
+                                title="Approve"
+                                style={{ borderRadius: "8px" }}
+                              >
+                                <CheckCircle size={14} />
+                              </button>
+                            )}
+
+                            {/* Delete Button - Also visible for non-expired */}
                             <button
-                              className="btn btn-sm btn-outline-danger"
-                              onClick={() => setSelectedBooking(booking)}
-                              title="Reject"
-                              style={{ borderRadius: "8px" }}
-                            >
-                              <XCircle size={14} />
-                            </button>
-                          )}
-
-                          {booking.status === "REJECTED" && (
-                            <button
-                              className="btn btn-sm btn-outline-success"
-                              onClick={() => approveBooking(booking.id)}
-                              title="Approve"
-                              style={{ borderRadius: "8px" }}
-                            >
-                              <CheckCircle size={14} />
-                            </button>
-                          )}
-
-                          {/* Delete Button - Also visible for non-expired */}
-                          <button
-                            className="btn btn-sm btn-outline-dark"
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  "Are you sure you want to permanently delete this booking?",
-                                )
-                              ) {
-                                axios
-                                  .delete(
-                                    `http://localhost:8082/api/bookings/${booking.id}`,
+                              className="btn btn-sm btn-outline-dark"
+                              onClick={() => {
+                                if (
+                                  window.confirm(
+                                    "Are you sure you want to permanently delete this booking?",
                                   )
-                                  .then(() => {
-                                    toast.success("Booking deleted successfully");
-                                    fetchAllBookings();
-                                  })
-                                  .catch((err) =>
-                                    toast.error("Failed to delete booking"),
-                                  );
-                              }
-                            }}
-                            title="Delete Permanently"
-                            style={{ borderRadius: "8px" }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </>
-                      )}
+                                ) {
+                                  axios
+                                    .delete(
+                                      `http://localhost:8082/api/bookings/${booking.id}`,
+                                    )
+                                    .then(() => {
+                                      toast.success("Booking deleted successfully");
+                                      fetchAllBookings();
+                                    })
+                                    .catch((err) =>
+                                      toast.error("Failed to delete booking"),
+                                    );
+                                }
+                              }}
+                              title="Delete Permanently"
+                              style={{ borderRadius: "8px" }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        ))}
                     </div>
                   </td>
                 </tr>

@@ -40,6 +40,8 @@ const BookingForm = () => {
     startTime: "",
     endTime: "",
     attendees: "",
+    purpose: "",
+    specialRequests: "",
   });
 
   // Get day of week from date (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
@@ -178,7 +180,15 @@ const BookingForm = () => {
     return startMinutes < endMinutes;
   };
 
-  // Validate date field
+  // Get max date (current date + 5 years = up to 2031)
+  const getMaxDate = () => {
+    const today = new Date();
+    const maxDate = new Date(today);
+    maxDate.setFullYear(today.getFullYear() + 5);
+    return maxDate.toISOString().split("T")[0];
+  };
+
+  // Validate date field with date range (present to 2031)
   const validateDate = (date) => {
     if (!date) {
       setValidationErrors((prev) => ({ ...prev, date: "" }));
@@ -193,7 +203,65 @@ const BookingForm = () => {
       return false;
     }
 
+    // Check date range (from today to 2031)
+    const today = new Date().toISOString().split("T")[0];
+    const maxDate = getMaxDate();
+    
+    if (date < today) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        date: "Booking date cannot be in the past",
+      }));
+      return false;
+    }
+    
+    if (date > maxDate) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        date: "Booking date cannot be more than 5 years from now (maximum: 2031)",
+      }));
+      return false;
+    }
+
     setValidationErrors((prev) => ({ ...prev, date: "" }));
+    return true;
+  };
+
+  // Validate purpose field (max 250 characters)
+  const validatePurpose = (purpose) => {
+    if (!purpose) {
+      setValidationErrors((prev) => ({ ...prev, purpose: "" }));
+      return true;
+    }
+    
+    if (purpose.length > 250) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        purpose: "Purpose must not exceed 250 characters",
+      }));
+      return false;
+    }
+    
+    setValidationErrors((prev) => ({ ...prev, purpose: "" }));
+    return true;
+  };
+
+  // Validate special requests field (max 250 characters)
+  const validateSpecialRequests = (specialRequests) => {
+    if (!specialRequests) {
+      setValidationErrors((prev) => ({ ...prev, specialRequests: "" }));
+      return true;
+    }
+    
+    if (specialRequests.length > 250) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        specialRequests: "Special requests must not exceed 250 characters",
+      }));
+      return false;
+    }
+    
+    setValidationErrors((prev) => ({ ...prev, specialRequests: "" }));
     return true;
   };
 
@@ -309,8 +377,10 @@ const BookingForm = () => {
     const isStartTimeOk = validateStartTime(formData.startTime);
     const isEndTimeOk = validateEndTime(formData.endTime);
     const isAttendeesOk = validateAttendees(formData.expectedAttendees);
+    const isPurposeOk = validatePurpose(formData.purpose);
+    const isSpecialRequestsOk = validateSpecialRequests(formData.specialRequests);
 
-    return isDateOk && isStartTimeOk && isEndTimeOk && isAttendeesOk;
+    return isDateOk && isStartTimeOk && isEndTimeOk && isAttendeesOk && isPurposeOk && isSpecialRequestsOk;
   };
 
   useEffect(() => {
@@ -346,6 +416,10 @@ const BookingForm = () => {
       validateEndTime(value);
     } else if (name === "expectedAttendees") {
       validateAttendees(value);
+    } else if (name === "purpose") {
+      validatePurpose(value);
+    } else if (name === "specialRequests") {
+      validateSpecialRequests(value);
     }
 
     // Check conflicts when date/time changes and all fields are valid
@@ -550,6 +624,7 @@ const BookingForm = () => {
                       onChange={handleChange}
                       className={`form-control ${validationErrors.date ? "is-invalid" : ""}`}
                       min={getMinDate()}
+                      max={getMaxDate()}
                       required
                     />
                     {validationErrors.date && (
@@ -562,6 +637,9 @@ const BookingForm = () => {
                         Note: Weekends are not available for booking
                       </small>
                     )}
+                    <small className="text-muted d-block">
+                      You can book up to 5 years in advance (maximum until {getMaxDate()})
+                    </small>
                   </div>
 
                   {/* Time Range */}
@@ -635,11 +713,20 @@ const BookingForm = () => {
                       name="purpose"
                       value={formData.purpose}
                       onChange={handleChange}
-                      className="form-control"
+                      className={`form-control ${validationErrors.purpose ? "is-invalid" : ""}`}
                       rows="3"
-                      placeholder="e.g., Group study session, Lecture, Project meeting..."
+                      placeholder="e.g., Group study session, Lecture, Project meeting... (Max 250 characters)"
                       required
+                      maxLength={250}
                     />
+                    {validationErrors.purpose && (
+                      <div className="invalid-feedback">
+                        {validationErrors.purpose}
+                      </div>
+                    )}
+                    <small className="text-muted">
+                      {formData.purpose.length}/250 characters
+                    </small>
                   </div>
 
                   {/* Expected Attendees - Only show for non-EQUIPMENT resources */}
@@ -677,10 +764,19 @@ const BookingForm = () => {
                       name="specialRequests"
                       value={formData.specialRequests}
                       onChange={handleChange}
-                      className="form-control"
+                      className={`form-control ${validationErrors.specialRequests ? "is-invalid" : ""}`}
                       rows="2"
-                      placeholder="Any special requirements or equipment needed?"
+                      placeholder="Any special requirements or equipment needed? (Max 250 characters)"
+                      maxLength={250}
                     />
+                    {validationErrors.specialRequests && (
+                      <div className="invalid-feedback">
+                        {validationErrors.specialRequests}
+                      </div>
+                    )}
+                    <small className="text-muted">
+                      {formData.specialRequests.length}/250 characters
+                    </small>
                   </div>
 
                   {/* Submit Buttons */}
