@@ -1,0 +1,213 @@
+package com.campus.hub.controller;
+
+import com.campus.hub.dto.BookingRequest;
+import com.campus.hub.dto.BookingResponseDTO;
+import com.campus.hub.entity.CampusUser;
+import com.campus.hub.entity.Booking;
+import com.campus.hub.security.AuthenticatedUserResolver;
+import com.campus.hub.service.BookingService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/bookings")
+@CrossOrigin(origins = "http://localhost:5173") // For React frontend
+public class BookingController {
+
+    @Autowired
+    private BookingService bookingService;
+
+    @Autowired
+    private AuthenticatedUserResolver authenticatedUserResolver;
+
+    // Create a new booking
+    @PostMapping
+    public ResponseEntity<?> createBooking(@Valid @RequestBody BookingRequest request, Authentication authentication) {
+        try {
+            CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+            BookingResponseDTO booking = bookingService.createBooking(request, currentUser.getId());
+            return ResponseEntity.ok(booking);  // Return HTTP 200 OK with the created booking data
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));  // Return HTTP 400 Bad Request with error message
+        }
+    }
+
+    // Check for conflicts
+    @GetMapping("/check-conflict")
+    public ResponseEntity<?> checkConflict(@RequestParam Long resourceId,
+            @RequestParam String date,
+            @RequestParam String startTime,
+            @RequestParam String endTime) {
+        boolean hasConflict = bookingService.checkConflict(resourceId, date, startTime, endTime);
+        return ResponseEntity.ok(Map.of("conflicts", hasConflict ? List.of("Conflict found") : List.of()));
+    }
+
+    // Get user's bookings
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<BookingResponseDTO>> getUserBookings(@PathVariable Long userId, Authentication authentication) {
+        CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+        if (!currentUser.getId().equals(userId)) {
+            return ResponseEntity.status(403).build();  // Return HTTP 403 Forbidden if trying to access another user's bookings
+        }
+        List<BookingResponseDTO> bookings = bookingService.getUserBookings(currentUser.getId());
+        return ResponseEntity.ok(bookings);   // Return HTTP 200 OK with the list of bookings
+    }
+
+    // Get current session user's bookings
+    @GetMapping("/my")
+    public ResponseEntity<List<BookingResponseDTO>> getMyBookings(Authentication authentication) {
+        CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+        List<BookingResponseDTO> bookings = bookingService.getUserBookings(currentUser.getId());
+        return ResponseEntity.ok(bookings);
+    }
+
+    // Cancel booking
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelBooking(@PathVariable Long id) {
+        try {
+            Booking booking = bookingService.cancelBooking(id);
+            return ResponseEntity.ok(booking);   // Return HTTP 200 OK with updated booking
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Approve booking (Admin only)
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approveBooking(@PathVariable Long id) {
+        try {
+            Booking booking = bookingService.approveBooking(id);
+            return ResponseEntity.ok(booking);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Reject booking (Admin only)
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<?> rejectBooking(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        try {
+            String reason = payload.get("reason");
+            Booking booking = bookingService.rejectBooking(id, reason);
+            return ResponseEntity.ok(booking);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Get all bookings (Admin only)
+    @GetMapping("/all")
+    public ResponseEntity<List<BookingResponseDTO>> getAllBookings() {
+        List<BookingResponseDTO> bookings = bookingService.getAllBookings();  // Get all bookings from database
+        return ResponseEntity.ok(bookings);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getBookingById(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(bookingService.getBookingById(id));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Delete booking (Admin only - permanent deletion)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteBooking(@PathVariable Long id) {
+        try {
+            bookingService.deleteBooking(id);
+            return ResponseEntity.ok(Map.of("message", "Booking deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    // Get QR code image for a booking
+    @GetMapping("/{id}/qrcode")
+    public ResponseEntity<byte[]> getQRCode(@PathVariable Long id) {    // Returns image as byte array
+        try {
+            byte[] qrImage = bookingService.generateQRCodeImage(id);   // Generate QR code image for the booking
+            return ResponseEntity.ok()
+                    .contentType(org.springframework.http.MediaType.IMAGE_PNG)   // Set content type as PNG image
+                    .body(qrImage);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();  // Return HTTP 404 Not Found if something fails
+        }
+    }
+
+    // Verify check-in (called by scanner)
+    @PostMapping("/verify-checkin/preview")
+    public ResponseEntity<?> previewCheckin(@RequestBody Map<String, String> payload, Authentication authentication) {
+        String qrData = payload.get("qrData");
+        try {
+            CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+            Booking booking = bookingService.validateCheckin(qrData, currentUser.getId(), currentUser.getRole());  // Validate QR code without checking in
+            BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
+            return ResponseEntity.ok(Map.of(   // Return validation success with booking details
+                    "message", "Booking validation successful",
+                    "bookingId", booking.getId(),
+                    "resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()),
+                    "bookedByName", bookingDto.getBookedByName(),
+                    "bookingDate", booking.getBookingDate().toString(),
+                    "startTime", booking.getStartTime().toString(),
+                    "endTime", booking.getEndTime().toString(),
+                    "checkedIn", booking.isCheckedIn()));
+        } catch (Exception e) {
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("message", e.getMessage());
+            try {
+                Booking booking = bookingService.findBookingByQr(qrData);
+                BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
+                errorBody.put("bookingId", booking.getId());
+                errorBody.put("resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()));
+                errorBody.put("bookedByName", bookingDto.getBookedByName());
+                errorBody.put("bookingDate", booking.getBookingDate().toString());
+                errorBody.put("startTime", booking.getStartTime().toString());
+                errorBody.put("endTime", booking.getEndTime().toString());
+            } catch (Exception ignored) {
+                // Keep message-only response when QR cannot be resolved to any booking.
+            }
+            return ResponseEntity.badRequest().body(errorBody);
+        }
+    }
+
+    // Verify check-in (called by scanner)
+    @PostMapping("/verify-checkin")
+    public ResponseEntity<?> verifyCheckin(@RequestBody Map<String, String> payload, Authentication authentication) {
+        String qrData = payload.get("qrData");
+        try {
+            CampusUser currentUser = authenticatedUserResolver.resolve(authentication);
+            Booking booking = bookingService.verifyAndCheckin(qrData, currentUser.getId(), currentUser.getRole());
+            BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Check-in successful",
+                    "bookingId", booking.getId(),
+                    "resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()),
+                    "bookedByName", bookingDto.getBookedByName(),
+                    "checkedInAt", booking.getCheckedInAt().toString(),
+                    "checkedIn", booking.isCheckedIn()));
+        } catch (Exception e) {
+            Map<String, Object> errorBody = new HashMap<>();
+            errorBody.put("message", e.getMessage());
+            try {
+                Booking booking = bookingService.findBookingByQr(qrData);
+                BookingResponseDTO bookingDto = bookingService.convertToDTO(booking);
+                errorBody.put("bookingId", booking.getId());
+                errorBody.put("resourceName", bookingDto.getResourceName() != null ? bookingDto.getResourceName() : ("Resource #" + booking.getResourceId()));
+                errorBody.put("bookedByName", bookingDto.getBookedByName());
+                errorBody.put("bookingDate", booking.getBookingDate().toString());
+                errorBody.put("startTime", booking.getStartTime().toString());
+                errorBody.put("endTime", booking.getEndTime().toString());
+            } catch (Exception ignored) {
+                // Keep message-only response when QR cannot be resolved to any booking.
+            }
+            return ResponseEntity.badRequest().body(errorBody);
+        }
+    }
+}
