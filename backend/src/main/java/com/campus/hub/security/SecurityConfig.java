@@ -107,7 +107,7 @@ public class SecurityConfig {
                                         .filter(value -> !value.isBlank())
                                         .toList());
                 }
-                originPatterns.add("http://10.218.54.1:5173");
+                originPatterns.add("http://10.43.199.1:5173");
                 originPatterns.add("http://localhost:*");
                 originPatterns.add("http://127.0.0.1:*");
                 configuration.setAllowedOriginPatterns(originPatterns);

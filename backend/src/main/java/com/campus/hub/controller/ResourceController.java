@@ -11,7 +11,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/resources")
 // @CrossOrigin(origins = "*",allowedHeaders = "*")
-@CrossOrigin(origins = "http://10.218.54.1:5173")
+@CrossOrigin(origins = "http://10.43.199.1:5173")
 public class ResourceController {
 
     private final ResourceService resourceService;
