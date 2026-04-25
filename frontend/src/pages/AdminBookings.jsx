@@ -1,6 +1,6 @@
 // src/pages/AdminBookings.jsx
-import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useMemo } from "react";   // Import React core hooks for state management, side effects, and memoization
+import axios from "axios";  // Import axios for making HTTP API calls to backend
 import {
   CheckCircle,
   XCircle,
@@ -26,10 +26,10 @@ import { getResourceImageOrCatalogueFallback } from "../utils/resourceImageFallb
 import { useAuth } from "../context/AuthContext";
 
 const AdminBookings = () => {
-  const { isSecurity } = useAuth();
+  const { isSecurity } = useAuth();   // Destructure isSecurity flag from auth context to check if user has security role
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("ALL");
+  const [loading, setLoading] = useState(true);  // State hook to track loading state while fetching data
+  const [filter, setFilter] = useState("ALL");  // State hook to track selected booking status filter (ALL, PENDING, APPROVED, etc.)
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -38,13 +38,13 @@ const AdminBookings = () => {
   const [checkedInFilter, setCheckedInFilter] = useState("ALL");
 
   useEffect(() => {
-    fetchAllBookings();
+    fetchAllBookings();  // Call function to fetch all bookings from backend API
   }, []);
 
   const fetchAllBookings = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:8082/api/bookings/all",
+        "http://localhost:8082/api/bookings/all",  // Make GET request to fetch all bookings
       );
       setBookings(response.data);
     } catch (err) {
@@ -54,11 +54,11 @@ const AdminBookings = () => {
     }
   };
 
-  const approveBooking = async (bookingId) => {
+  const approveBooking = async (bookingId) => {  // Async function to approve a booking
     if (window.confirm("Are you sure you want to approve this booking?")) {
       try {
         await axios.put(
-          `http://localhost:8082/api/bookings/${bookingId}/approve`,
+          `http://localhost:8082/api/bookings/${bookingId}/approve`,  // Send PUT request to approve booking
         );
         fetchAllBookings();
         toast.success("Booking approved successfully!");
@@ -75,21 +75,21 @@ const AdminBookings = () => {
     }
     try {
       await axios.put(
-        `http://localhost:8082/api/bookings/${bookingId}/reject`,
+        `http://localhost:8082/api/bookings/${bookingId}/reject`, // Send PUT request to reject booking
         {
           reason: rejectionReason,
         },
       );
-      fetchAllBookings();
-      setSelectedBooking(null);
-      setRejectionReason("");
+      fetchAllBookings();   // Refresh bookings list after rejection
+      setSelectedBooking(null);  // Clear selected booking
+      setRejectionReason("");  // Clear rejection reason
       toast.success("Booking rejected");
     } catch (err) {
       toast.error("Failed to reject booking");
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status) => {   // Function to return appropriate badge component based on booking status
     switch (status) {
       case "APPROVED":
         return <span className="badge bg-success">Approved</span>;
@@ -151,7 +151,7 @@ const AdminBookings = () => {
   };
 
   // ========== CHECKED-IN STATISTICS FOR CHART (MOVED OUTSIDE) ==========
-  const checkedInStats = useMemo(() => {
+  const checkedInStats = useMemo(() => {    // Memoized function to calculate check-in statistics
     const approvedBookings = bookings.filter((b) => b.status === "APPROVED");
     const checkedIn = approvedBookings.filter((b) => b.checkedIn).length;
     const notCheckedIn = approvedBookings.filter((b) => !b.checkedIn).length;

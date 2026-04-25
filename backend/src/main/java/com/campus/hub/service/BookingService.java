@@ -29,21 +29,21 @@ import java.util.stream.Collectors;
 public class BookingService {
     
     @Autowired
-    private ResourceRepository resourceRepository;
+    private ResourceRepository resourceRepository;  // Repository for resource database operations
     
     @Autowired
-    private BookingRepository bookingRepository;
+    private BookingRepository bookingRepository;  // Repository for booking database operations
 
     @Autowired
-    private CampusUserRepository campusUserRepository;
+    private CampusUserRepository campusUserRepository;  // Repository for campus user database operations
 
     @Autowired
-    private NotificationService notificationService;
-    
+    private NotificationService notificationService;  // Repository for notification database operations
+
     // Convert Booking to DTO with resource details
     public BookingResponseDTO convertToDTO(Booking booking) {
-        BookingResponseDTO dto = new BookingResponseDTO();
-        dto.setId(booking.getId());
+        BookingResponseDTO dto = new BookingResponseDTO();  // Creates new empty DTO object
+        dto.setId(booking.getId());   // Sets booking ID from entity to DTO
         dto.setResourceId(booking.getResourceId());
         dto.setUserId(booking.getUserId());
         dto.setBookedByName(booking.getBookedByName());
@@ -65,22 +65,22 @@ public class BookingService {
         
         // Get resource details
         resourceRepository.findById(booking.getResourceId()).ifPresent(resource -> {
-            dto.setResourceName(resource.getName());
+            dto.setResourceName(resource.getName());  // Sets resource name from resource entity to DTO
             dto.setResourceLocation(resource.getLocation());
             dto.setResourceImage(resource.getImageUrl());
         });
 
-        if (booking.getBookedByEmail() != null && !booking.getBookedByEmail().isBlank()) {
+        if (booking.getBookedByEmail() != null && !booking.getBookedByEmail().isBlank()) {  // Checks if bookedByEmail is present in booking
             dto.setUserEmail(booking.getBookedByEmail());
         } else {
-            campusUserRepository.findById(booking.getUserId()).map(CampusUser::getEmail).ifPresent(dto::setUserEmail);
+            campusUserRepository.findById(booking.getUserId()).map(CampusUser::getEmail).ifPresent(dto::setUserEmail);  // Fetches email from user table using user ID
         }
         
         return dto;
     }
     
     // Create booking and return DTO with full backend validations
-    public BookingResponseDTO createBooking(BookingRequest request, Long authenticatedUserId) {
+    public BookingResponseDTO createBooking(BookingRequest request, Long authenticatedUserId) {  //Method to create new booking with validations
         // ========== BACKEND VALIDATIONS ==========
         
         // 1. Validate authenticated user ID is not null
@@ -94,11 +94,11 @@ public class BookingService {
             .orElseThrow(() -> new RuntimeException("Resource not found with ID: " + request.getResourceId()));
         
         // 4. Date range validation (present to 2031 / 5 years from now)
-        LocalDate bookingDate = LocalDate.parse(request.getBookingDate());
+        LocalDate bookingDate = LocalDate.parse(request.getBookingDate());  // Parses booking date string to LocalDate
         LocalDate today = LocalDate.now();
         LocalDate maxDate = today.plusYears(5);
         
-        if (bookingDate.isBefore(today)) {
+        if (bookingDate.isBefore(today)) {  // Checks if booking date is in the past
             throw new RuntimeException("Booking date cannot be in the past");
         }
         if (bookingDate.isAfter(maxDate)) {
@@ -124,14 +124,14 @@ public class BookingService {
         
         if (crossesMidnight) {
             // Overnight operating hours
-            if (startTime.isBefore(openTime) && startTime.isAfter(closeTime)) {
+            if (startTime.isBefore(openTime) && startTime.isAfter(closeTime)) {  // Checks if start time outside operating hours
                 throw new RuntimeException("Start time must be between " + openTime + " and " + closeTime + " (overnight)");
             }
-            if (endTime.isBefore(openTime) && endTime.isAfter(closeTime)) {
+            if (endTime.isBefore(openTime) && endTime.isAfter(closeTime)) {  // Checks if end time outside operating hours
                 throw new RuntimeException("End time must be between " + openTime + " and " + closeTime + " (overnight)");
             }
         } else {
-            // Normal operating hours
+            // If normal operating hours (same day)
             if (startTime.isBefore(openTime) || startTime.isAfter(closeTime)) {
                 throw new RuntimeException("Start time must be between " + openTime + " and " + closeTime);
             }
@@ -156,7 +156,7 @@ public class BookingService {
             if (request.getExpectedAttendees() <= 0) {
                 throw new RuntimeException("Expected attendees must be at least 1");
             }
-            if (request.getExpectedAttendees() > resource.getCapacity()) {
+            if (request.getExpectedAttendees() > resource.getCapacity()) {  // Checks if attendees exceed resource capacity
                 throw new RuntimeException("Expected attendees cannot exceed resource capacity of " + resource.getCapacity());
             }
         }
@@ -167,7 +167,7 @@ public class BookingService {
         }
         
         // 10. Check for conflicts before creating
-        boolean hasConflict = checkConflict(
+        boolean hasConflict = checkConflict(   // Calls checkConflict method to detect overlaps
             request.getResourceId(),
             request.getBookingDate(),
             request.getStartTime(),
@@ -180,21 +180,21 @@ public class BookingService {
         
         // ========== END OF BACKEND VALIDATIONS ==========
         
-        Booking booking = new Booking();
+        Booking booking = new Booking();   // Creates new Booking entity instance
         booking.setResourceId(request.getResourceId());
         booking.setUserId(authenticatedUserId);
-        booking.setBookedByName(request.getBookedByName() == null ? null : request.getBookedByName().trim());
+        booking.setBookedByName(request.getBookedByName() == null ? null : request.getBookedByName().trim());   // Sets booker name with trimming if present
         booking.setBookedByEmail(request.getBookedByEmail() == null ? null : request.getBookedByEmail().trim().toLowerCase());
         booking.setContactNumber(request.getContactNumber() == null ? null : request.getContactNumber().trim());
-        booking.setBookingDate(bookingDate);
+        booking.setBookingDate(bookingDate);   // Sets validated booking date to entity
         booking.setStartTime(startTime);
         booking.setEndTime(endTime);
         booking.setPurpose(request.getPurpose());
         booking.setExpectedAttendees(request.getExpectedAttendees());
         booking.setSpecialRequests(request.getSpecialRequests());
         
-        Booking saved = bookingRepository.save(booking);
-        return convertToDTO(saved);
+        Booking saved = bookingRepository.save(booking);  // Saves booking to database and returns saved entity
+        return convertToDTO(saved);   // Converts saved entity to DTO and returns to controller
     }
     
     // Check for conflicts
@@ -247,13 +247,13 @@ public class BookingService {
         
         // Generate unique QR code token when approved
         String qrToken = generateQRToken(booking);
-        booking.setQrCode(qrToken);
+        booking.setQrCode(qrToken);  // Sets QR code on booking entity
         booking.setQrCodeGeneratedAt(LocalDateTime.now());
         
-        Booking saved = bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);  // Saves approved booking with QR code to database
 
         try {
-            notificationService.create(new NotificationCreateRequest(
+            notificationService.create(new NotificationCreateRequest(  // Creates and sends notification to user
                 saved.getUserId(),
                 "SPECIFIC",
                 NotificationCategory.BOOKING,
@@ -318,6 +318,7 @@ public class BookingService {
         bookingRepository.delete(booking);
     }
 
+    // Creates and sends notification to user
     public BookingResponseDTO getBookingById(Long id) {
         Objects.requireNonNull(id, "Booking ID cannot be null");
         return bookingRepository.findById(id)
@@ -326,7 +327,7 @@ public class BookingService {
     }
 
     // Generate QR code image as byte array
-    public byte[] generateQRCodeImage(Long bookingId) {
+    public byte[] generateQRCodeImage(Long bookingId) {  // Method to generate QR code image as byte array
         Objects.requireNonNull(bookingId, "Booking ID cannot be null");
         Booking booking = bookingRepository.findById(bookingId)
             .orElseThrow(() -> new RuntimeException("Booking not found with ID: " + bookingId));
@@ -347,7 +348,7 @@ public class BookingService {
                 hints
             );
             
-            javax.imageio.ImageIO.setUseCache(false);
+            javax.imageio.ImageIO.setUseCache(false);  // Disables image IO cache to avoid file locking
             java.awt.image.BufferedImage qrImage = com.google.zxing.client.j2se.MatrixToImageWriter.toBufferedImage(bitMatrix);
             
             java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
@@ -439,7 +440,6 @@ public class BookingService {
         // VALIDATION 3: Allow staff/admin scanners; enforce ownership for end users
         boolean isStaffScanner = currentUserRole != null && (
                 currentUserRole == Role.ADMIN
-                        || currentUserRole == Role.TECHNICIAN
                         || currentUserRole == Role.SECURITY);
         if (!isStaffScanner && currentUserId != null && !booking.getUserId().equals(currentUserId)) {
             throw new RuntimeException("You are not authorized to check in for this booking");

@@ -11,11 +11,11 @@ import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     
-    List<Booking> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Booking> findByUserIdOrderByCreatedAtDesc(Long userId);  //finds all bookings by user ID and sorts by creation date descending (newest first)
     
-    List<Booking> findAllByOrderByCreatedAtDesc();
+    List<Booking> findAllByOrderByCreatedAtDesc();  // Custom query method - finds all bookings ordered by creation date descending (newest first)
     
-    Optional<Booking> findByQrCode(String qrCode);
+    Optional<Booking> findByQrCode(String qrCode);  //Custom query method - finds a booking by its QR code (returns Optional to handle null case)
 
     // Exclude CANCELLED and REJECTED bookings from conflict checking
     // Only PENDING and APPROVED bookings block new bookings

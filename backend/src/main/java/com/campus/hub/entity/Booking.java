@@ -40,7 +40,7 @@ public class Booking {
     @Column(length = 500)
     private String specialRequests;
     
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)  // Stores enum as String in database (e.g., "PENDING" instead of ordinal 0)
     private BookingStatus status;
     
     @Column(length = 500)
@@ -50,7 +50,7 @@ public class Booking {
     
     private LocalDateTime updatedAt;
 
-    @Column(unique = true, length = 255)
+    @Column(unique = true, length = 255)  // Unique constraint - no two bookings can have same QR code
     private String qrCode;
     
     private LocalDateTime qrCodeGeneratedAt;
