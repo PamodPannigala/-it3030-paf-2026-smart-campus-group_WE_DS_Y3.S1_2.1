@@ -469,7 +469,7 @@ const AdminBookings = () => {
       const tableRows = filteredBookings.map((b) => [
         `#${b.id}`,
         b.resourceName || `Resource ${b.resourceId}`,
-        b.userEmail || `User ${b.userId}`,
+        b.userId || `User ${b.userId}`,
         b.bookingDate,
         `${b.startTime} - ${b.endTime}`,
         b.purpose?.substring(0, 40) || "",
