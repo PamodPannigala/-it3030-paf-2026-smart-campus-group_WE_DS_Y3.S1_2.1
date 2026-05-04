@@ -123,11 +123,24 @@ The Smart Campus Operations Hub provides a unified digital platform with five co
 
 ## 🚀 Getting Started
 
+### Database Setup
+
+```bash
+# Log into MySQL
+mysql -u root -p
+
+# Create database
+CREATE DATABASE campus_hub;
+
+# Exit MySQL
+exit;
+```
+
 ### Backend Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1.git
+git clone https://github.com/PamodPannigala/-it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1.git
 cd it3030-paf-2026-smart-campus-group_WE_DS_Y3.S1_2.1/backend
 
 # Configure application.properties (update MySQL credentials)
