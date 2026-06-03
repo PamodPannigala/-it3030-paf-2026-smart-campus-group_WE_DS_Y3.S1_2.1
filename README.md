@@ -20,7 +20,7 @@ Traditional campus resource and incident management often suffers from:
 
 ## 💡 Our Solution
 
-The Adeline University Operations Hub provides a unified digital platform with five core modules:
+Our Smart Campus Operations Hub provides a unified digital platform with five core modules:
 
 | Module | Description |
 |--------|-------------|
