@@ -107,11 +107,7 @@ public class SecurityConfig {
                                         .filter(value -> !value.isBlank())
                                         .toList());
                 }
-<<<<<<< HEAD
                 //originPatterns.add("http://10.43.199.1:5173");
-=======
-                //originPatterns.add("http://10.241.204.1:5173");
->>>>>>> ff569e3717fc415ca5e08198c9e1b1b3ea29bbea
                 originPatterns.add("http://localhost:*");
                 originPatterns.add("http://127.0.0.1:*");
                 configuration.setAllowedOriginPatterns(originPatterns);

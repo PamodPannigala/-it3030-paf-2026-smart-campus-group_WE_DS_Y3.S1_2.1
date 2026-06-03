@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import logoImg from "../assets/logo.png";
 
 const Footer = () => {
   return (
@@ -8,8 +9,8 @@ const Footer = () => {
         <div className="row gy-4">
           <div className="col-lg-4 col-md-6">
             <h5 className="text-white fw-bold mb-3 d-flex align-items-center gap-2">
-              <span className="ch-logo-icon">C</span>
-              Campus Hub
+              <img className="ch-logo-icon" src={logoImg} alt="Adeline University logo" />
+              Adeline University
             </h5>
             <p className="text-white-50 small pe-lg-4">
               Your centralized gateway to university services, event bookings, facility management, and support systems. Building a smarter campus experience.
@@ -47,7 +48,7 @@ const Footer = () => {
         </div>
         <div className="row mt-5">
           <div className="col-12 border-top border-secondary pt-4 d-flex flex-column flex-md-row justify-content-between align-items-center">
-            <span className="text-white-50 small">© {new Date().getFullYear()} Campus Hub Operations. All rights reserved.</span>
+            <span className="text-white-50 small">© {new Date().getFullYear()} Adeline University Operations. All rights reserved.</span>
             <div className="d-flex gap-3 mt-2 mt-md-0 small">
               <a href="#" className="text-white-50 text-decoration-none">Privacy</a>
               <a href="#" className="text-white-50 text-decoration-none">Terms</a>

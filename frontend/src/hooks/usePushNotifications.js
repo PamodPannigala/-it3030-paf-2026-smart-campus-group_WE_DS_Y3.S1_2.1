@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import logoImg from "../assets/logo.png";
 
 /**
  * Custom hook to handle Browser Push Notifications.
@@ -27,8 +28,8 @@ const usePushNotifications = () => {
   const showNotification = useCallback((title, options = {}) => {
     if (Notification.permission === "granted") {
       const defaultOptions = {
-        icon: '/favicon.ico', // Replace with your logo path
-        badge: '/favicon.ico',
+        icon: logoImg,
+        badge: logoImg,
         ...options
       };
       

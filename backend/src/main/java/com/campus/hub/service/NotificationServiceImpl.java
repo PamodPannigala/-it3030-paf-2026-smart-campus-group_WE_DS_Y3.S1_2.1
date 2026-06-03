@@ -223,10 +223,10 @@ public class NotificationServiceImpl implements NotificationService {
         
         if (preference.isEmailEnabled() && categoryEnabled) {
             String body = String.format(
-                    "Hello %s,\n\nYou have a new notification from Smart Campus Hub:\n\nTitle: %s\nMessage: %s\n\nYou can view more details by logging into your portal.\n\nBest regards,\nSmart Campus Team",
+                    "Hello %s,\n\nYou have a new notification from Adeline University:\n\nTitle: %s\nMessage: %s\n\nYou can view more details by logging into your portal.\n\nBest regards,\nAdeline University Team",
                     user.getFullName(), notification.getTitle(), notification.getMessage());
             
-            emailService.sendEmail(user.getEmail(), "Smart Campus Hub: " + notification.getTitle(), body);
+            emailService.sendEmail(user.getEmail(), "Adeline University: " + notification.getTitle(), body);
         }
     }
 

@@ -39,7 +39,7 @@ export default function SupportHomePage() {
   const slides = [
     {
       badge: "Campus IT Support",
-      title: "Smart Campus Help Desk",
+      title: "Adeline University Help Desk",
       desc: "Your centralized hub for all campus technology needs. From classroom equipment to dorm Wi-Fi, we provide fast, reliable support for students, faculty, and staff across all departments.",
       icon: GraduationCap,
       image: "https://sptel.com/wp-content/uploads/2024/03/4.-How-Can-Schools-Get-Started-with-Smart-Campuses_.jpg"
@@ -52,8 +52,8 @@ export default function SupportHomePage() {
       image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1920&q=80"
     },
     {
-      badge: "Smart Campus Analytics",
-      title: "Data-Driven Campus Operations",
+      badge: "Adeline University Analytics",
+      title: "Data-Driven Adeline University Operations",
       desc: "Real-time tracking of campus maintenance requests, equipment status, and resolution metrics. We continuously improve our services based on student and faculty feedback.",
       icon: BarChart3,
       image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1920&q=80"

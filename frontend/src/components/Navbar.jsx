@@ -1,5 +1,6 @@
 import { NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import logoImg from "../assets/logo.png";
 
 const Navbar = () => {
   const {
@@ -40,8 +41,8 @@ const Navbar = () => {
             <span className="fs-5">&larr;</span>
           </button>
           <NavLink className="navbar-brand" to={brandTo}>
-            <span className="ch-logo-icon">C</span>
-            Campus Hub
+            <img className="ch-logo-icon" src={logoImg} alt="Adeline University logo" />
+            Adeline University
           </NavLink>
         </div>
 

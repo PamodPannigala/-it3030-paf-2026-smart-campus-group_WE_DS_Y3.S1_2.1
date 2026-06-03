@@ -33,7 +33,7 @@ public class EmailService {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             // Using the configured username as the from address for Gmail compatibility
-            message.setFrom(mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl ? ((org.springframework.mail.javamail.JavaMailSenderImpl) mailSender).getUsername() : "campushub-notifications@gmail.com");
+            message.setFrom(mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl ? ((org.springframework.mail.javamail.JavaMailSenderImpl) mailSender).getUsername() : "adelineuniversity-notifications@gmail.com");
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);

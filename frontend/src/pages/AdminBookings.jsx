@@ -397,7 +397,7 @@ const AdminBookings = () => {
         pdf.setFontSize(16);
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(25, 42, 86);
-        pdf.text("CampusHub", 15, 25);
+        pdf.text("Adeline University", 15, 25);
       }
 
       // ✅ Company Name Gradient (FIXED)

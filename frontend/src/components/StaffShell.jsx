@@ -10,6 +10,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import logoImg from "../assets/logo.png";
 
 const StaffShell = ({ children }) => {
   const { logout, isAdmin, isSecurity } = useAuth();
@@ -27,8 +28,8 @@ const StaffShell = ({ children }) => {
     <div className="staff-console-root">
       <aside className="staff-sidebar" aria-label="Operations menu">
         <div className="staff-sidebar-brand">
-          <div className="staff-sidebar-mark">CH</div>
-          <span className="staff-sidebar-title">Campus Hub</span>
+          <img className="staff-sidebar-mark" src={logoImg} alt="Adeline University logo" />
+          <span className="staff-sidebar-title">Adeline University</span>
         </div>
         <ul className="staff-menu">
           <li>

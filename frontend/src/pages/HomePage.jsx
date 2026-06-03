@@ -14,7 +14,7 @@ const Home = () => {
     {
       image:
         "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=2070&auto=format&fit=crop",
-      title: "Smart Campus Ecosystem",
+      title: "Adeline University Ecosystem",
       subtitle:
         "Revolutionizing university life with modern technology and seamless integrations",
     },
@@ -33,7 +33,7 @@ const Home = () => {
     },
   ];
 
-  // Quality data for Smart Campus
+  // Quality data for Adeline University
   const qualityData = [
     { percentage: "99.9%", description: "System Uptime Rating" },
     { percentage: "24/7", description: "Facility Access Control" },
@@ -129,7 +129,7 @@ const Home = () => {
   }, [isStaff, navigate]);
 
   useEffect(() => {
-    document.title = "Campus Hub | Home";
+    document.title = "Adeline University | Home";
   }, []);
 
   if (isStaff) return null;
@@ -241,9 +241,9 @@ const Home = () => {
         <div className="home-inner-container">
           <div className="content-wrapper">
             <div className="left-side">
-              <h2>Why Users Choose Campus Hub</h2>
+              <h2>Why Users Choose Adeline University</h2>
               <p>
-                At Campus Hub, we're committed to revolutionizing operations
+                At Adeline University, we're committed to revolutionizing operations
                 through integrated technology. Our platform combines live
                 scheduling, intelligent alerting, and a centralized support
                 queue to ensure students and staff are always in sync.
@@ -288,7 +288,7 @@ const Home = () => {
       <section className="newsletter-section animate-on-scroll">
         <div className="home-inner-container">
           <div className="newsletter-content">
-            <h2>Stay Connected with Campus Direct</h2>
+            <h2>Stay Connected with Adeline University</h2>
             <p>
               Get the latest event announcements, policy updates, and critical
               alerts delivered to your inbox.

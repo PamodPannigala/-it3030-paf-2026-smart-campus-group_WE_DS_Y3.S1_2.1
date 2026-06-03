@@ -117,7 +117,7 @@ export default function TicketReportGenerator({ tickets }) {
         pdf.setFontSize(16);
         pdf.setFont("helvetica", "bold");
         pdf.setTextColor(25, 42, 86);
-        pdf.text("CampusHub", 15, 25);
+        pdf.text("Adeline University", 15, 25);
       }
 
       // ── COMPANY NAME ──
@@ -244,7 +244,7 @@ export default function TicketReportGenerator({ tickets }) {
       }
 
       pdf.save(
-        `CampusHub-Tickets-Report-${new Date().toISOString().split("T")[0]}.pdf`,
+        `Adeline-University-Tickets-Report-${new Date().toISOString().split("T")[0]}.pdf`,
       );
 
       if (btn) {

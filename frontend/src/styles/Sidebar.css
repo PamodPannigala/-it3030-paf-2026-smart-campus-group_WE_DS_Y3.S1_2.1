@@ -11,6 +11,18 @@
   color: white;
   padding: 18px 0 0;
   background-color: #1a252f;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-heading img {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 2px;
 }
 
 .list-group-item {

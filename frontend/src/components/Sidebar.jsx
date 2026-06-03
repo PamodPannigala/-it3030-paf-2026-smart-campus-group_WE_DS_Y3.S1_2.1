@@ -13,6 +13,7 @@ import {
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../styles/Sidebar.css";
+import logoImg from "../assets/logo.png";
 
 const navLinkClass = ({ isActive }) =>
   `list-group-item list-group-item-action p-3 d-flex align-items-center ${isActive ? "active-nav-link" : ""}`;
@@ -22,7 +23,10 @@ const Sidebar = () => {
 
   return (
     <div className="bg-light border-right" id="sidebar-wrapper">
-      <div className="sidebar-heading p-3">Campus Hub</div>
+      <div className="sidebar-heading p-3">
+        <img src={logoImg} alt="Adeline University logo" />
+        <span>Adeline University</span>
+      </div>
       <div className="list-group list-group-flush">
         {!user && (
           <NavLink to="/" className={navLinkClass}>

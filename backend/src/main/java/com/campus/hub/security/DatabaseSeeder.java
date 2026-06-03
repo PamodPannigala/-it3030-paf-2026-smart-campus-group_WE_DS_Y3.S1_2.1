@@ -22,7 +22,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
 
-    @Value("${app.seed.admin-email:admin@campushub.local}")
+    @Value("${app.seed.admin-email:admin@adelineuniversity.local}")
     private String adminEmail;
 
     @Value("${app.seed.admin-name:System Admin}")

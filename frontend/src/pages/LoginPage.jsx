@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogIn, UserPlus, Key, Eye, EyeOff, Github, Globe, Sparkles, Rocket, ShieldCheck } from "lucide-react";
+import { LogIn, UserPlus, Key, Eye, EyeOff, Github, Sparkles, Rocket, ShieldCheck } from "lucide-react";
+import logoImg from "../assets/logo.png";
 
 function useQuery() {
   const { search } = useLocation();
@@ -101,14 +102,31 @@ const LoginPage = () => {
             transition={{ delay: 0.2 }}
             className="branding-content text-white"
           >
-            <div className="d-flex align-items-center gap-2 mb-4">
-              <div className="bg-white text-primary p-2 rounded-xl shadow-lg">
-                <Globe className="w-8 h-8" />
+            <div className="d-flex flex-column align-items-center text-center gap-3 mb-4">
+              <div
+                className="bg-white text-primary shadow-lg"
+                style={{
+                  borderRadius: "28px",
+                  overflow: "hidden",
+                 
+                }}
+              >
+                <img
+                  src={logoImg}
+                  alt="Adeline University logo"
+                  style={{
+                    width: "250px",
+                    height: "250px",
+                    objectFit: "contain",
+                    borderRadius: "20px",
+                    display: "block",
+                  }}
+                />
               </div>
-              <h2 className="fw-bold mb-0 text-white" style={{ letterSpacing: "-1px" }}>Smart Campus</h2>
+              <h2 className="display-4 fw-bold mb-0 text-white" style={{ letterSpacing: "-1px" }}>Adeline University</h2>
             </div>
             
-            <h1 className="display-4 fw-bold mb-4 tracking-tight">The unified digital experience.</h1>
+            <h1 className="h3 fw-bold mb-4 tracking-tight text-center">The unified digital experience.</h1>
             <p className="lead text-white-50 mb-5">
               Access your tools, connections, and campus spaces all in one seamless interface.
             </p>
