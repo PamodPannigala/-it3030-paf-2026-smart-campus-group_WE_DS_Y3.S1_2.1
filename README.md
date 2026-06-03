@@ -1,4 +1,4 @@
-# 🏫 Adeline University Operations Hub
+# 🏫 Smart Campus Operations Hub
 
 A comprehensive platform built with **Spring Boot (Java) REST API** and **React** that streamlines university campus operations by integrating facility & asset booking, maintenance/incident ticketing, notifications, QR code check-in, and role-based access control.
 
